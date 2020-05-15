@@ -1,0 +1,68 @@
+version: 2
+
+tasks:
+  start-backend:
+    deps: [backend]
+    cmds:
+      - chmod +x backend/out/app
+      - ./backend/out/app
+
+  backend:
+    dir: backend
+    env:
+      GOARCH: amd64
+      GOOS: linux
+    cmds:
+      - go build -v -o out/app -i src/main/main.go
+    sources:
+      - backend/src/**
+    generates:
+      - out/**
+
+  frontend-install:
+    dir: frontend
+    cmds:
+      - npm install
+    sources:
+      - frontend/package.json
+    generates:
+      - frontend/package-lock.json
+      - frontend/node_modules
+    method: checksum
+
+  frontend:
+    dir: frontend
+    deps: [frontend-install]
+    cmds:
+      - npm run build:prod
+    sources:
+      - frontend/src/**
+      - frontend/*.js
+      - frontend/*.json
+    generates:
+      - frontend/dist
+
+  clean:
+    cmds:
+      - rm -rf out
+      - rm -rf backend/out
+      - cd frontend && npm run clean && cd ..
+
+  full-build:
+    deps: [frontend, backend]
+    cmds:
+      - rm -rf out
+      - mkdir out
+      - cp -r frontend/dist/** out/static
+      - cp backend/out/** out/
+    sources:
+      - frontend/dist/**
+      - backend/out/**
+    generates:
+      - out/**
+    method: checksum
+
+  docker-build:
+    deps: [full-build]
+    cmds:
+      - docker container run -p 8080 rt-chat-tute

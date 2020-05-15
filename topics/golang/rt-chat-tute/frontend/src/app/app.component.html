@@ -1,0 +1,12 @@
+<div>
+  <h4>Chat</h4>
+  <ul id="messages">
+    <li *ngFor="let message of messages">
+      <span [innerHTML]="isSystemMessage(message)"></span>
+    </li>
+  </ul>
+  <form action="">
+    <input [(ngModel)]="chatBox" [ngModelOptions]="{standalone: true}" autocomplete="off" />
+    <button (click)="send()">Send</button>
+  </form>
+</div>
