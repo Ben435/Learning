@@ -17,7 +17,7 @@ module.exports = {
     plugins: [
         new webpack.ProgressPlugin(handler),
         new HtmlWebpackPlugin({
-            title: 'Excalibur',
+            title: 'WasmGameOfLife',
             inject: true,
             template: path.resolve(__dirname, 'static', 'index.html'),
         }),
