@@ -2,23 +2,33 @@ use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
 use std::fs;
 use std::path::Path;
+use learn_webserver::thread_pool;
+
+static WORKER_THREADS: usize = 4;
 
 static HOST: &str = "localhost";
 static PORT: &str = "8080";
 
+static NOT_FOUND_FILE: &str = "404.html";
+
 fn main() {
+    let pool = thread_pool::ThreadPool::new(WORKER_THREADS).unwrap();
+
     let address = format!("{}:{}", HOST, PORT);
     let listener = TcpListener::bind(&address)
         .expect(&format!("Failed to bind to: {}", &address));
 
     println!("Listening on: {}", &address);
 
-    for stream in listener.incoming() {
+    for stream in listener.incoming().take(2) {
         match stream {
-            Ok(stream) => handle_connection(stream),
+            Ok(stream) => pool.execute(|| handle_connection(stream)),
             Err(e) => panic!("Error! {}", e),
         }
     }
+
+
+    println!("Shutting down!")
 }
 
 fn handle_connection(mut stream: TcpStream) {
@@ -52,15 +62,13 @@ fn handle_connection(mut stream: TcpStream) {
         }
     );
 
-    println!("URI: {:?}", &uri);
-
-    let response_content = fs::read_to_string(uri).ok();
+    let response_content = fs::read_to_string(uri);
 
     println!("Content: {:?}", &response_content);
 
     let response = match response_content {
-        Some(content) => format!("HTTP/1.1 200 OK \r\n\r\n{}", content),
-        None => String::from("HTTP/1.1 404 OK \r\n\r\n<html><body><h1>Not Found</h1></body></html>"),
+        Ok(content) => format!("HTTP/1.1 200 OK \r\n\r\n{}", content),
+        Err(_) => format!("HTTP/1.1 404 OK \r\n\r\n{}", &NOT_FOUND_FILE),
     };
 
     stream.write(response.as_bytes()).unwrap();
