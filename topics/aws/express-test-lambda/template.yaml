@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cars API
+
+Parameters:
+  apiDomain:
+    Type: String
+    Default: "api.bens-stuff.net"
+    Description: "Api domain name. Default is 'api.bens-stuff.net'"
+  stageName:
+    Type: String
+    Default: prod
+Resources:
+
+  GetCars:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get.handler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          CarsDb: !Ref CarsDb
+      Policies:
+        - Version: "2012-10-17"
+          Statement: 
+          - Effect: "Allow"
+            Action: 
+              - "lambda:InvokeFunction"
+            Resource: '*'
+          Statement:
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:GetItem"
+              - "dynamodb:Query"
+            Resource: "*"
+
+  CreateCars:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: create.handler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          CarsDb: !Ref CarsDb
+      Policies:
+        - Version: "2012-10-17"
+          Statement: 
+          - Effect: "Allow"
+            Action: 
+              - "lambda:InvokeFunction"
+            Resource: '*'
+          Statement:
+          - Effect: "Allow"
+            Action:
+              - "dynamodb:GetItem"
+              - "dynamodb:PutItem"
+              - "dynamodb:UpdateItem"
+            Resource: "*"
+
+  CarsDb:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      ProvisionedThroughput:
+        ReadCapacityUnits: 10
+        WriteCapacityUnits: 10
+      AttributeDefinitions:
+        -
+          AttributeName: "MakeId"
+          AttributeType: "S"
+        -
+          AttributeName: "ModelId"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "MakeId"
+          KeyType: "HASH"
+        -
+          AttributeName: "ModelId"
+          KeyType: "RANGE"
+
+  CarsApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: Get_Car API
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Body:
+        swagger: '2.0'
+        info:
+          description: API to return Car Data
+          version: 1.0.0
+          title: Car API
+        schemes:
+          - https
+        paths:
+          /:
+            post:
+              produces:
+                - application/json
+              responses:
+                '200':
+                  description: 200 response
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: '200'
+                uri:
+                  'Fn::Join':
+                    - ':'
+                    - - 'arn:aws:apigateway'
+                      - !Ref 'AWS::Region'
+                      - 'lambda:path/2015-03-31/functions/arn:aws:lambda'
+                      - !Ref 'AWS::Region'
+                      - !Ref 'AWS::AccountId'
+                      - function
+                      - 'Fn::Join':
+                          - ''
+                          - - !Ref GetCars
+                            - /invocations
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                contentHandling: CONVERT_TO_TEXT
+                type: aws
+            put:
+              produces:
+                - application/json
+              responses:
+                '200':
+                  description: 200 response
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: '200'
+                uri:
+                  'Fn::Join':
+                    - ':'
+                    - - 'arn:aws:apigateway'
+                      - !Ref 'AWS::Region'
+                      - 'lambda:path/2015-03-31/functions/arn:aws:lambda'
+                      - !Ref 'AWS::Region'
+                      - !Ref 'AWS::AccountId'
+                      - function
+                      - 'Fn::Join':
+                          - ''
+                          - - !Ref CreateCars
+                            - /invocations
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                contentHandling: CONVERT_TO_TEXT
+                type: aws
+  
+  CarsApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: prod
+      RestApiId:
+        Ref: CarsApi
+      DeploymentId:
+        Ref: CarsApiDeployment
+      MethodSettings:
+      - HttpMethod: '*'
+        ResourcePath: /cars
+
+  CarsApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiDomainName
+    Properties:
+      RestApiId:
+        Ref: CarsApi
+      StageName: prod
+
+  CarsApiBasePath:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: CarsApiDeployment
+    Properties:
+      BasePath: exp
+      DomainName: !Ref ApiDomainName
+      RestApiId: !Ref CarsApi
+      Stage: !Ref stageName
+
+  ApiDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref apiDomain
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      RegionalCertificateArn: arn:aws:acm:ap-southeast-2:307795561406:certificate/cc90cb4b-05f6-4930-ba4a-3674dcebbc5c
+
+  ApiDNSGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: bens-stuff.net.
+      RecordSets:
+        - Name: !Ref apiDomain
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt ApiDomainName.RegionalDomainName
+            HostedZoneId: !GetAtt ApiDomainName.RegionalHostedZoneId

@@ -1,0 +1,21 @@
+{
+  "name": "express-test-lambda",
+  "version": "1.0.0",
+  "description": "test-lambda",
+  "main": "handler.js",
+  "scripts": {
+    "event": "sam local invoke -e",
+    "build-deploy": "npm run build && npm run deploy",
+    "build": "npm run package-template",
+    "package-template": "sam package --template template.yaml --output-template-file package.yml --s3-bucket deploy-temp",
+    "deploy": "sam deploy --template-file package.yml --stack-name express-test --capabilities CAPABILITY_IAM"
+  },
+  "author": "Ben Clare",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.586.0"
+  },
+  "devDependencies": {
+    "sam": "0.0.7"
+  }
+}

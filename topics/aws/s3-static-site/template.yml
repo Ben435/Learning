@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Description: Static Experiment Site
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: experiment.bens-stuff.net
+
+Resources:
+  StaticResourcesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref DomainName
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      AccessControl: public-read
+      VersioningConfiguration: 
+        Status: Enabled
+  DNSGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: bens-stuff.net.
+      RecordSets:
+        - Name: !Ref DomainName
+          Type: A
+          AliasTarget:
+            DNSName: s3-website-ap-southeast-2.amazonaws.com
+            HostedZoneId: Z1WCIGYICN2BYD     # Need to figure out how to get this dynamically
+

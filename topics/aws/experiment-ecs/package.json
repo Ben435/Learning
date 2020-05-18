@@ -1,0 +1,20 @@
+{
+  "name": "experiment-ecs",
+  "version": "1.0.0",
+  "description": "Experiment with ECS",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run start && aws cloudformation validate-template --template-body file://out/template.yml",
+    "start": "node index.js $STACKNAME",
+    "update-ecs-config": "aws s3 cp ./out/ecs.config s3://deploy-temp/$STACKNAME-ecs.config",
+    "build-deploy": "npm test && npm run update-ecs-config && npm run deploy",
+    "deploy": "aws cloudformation deploy --template-file out/template.yml --stack-name $STACKNAME",
+    "check": "aws cloudformation describe-stack-events --stack-name $STACKNAME"
+  },
+  "author": "Ben Clare",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.0.1",
+    "js-base64": "^2.5.1"
+  }
+}
