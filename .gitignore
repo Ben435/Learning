@@ -2,3 +2,4 @@ out/
 target/
 node_modules/
 .idea/
+venv/
