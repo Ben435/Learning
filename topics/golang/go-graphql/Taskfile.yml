@@ -1,0 +1,22 @@
+# https://taskfile.dev
+
+version: '2'
+
+env:
+  BIN: gograph
+
+tasks:
+  default:
+    cmds:
+      - task: run
+
+  build:
+    cmds: 
+      - go build -o out/$BIN cmd/gograph/main.go 
+  
+  run:
+    deps: [build]
+    cmds:
+      - out/$BIN
+    env:
+      DEBUG: true

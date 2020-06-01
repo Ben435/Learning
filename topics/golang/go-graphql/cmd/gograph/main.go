@@ -5,6 +5,7 @@ import (
 	"gograph/internal/gograph"
 	"log"
 	"net/http"
+	"os"
 )
 
 const rootURL = "http://localhost"
@@ -16,6 +17,9 @@ func getHostURL() string {
 }
 
 func main() {
+	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
+	logger.Printf("Starting on %v\n", getHostURL())
 	gograph.RegisterHandlers()
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
