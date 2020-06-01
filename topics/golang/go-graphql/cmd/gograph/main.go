@@ -8,18 +8,26 @@ import (
 	"os"
 )
 
-const rootURL = "http://localhost"
 const port = 8080
 const apiPrefix = "/api"
-
-func getHostURL() string {
-	return fmt.Sprintf("%s:%d", rootURL, port)
-}
 
 func main() {
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	logger.Printf("Starting on %v\n", getHostURL())
-	gograph.RegisterHandlers()
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	logger.Printf("Starting on port=%v\n", port)
+
+	server := http.DefaultServeMux
+
+	gograph.RegisterHandlers(server)
+
+	handler := logRequests(server)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), handler))
+}
+
+func logRequests(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
 }

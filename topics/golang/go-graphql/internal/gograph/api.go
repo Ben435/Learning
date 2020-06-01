@@ -7,7 +7,7 @@ import (
 )
 
 // RegisterHandlers registers handlers to target
-func RegisterHandlers() {
+func RegisterHandlers(server *http.ServeMux) {
 	schema := GetSchema()
 
 	graphqlHandler := handler.New(&handler.Config{
@@ -16,5 +16,5 @@ func RegisterHandlers() {
 		GraphiQL: GetBoolConfigVar(DebugMode),
 	})
 
-	http.Handle("/graphql", graphqlHandler)
+	server.Handle("/graphql", graphqlHandler)
 }
