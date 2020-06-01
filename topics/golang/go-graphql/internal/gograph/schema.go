@@ -6,13 +6,28 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
+type Character struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
 // GetSchema returns GraphQL schema
 func GetSchema() graphql.Schema {
+
+	character := graphql.Type{}
+
 	fields := graphql.Fields{
-		"hello": &graphql.Field{
+		"name": &graphql.Field{
 			Type: graphql.String,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-				return "world", nil
+				return "fred", nil
+			},
+		},
+		"age": &graphql.Field{
+			Type: graphql.Int,
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				return 10, nil
 			},
 		},
 	}
