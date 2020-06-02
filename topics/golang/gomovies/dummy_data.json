@@ -1,0 +1,24 @@
+{
+    "actors": [
+        {
+            "id": "1",
+            "name": "John Smith"
+        },
+        {
+            "id": "2",
+            "name": "Henry Cavil"
+        },
+        {
+            "id": "3",
+            "name": "Chris Hemsworth"
+        },
+        {
+            "id": "4",
+            "name": "Jennifer Laurence"
+        },
+        {
+            "id": "5",
+            "name": "Natalie Portman"
+        }
+    ]
+}
