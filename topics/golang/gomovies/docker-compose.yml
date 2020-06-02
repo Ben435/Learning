@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+    webapp:
+        build:
+            context: .
+        image: webapp:latest
+        ports: 
+            - 8080:8080
+
+    database:
+        image: mongo:latest

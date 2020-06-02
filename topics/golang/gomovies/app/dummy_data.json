@@ -20,5 +20,24 @@
             "id": "5",
             "name": "Natalie Portman"
         }
+    ],
+    "movies": [
+        {
+            "id": "1",
+            "title": "The Witcher",
+            "actors": [
+                "1",
+                "2"
+            ]
+        },
+        {
+            "id": "2",
+            "title": "Avengers",
+            "actors": [
+                "5",
+                "3",
+                "1"
+            ]
+        }
     ]
 }

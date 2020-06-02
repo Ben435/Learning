@@ -30,7 +30,7 @@ func registerHandlers(server *http.ServeMux) {
 	graphqlHandler := handler.New(&handler.Config{
 		Schema:   &schema,
 		Pretty:   true,
-		GraphiQL: GetBoolConfigVar(DebugMode),
+		GraphiQL: true,
 	})
 
 	server.Handle("/graphql", graphqlHandler)
