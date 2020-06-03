@@ -54,41 +54,47 @@ func (c *MongoDatasource) loadLocalData(ctx context.Context) {
 	localData := GetData()
 	actorsCollection := c.GetActorsCollection()
 
+	var loadedActors []string
 	for _, actor := range localData.Actors {
 		res := actorsCollection.FindOne(ctx, bson.D{{Key: "_id", Value: actor.ID}})
 		if err := res.Err(); err != nil {
 			if err == mongo.ErrNoDocuments {
-				fmt.Printf("Loading actor: %v\n", actor)
 				_, err := actorsCollection.InsertOne(ctx, actor)
 
 				if err != nil {
 					log.Fatalf("Failed to load data for actor: %v, err: %v", actor, err)
 				}
+				loadedActors = append(loadedActors, actor.ID)
 			} else {
 				log.Fatalf("Failed to retrieve data about actor: %v, err: %v", actor, err)
 			}
-		} else {
-			fmt.Printf("Skipping already loaded actor: %v\n", actor.ID)
 		}
+	}
+	if len(loadedActors) > 0 {
+		fmt.Printf("Loaded actors %v\n", loadedActors)
 	}
 
 	moviesCollection := c.GetMoviesCollection()
+	var loadedMovies []string
 	for _, movie := range localData.Movies {
 		res := moviesCollection.FindOne(ctx, bson.D{{Key: "_id", Value: movie.ID}})
 		if err := res.Err(); err != nil {
 			if err == mongo.ErrNoDocuments {
-				fmt.Printf("Loading movie: %v\n", movie)
 				_, err := moviesCollection.InsertOne(ctx, movie)
 
 				if err != nil {
 					log.Fatalf("Failed to load data for movie: %v, err: %v", movie, err)
 				}
+
+				loadedMovies = append(loadedMovies, movie.ID)
 			} else {
 				log.Fatalf("Failed to retrieve data about movie: %v, err: %v", movie, err)
 			}
-		} else {
-			fmt.Printf("Skipping already loaded movie: %v\n", movie.ID)
 		}
+	}
+
+	if len(loadedMovies) > 0 {
+		fmt.Printf("Loaded movies %v\n", loadedMovies)
 	}
 }
 

@@ -2,9 +2,11 @@ package gomovies
 
 import (
 	"context"
+	"fmt"
 	"gomovies/pkg/data"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/graphql-go/handler"
 )
@@ -16,7 +18,14 @@ func StartServer() {
 
 	handler := logRequests(server)
 
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	port, present := os.LookupEnv("PORT")
+
+	if !present {
+		port = "8080"
+	}
+
+	fmt.Printf("Starting on port '%v'\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), handler))
 }
 
 func logRequests(handler http.Handler) http.Handler {

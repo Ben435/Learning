@@ -32,8 +32,6 @@ func GetData() Data {
 			log.Fatalf("Failed to unmarshall data: %v", err)
 		}
 
-		log.Printf("Loaded data: %v", data)
-
 		loadedData.data = data
 		loadedData.loaded = true
 	}
