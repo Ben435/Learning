@@ -1,52 +1,38 @@
 package data
 
 import (
+	"context"
 	"errors"
 	"fmt"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MovieData struct {
-	ID       string   `json:"id"`
-	Title    string   `json:"title"`
-	ActorIDs []string `json:"actors"`
+type Movie struct {
+	ID       string   `json:"id" bson:"_id"`
+	Title    string   `json:"title" bson:"title"`
+	ActorIDs []string `json:"actors" bson:"actor_ids"`
 }
 
-type Movie struct {
-	ID     string
-	Title  string
-	Actors []Actor
+func (m *Movie) GetActors(datasource Datasource) ([]*Actor, error) {
+	return GetActors(datasource, m.ActorIDs)
 }
 
 func GetMovie(datasource Datasource, id string) (*Movie, error) {
-	data := GetData()
+	movies := datasource.GetMoviesCollection()
 
-	movies := data.Movies
-	var movieData *MovieData
+	res := movies.FindOne(context.TODO(), bson.D{{Key: "_id", Value: id}})
 
-	for i := 0; i < len(movies); i++ {
-		if movies[i].ID == id {
-			movieData = &movies[i]
+	if err := res.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New(fmt.Sprintf("Movie not found with id: %v", id))
 		}
+		return nil, errors.New(fmt.Sprintf("Failed to find movie with id: %v, err: %v", id, err))
 	}
 
-	if movieData == nil {
-		return nil, errors.New("Failed to find movie")
-	}
+	var movie Movie
+	res.Decode(&movie)
 
-	actorIDs := movieData.ActorIDs
-	actors := make([]Actor, len(movieData.ActorIDs))
-	for i := 0; i < len(actorIDs); i++ {
-		actor, err := GetActor(datasource, actorIDs[i])
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Failed to find actor id %v in movie %v", actorIDs[i], movieData.ID))
-		}
-
-		actors[i] = *actor
-	}
-
-	return &Movie{
-		ID:     movieData.ID,
-		Title:  movieData.Title,
-		Actors: actors,
-	}, nil
+	return &movie, nil
 }

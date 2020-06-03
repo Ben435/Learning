@@ -40,7 +40,7 @@ func GetSchema(datasource data.Datasource) graphql.Schema {
 			"id": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if movie, ok := p.Source.(data.Movie); ok {
+					if movie, ok := p.Source.(*data.Movie); ok {
 						return movie.ID, nil
 					}
 					return nil, nil
@@ -49,7 +49,7 @@ func GetSchema(datasource data.Datasource) graphql.Schema {
 			"title": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if movie, ok := p.Source.(data.Movie); ok {
+					if movie, ok := p.Source.(*data.Movie); ok {
 						return movie.Title, nil
 					}
 					return nil, nil
@@ -60,8 +60,8 @@ func GetSchema(datasource data.Datasource) graphql.Schema {
 					OfType: actorType,
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if movie, ok := p.Source.(data.Movie); ok {
-						return movie.Actors, nil
+					if movie, ok := p.Source.(*data.Movie); ok {
+						return movie.GetActors(datasource)
 					}
 					return nil, nil
 				},

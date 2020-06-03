@@ -66,6 +66,25 @@ func (c *Datasource) loadLocalData() {
 			fmt.Printf("Skipping already loaded actor: %v\n", actor.ID)
 		}
 	}
+
+	moviesCollection := c.GetMoviesCollection()
+	for _, movie := range localData.Movies {
+		res := moviesCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: movie.ID}})
+		if err := res.Err(); err != nil {
+			if err == mongo.ErrNoDocuments {
+				fmt.Printf("Loading movie: %v\n", movie)
+				_, err := moviesCollection.InsertOne(context.TODO(), movie)
+
+				if err != nil {
+					log.Fatalf("Failed to load data for movie: %v, err: %v", movie, err)
+				}
+			} else {
+				log.Fatalf("Failed to retrieve data about movie: %v, err: %v", movie, err)
+			}
+		} else {
+			fmt.Printf("Skipping already loaded movie: %v\n", movie.ID)
+		}
+	}
 }
 
 func (c *Datasource) GetActorsCollection() *mongo.Collection {

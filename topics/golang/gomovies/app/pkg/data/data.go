@@ -12,8 +12,8 @@ type LoadedData struct {
 }
 
 type Data struct {
-	Actors []Actor     `json:"actors"`
-	Movies []MovieData `json:"movies"`
+	Actors []Actor `json:"actors"`
+	Movies []Movie `json:"movies"`
 }
 
 var loadedData = LoadedData{loaded: false}
