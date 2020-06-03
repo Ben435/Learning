@@ -10,12 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Datasource struct {
+type MongoDatasource struct {
 	client   mongo.Client
 	database string
 }
 
-func NewDatasource(database string) Datasource {
+func NewMongoDatasource(database string) MongoDatasource {
 
 	fmt.Println("Connecting to MongoDB...")
 
@@ -35,7 +35,7 @@ func NewDatasource(database string) Datasource {
 
 	fmt.Println("Connected to MongoDB!")
 
-	datasource := Datasource{
+	datasource := MongoDatasource{
 		*client,
 		database,
 	}
@@ -45,7 +45,7 @@ func NewDatasource(database string) Datasource {
 	return datasource
 }
 
-func (c *Datasource) loadLocalData() {
+func (c *MongoDatasource) loadLocalData() {
 	localData := GetData()
 	actorsCollection := c.GetActorsCollection()
 
@@ -87,10 +87,10 @@ func (c *Datasource) loadLocalData() {
 	}
 }
 
-func (c *Datasource) GetActorsCollection() *mongo.Collection {
+func (c *MongoDatasource) GetActorsCollection() *mongo.Collection {
 	return c.client.Database(c.database).Collection("actors")
 }
 
-func (c *Datasource) GetMoviesCollection() *mongo.Collection {
+func (c *MongoDatasource) GetMoviesCollection() *mongo.Collection {
 	return c.client.Database(c.database).Collection("movies")
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
-func GetSchema(datasource data.Datasource) graphql.Schema {
+func GetSchema(datasource data.MongoDatasource) graphql.Schema {
 
 	actorType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Actor",

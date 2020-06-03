@@ -27,7 +27,7 @@ func logRequests(handler http.Handler) http.Handler {
 
 func registerHandlers(server *http.ServeMux) {
 
-	datasource := data.NewDatasource("movies")
+	datasource := data.NewMongoDatasource("movies")
 
 	schema := GetSchema(datasource)
 

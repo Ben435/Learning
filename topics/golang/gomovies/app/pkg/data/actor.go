@@ -14,7 +14,7 @@ type Actor struct {
 	Name string `json:"name" bson:"name"`
 }
 
-func GetActor(datasource Datasource, id string) (*Actor, error) {
+func GetActor(datasource MongoDatasource, id string) (*Actor, error) {
 	actors := datasource.GetActorsCollection()
 
 	res := actors.FindOne(context.TODO(), bson.D{{Key: "_id", Value: id}})
@@ -35,7 +35,7 @@ func GetActor(datasource Datasource, id string) (*Actor, error) {
 	return &actor, nil
 }
 
-func GetActors(datasource Datasource, ids []string) ([]*Actor, error) {
+func GetActors(datasource MongoDatasource, ids []string) ([]*Actor, error) {
 	actorsCollection := datasource.GetActorsCollection()
 
 	cursor, err := actorsCollection.Find(context.TODO(), bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
