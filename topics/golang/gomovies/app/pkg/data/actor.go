@@ -14,10 +14,20 @@ type Actor struct {
 	Name string `json:"name" bson:"name"`
 }
 
-func GetActor(datasource MongoDatasource, id string) (*Actor, error) {
-	actors := datasource.GetActorsCollection()
+type ActorDatasource struct {
+	datasource MongoDatasource
+}
 
-	res := actors.FindOne(context.TODO(), bson.D{{Key: "_id", Value: id}})
+func NewActorDatasource(datasource MongoDatasource) ActorDatasource {
+	return ActorDatasource{
+		datasource,
+	}
+}
+
+func (a *ActorDatasource) GetActor(ctx context.Context, id string) (*Actor, error) {
+	actors := a.datasource.GetActorsCollection()
+
+	res := actors.FindOne(ctx, bson.D{{Key: "_id", Value: id}})
 
 	if err := res.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -35,17 +45,17 @@ func GetActor(datasource MongoDatasource, id string) (*Actor, error) {
 	return &actor, nil
 }
 
-func GetActors(datasource MongoDatasource, ids []string) ([]*Actor, error) {
-	actorsCollection := datasource.GetActorsCollection()
+func (a *ActorDatasource) GetActors(ctx context.Context, ids []string) ([]*Actor, error) {
+	actorsCollection := a.datasource.GetActorsCollection()
 
-	cursor, err := actorsCollection.Find(context.TODO(), bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
+	cursor, err := actorsCollection.Find(ctx, bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Failed to load actors with ids: %v, err: %v", ids, err))
 	}
 
 	var actors []*Actor
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var actor Actor
 		err := cursor.Decode(&actor)
 

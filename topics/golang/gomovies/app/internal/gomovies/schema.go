@@ -8,7 +8,7 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
-func GetSchema(datasource data.MongoDatasource) graphql.Schema {
+func GetSchema(movieDatasource data.MovieDatasource, actorDatasource data.ActorDatasource) graphql.Schema {
 
 	actorType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Actor",
@@ -61,7 +61,7 @@ func GetSchema(datasource data.MongoDatasource) graphql.Schema {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					if movie, ok := p.Source.(*data.Movie); ok {
-						return movie.GetActors(datasource)
+						return movieDatasource.GetActorsForMovie(p.Context, *movie)
 					}
 					return nil, nil
 				},
@@ -81,7 +81,7 @@ func GetSchema(datasource data.MongoDatasource) graphql.Schema {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := fmt.Sprintf("%v", p.Args["id"])
-					return data.GetActor(datasource, id)
+					return actorDatasource.GetActor(p.Context, id)
 				},
 			},
 			"movie": &graphql.Field{
@@ -93,7 +93,8 @@ func GetSchema(datasource data.MongoDatasource) graphql.Schema {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := fmt.Sprintf("%v", p.Args["id"])
-					return data.GetMovie(datasource, id)
+
+					return movieDatasource.GetMovie(p.Context, id)
 				},
 			},
 		},

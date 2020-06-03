@@ -15,14 +15,26 @@ type Movie struct {
 	ActorIDs []string `json:"actors" bson:"actor_ids"`
 }
 
-func (m *Movie) GetActors(datasource MongoDatasource) ([]*Actor, error) {
-	return GetActors(datasource, m.ActorIDs)
+type MovieDatasource struct {
+	datasource      MongoDatasource
+	actorDatasource ActorDatasource
 }
 
-func GetMovie(datasource MongoDatasource, id string) (*Movie, error) {
-	movies := datasource.GetMoviesCollection()
+func NewMovieDatasource(datasource MongoDatasource, actorDatasource ActorDatasource) MovieDatasource {
+	return MovieDatasource{
+		datasource,
+		actorDatasource,
+	}
+}
 
-	res := movies.FindOne(context.TODO(), bson.D{{Key: "_id", Value: id}})
+func (m *MovieDatasource) GetActorsForMovie(ctx context.Context, movie Movie) ([]*Actor, error) {
+	return m.actorDatasource.GetActors(ctx, movie.ActorIDs)
+}
+
+func (m *MovieDatasource) GetMovie(ctx context.Context, id string) (*Movie, error) {
+	movies := m.datasource.GetMoviesCollection()
+
+	res := movies.FindOne(ctx, bson.D{{Key: "_id", Value: id}})
 
 	if err := res.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {

@@ -1,6 +1,7 @@
 package gomovies
 
 import (
+	"context"
 	"gomovies/pkg/data"
 	"log"
 	"net/http"
@@ -26,10 +27,14 @@ func logRequests(handler http.Handler) http.Handler {
 }
 
 func registerHandlers(server *http.ServeMux) {
+	ctx := context.Background()
 
-	datasource := data.NewMongoDatasource("movies")
+	datasource := data.NewMongoDatasource(ctx, "movies")
 
-	schema := GetSchema(datasource)
+	actorsData := data.NewActorDatasource(datasource)
+	moviesData := data.NewMovieDatasource(datasource, actorsData)
+
+	schema := GetSchema(moviesData, actorsData)
 
 	graphqlHandler := handler.New(&handler.Config{
 		Schema:   &schema,

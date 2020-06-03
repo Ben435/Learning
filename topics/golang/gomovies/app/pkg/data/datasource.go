@@ -15,19 +15,19 @@ type MongoDatasource struct {
 	database string
 }
 
-func NewMongoDatasource(database string) MongoDatasource {
+func NewMongoDatasource(ctx context.Context, database string) MongoDatasource {
 
 	fmt.Println("Connecting to MongoDB...")
 
 	clientOptions := options.Client().ApplyURI("mongodb://root:example@database:27017")
 
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, err := mongo.Connect(ctx, clientOptions)
 
 	if err != nil {
 		log.Fatalf("Error initializing MongoDB connection: %v", err)
 	}
 
-	err = client.Ping(context.TODO(), nil)
+	err = client.Ping(ctx, nil)
 
 	if err != nil {
 		log.Fatalf("Error pinging established MongoDB connection: %v", err)
@@ -40,21 +40,21 @@ func NewMongoDatasource(database string) MongoDatasource {
 		database,
 	}
 
-	datasource.loadLocalData()
+	datasource.loadLocalData(ctx)
 
 	return datasource
 }
 
-func (c *MongoDatasource) loadLocalData() {
+func (c *MongoDatasource) loadLocalData(ctx context.Context) {
 	localData := GetData()
 	actorsCollection := c.GetActorsCollection()
 
 	for _, actor := range localData.Actors {
-		res := actorsCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: actor.ID}})
+		res := actorsCollection.FindOne(ctx, bson.D{{Key: "_id", Value: actor.ID}})
 		if err := res.Err(); err != nil {
 			if err == mongo.ErrNoDocuments {
 				fmt.Printf("Loading actor: %v\n", actor)
-				_, err := actorsCollection.InsertOne(context.TODO(), actor)
+				_, err := actorsCollection.InsertOne(ctx, actor)
 
 				if err != nil {
 					log.Fatalf("Failed to load data for actor: %v, err: %v", actor, err)
@@ -69,11 +69,11 @@ func (c *MongoDatasource) loadLocalData() {
 
 	moviesCollection := c.GetMoviesCollection()
 	for _, movie := range localData.Movies {
-		res := moviesCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: movie.ID}})
+		res := moviesCollection.FindOne(ctx, bson.D{{Key: "_id", Value: movie.ID}})
 		if err := res.Err(); err != nil {
 			if err == mongo.ErrNoDocuments {
 				fmt.Printf("Loading movie: %v\n", movie)
-				_, err := moviesCollection.InsertOne(context.TODO(), movie)
+				_, err := moviesCollection.InsertOne(ctx, movie)
 
 				if err != nil {
 					log.Fatalf("Failed to load data for movie: %v, err: %v", movie, err)
