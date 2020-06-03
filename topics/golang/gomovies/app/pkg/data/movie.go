@@ -17,7 +17,7 @@ type Movie struct {
 	Actors []Actor
 }
 
-func GetMovie(id string) (Movie, error) {
+func GetMovie(datasource Datasource, id string) (*Movie, error) {
 	data := GetData()
 
 	movies := data.Movies
@@ -30,21 +30,21 @@ func GetMovie(id string) (Movie, error) {
 	}
 
 	if movieData == nil {
-		return Movie{}, errors.New("Failed to find movie")
+		return nil, errors.New("Failed to find movie")
 	}
 
 	actorIDs := movieData.ActorIDs
 	actors := make([]Actor, len(movieData.ActorIDs))
 	for i := 0; i < len(actorIDs); i++ {
-		actor, err := GetActor(actorIDs[i])
+		actor, err := GetActor(datasource, actorIDs[i])
 		if err != nil {
-			return Movie{}, errors.New(fmt.Sprintf("Failed to find actor id %v in movie %v", actorIDs[i], movieData.ID))
+			return nil, errors.New(fmt.Sprintf("Failed to find actor id %v in movie %v", actorIDs[i], movieData.ID))
 		}
 
-		actors[i] = actor
+		actors[i] = *actor
 	}
 
-	return Movie{
+	return &Movie{
 		ID:     movieData.ID,
 		Title:  movieData.Title,
 		Actors: actors,

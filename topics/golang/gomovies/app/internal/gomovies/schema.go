@@ -8,7 +8,7 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
-func GetSchema() graphql.Schema {
+func GetSchema(datasource data.Datasource) graphql.Schema {
 
 	actorType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Actor",
@@ -16,7 +16,7 @@ func GetSchema() graphql.Schema {
 			"id": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if actor, ok := p.Source.(data.Actor); ok {
+					if actor, ok := p.Source.(*data.Actor); ok {
 						return actor.ID, nil
 					}
 					return nil, nil
@@ -25,7 +25,7 @@ func GetSchema() graphql.Schema {
 			"name": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					if actor, ok := p.Source.(data.Actor); ok {
+					if actor, ok := p.Source.(*data.Actor); ok {
 						return actor.Name, nil
 					}
 					return nil, nil
@@ -81,7 +81,7 @@ func GetSchema() graphql.Schema {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := fmt.Sprintf("%v", p.Args["id"])
-					return data.GetActor(id)
+					return data.GetActor(datasource, id)
 				},
 			},
 			"movie": &graphql.Field{
@@ -93,7 +93,7 @@ func GetSchema() graphql.Schema {
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := fmt.Sprintf("%v", p.Args["id"])
-					return data.GetMovie(id)
+					return data.GetMovie(datasource, id)
 				},
 			},
 		},

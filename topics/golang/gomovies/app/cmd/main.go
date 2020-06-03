@@ -1,6 +1,8 @@
 package main
 
-import "gomovies/internal/gomovies"
+import (
+	"gomovies/internal/gomovies"
+)
 
 func main() {
 	gomovies.StartServer()
