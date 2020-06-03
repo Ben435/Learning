@@ -16,11 +16,11 @@ type Movie struct {
 }
 
 type MovieDatasource struct {
-	datasource      MongoDatasource
+	datasource      Datasource
 	actorDatasource ActorDatasource
 }
 
-func NewMovieDatasource(datasource MongoDatasource, actorDatasource ActorDatasource) MovieDatasource {
+func NewMovieDatasource(datasource Datasource, actorDatasource ActorDatasource) MovieDatasource {
 	return MovieDatasource{
 		datasource,
 		actorDatasource,

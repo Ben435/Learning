@@ -15,10 +15,10 @@ type Actor struct {
 }
 
 type ActorDatasource struct {
-	datasource MongoDatasource
+	datasource Datasource
 }
 
-func NewActorDatasource(datasource MongoDatasource) ActorDatasource {
+func NewActorDatasource(datasource Datasource) ActorDatasource {
 	return ActorDatasource{
 		datasource,
 	}
