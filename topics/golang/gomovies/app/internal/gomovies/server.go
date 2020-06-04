@@ -2,6 +2,7 @@ package gomovies
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"gomovies/pkg/data"
 	"log"
@@ -39,9 +40,10 @@ func registerHandlers(server *http.ServeMux) {
 	ctx := context.Background()
 
 	datasource := data.NewMongoDatasource(ctx, "movies")
+	encoding := *base64.StdEncoding
 
 	actorsData := data.NewActorDatasource(datasource)
-	moviesData := data.NewMovieDatasource(datasource, actorsData)
+	moviesData := data.NewMovieDatasource(datasource, actorsData, encoding)
 
 	schema := GetSchema(moviesData, actorsData)
 

@@ -69,6 +69,98 @@ func GetSchema(movieDatasource data.MovieDatasource, actorDatasource data.ActorD
 		},
 	})
 
+	pageInfoType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "PageInfo",
+		Fields: graphql.Fields{
+			"hasNextPage": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.Boolean),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if pageInfo, ok := p.Source.(*data.PageInfo); ok {
+						return pageInfo.HasNextPage, nil
+					}
+					return nil, nil
+				},
+			},
+			"hasPreviousPage": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.Boolean),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if pageInfo, ok := p.Source.(*data.PageInfo); ok {
+						return pageInfo.HasPreviousPage, nil
+					}
+					return nil, nil
+				},
+			},
+			"startCursor": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.String),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if pageInfo, ok := p.Source.(*data.PageInfo); ok {
+						return pageInfo.StartCursor, nil
+					}
+					return nil, nil
+				},
+			},
+			"endCursor": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.String),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if pageInfo, ok := p.Source.(*data.PageInfo); ok {
+						return pageInfo.EndCursor, nil
+					}
+					return nil, nil
+				},
+			},
+		},
+	})
+
+	movieNodeType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Node",
+		Fields: graphql.Fields{
+			"node": &graphql.Field{
+				Type: movieType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if movieNode, ok := p.Source.(*data.MovieNode); ok {
+						return &movieNode.Data, nil
+					}
+					return nil, nil
+				},
+			},
+			"cursor": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.String),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if movieNode, ok := p.Source.(*data.MovieNode); ok {
+						return movieNode.Cursor, nil
+					}
+					return nil, nil
+				},
+			},
+		},
+	})
+
+	movieConnectionType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "MovieConnection",
+		Fields: graphql.Fields{
+			"pageInfo": &graphql.Field{
+				Type: graphql.NewNonNull(pageInfoType),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if movieConnection, ok := p.Source.(*data.MovieConnection); ok {
+						return &movieConnection.PageInfo, nil
+					}
+					return nil, nil
+				},
+			},
+			"edges": &graphql.Field{
+				Type: &graphql.List{
+					OfType: movieNodeType,
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if movieConnection, ok := p.Source.(*data.MovieConnection); ok {
+						return movieConnection.Edges, nil
+					}
+					return nil, nil
+				},
+			},
+		},
+	})
+
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "RootQuery",
 		Fields: graphql.Fields{
@@ -95,6 +187,12 @@ func GetSchema(movieDatasource data.MovieDatasource, actorDatasource data.ActorD
 					id := fmt.Sprintf("%v", p.Args["id"])
 
 					return movieDatasource.GetMovie(p.Context, id)
+				},
+			},
+			"movies": &graphql.Field{
+				Type: movieConnectionType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					return movieDatasource.GetMovies(p.Context)
 				},
 			},
 		},

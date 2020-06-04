@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -31,15 +30,15 @@ func (a *ActorDatasource) GetActor(ctx context.Context, id string) (*Actor, erro
 
 	if err := res.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, errors.New(fmt.Sprintf("Actor not found with id: %v", id))
+			return nil, fmt.Errorf("Actor not found with id: %v", id)
 		}
-		return nil, errors.New(fmt.Sprintf("Failed to find actor with id: %v, err: %v", id, err))
+		return nil, fmt.Errorf("Failed to find actor with id: %v, err: %v", id, err)
 	}
 
 	var actor Actor
 	err := res.Decode(&actor)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to parse actor with id: %v, err: %v", id, err))
+		return nil, fmt.Errorf("Failed to parse actor with id: %v, err: %v", id, err)
 	}
 
 	return &actor, nil
@@ -51,7 +50,7 @@ func (a *ActorDatasource) GetActors(ctx context.Context, ids []string) ([]*Actor
 	cursor, err := actorsCollection.Find(ctx, bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to load actors with ids: %v, err: %v", ids, err))
+		return nil, fmt.Errorf("Failed to load actors with ids: %v, err: %v", ids, err)
 	}
 
 	var actors []*Actor
@@ -60,7 +59,7 @@ func (a *ActorDatasource) GetActors(ctx context.Context, ids []string) ([]*Actor
 		err := cursor.Decode(&actor)
 
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Failed to decode actor: %v, err: %v", actor, err))
+			return nil, fmt.Errorf("Failed to decode actor: %v, err: %v", actor, err)
 		}
 
 		actors = append(actors, &actor)
