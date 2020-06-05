@@ -1,0 +1,6 @@
+name = "complex-worker"
+type = "rust"
+account_id = "b3f0acbc711e4284bf57bfc33bf46bbb"
+workers_dev = true
+route = ""
+zone_id = ""
