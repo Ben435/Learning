@@ -42,6 +42,21 @@ Also supports WASM. Seems to have had mixed reception on this, reports only _som
 
 Designed around running stateless/serverless blocks of code, however, can do some rudimentary storage. For example, its mentioned you can use global vars to store _some_ data, but its volatile and gets wiped occassionally, so don't rely on it. The Worker KV storage is recommended for long-er term storage, however, its query capabilities are limited (its a fairly strict Key-Val store, with )
 
+
+## Worker KV (KeyValue Store)
+
+Persistent Key-Value store (string to string), available to workers as global variables bound into the script.
+Fast, and cheap to read/write, but $0.50 a month per GB past the first is quite expensive.
+
+In addition, its $5 per 1mil writes, deletes, or list ops, past the first chunk you get with the subscription.
+
+### Stats
+
+* Fully globally accessible (eventually consistent)
+* TTL support for cached values
+* 512B keys, 2MB values
+* 1GB free storage + 10mil reads + 1mil write/delete/list with $5 monthly worker subscription
+
 ## Security
 
 Uses API tokens, can be fairly granularly configured. In this context, Zone = DNS Zone.
@@ -51,6 +66,35 @@ Uses API tokens, can be fairly granularly configured. In this context, Zone = DN
 Not quite as granular as eg: AWS IAM or GCP IAM, but probably enough given what you can run (eg: theres not database offering, so you probably wouldn't store any seriously sensitive data here anyway).
 
 ## Dev Experience
+
+Made a few basic projects, see rest of this folder. Mostly just off the tutorials parts of there docs, with a few minor modifications here and there to see how it felt to work with.
+
+### The Worker API
+
+Pretty standard, very similar to AWS Lambda.
+
+![Worker API](./docs/worker-api.png)
+
+Works the same with WASM projects (you just have the above call the WASM functions as needed).
+
+Because it runs on V8, I found myself almost _always_ using `type = webpack` to give myself some more freedom, as I was writing code as if it was a NodeJS project. Took a bit to get used too, but not too bad.
+
+#### Additional Runtime APIs
+
+Didn't use many of them, but looked fairly basic. They provide some Crypto, a region based Cache, and a HTMLRewriter tool.
+The HTMLRewriter tool seemed the most advanced, they describe it as  "jQuery for Workers". Provides a huge amount of parsing and editing capability.
+
+#### KV API
+
+Kinda weird. You configure namespaces for the project, and can edit the key-vals in either the web console, or the `wrangler` CLI, pretty standard.
+However, when you bind the namespace to your script, its accessible as a *global variable*. That was weird, and made testing a bit odd.
+Speaking of testing, because I was using `type = webpack` in my `wrangler.toml`, I didn't have access to the `webpack.config.js` to point Jest at. This wasn't an issue for basic tests, and you can configure a project `webpack.config.js` if you want, but just something to keep in mind.
+
+Looking at the docs for Worker KV, it has some weird API's (for example, it has pagination built in? As a key-value store?!), but I didn't need to use those, so not sure how weird they really are.
+
+### Docs
+
+Pretty basic, lots of examples, so pretty good. There isn't much to these Workers, so not having many docs was fine, as theres not much complexity anyway.
 
 ### `wrangler`
 
@@ -80,20 +124,6 @@ Need to re-deploy to see changes. On the free plan, can sometimes take a few req
 #### `wrangler publish`
 
 Publishes to the domain + route specified in the `wrangler.toml`. If no domain or route provided, will deploy to `<project_name>.<account_username>.workers.dev`, a free domain provided under either plan.
-
-## Worker KV (KeyValue Store)
-
-Persistent Key-Value store (string to string), available to workers as global variables bound into the script.
-Fast, and cheap to read/write, but $0.50 a month per GB past the first is quite expensive.
-
-In addition, its $5 per 1mil writes, deletes, or list ops, past the first chunk you get with the subscription.
-
-### Stats
-
-* Fully globally accessible (eventually consistent)
-* TTL support for cached values
-* 512B keys, 2MB values
-* 1GB free storage + 10mil reads + 1mil write/delete/list with $5 monthly worker subscription
 
 ## Integrations
 
