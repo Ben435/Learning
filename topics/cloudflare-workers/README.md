@@ -36,7 +36,7 @@ providing DNS black holes and stepping in during large scale DDOS ransom attempt
 ## Runtime Environment
 
 Running in essentially V8 isolates. Looks modified, as they've overriden some functionality, especially around web requests and the time API's.
-Supports raw V8 JS, so essentially anything you can run in Chrome. This can be a bit weird, because as a server-side environment, you might expect NodeJS support, but its not. Can use `type = 'webpack'` in the `wrangler.toml` to run the default webpack config over your code, else it'll error on NodeJS stuff like `require('lib')` or similar.
+Supports raw V8 JS, so essentially anything you can run in Chrome. This can be a bit weird, because as a server-side environment, you might expect NodeJS support, but its not. Can use `type = 'webpack'` in the `wrangler.toml` to run a default webpack config over your code, else it'll error on NodeJS stuff like `require('lib')` or similar.
 
 Also supports WASM. Seems to have had mixed reception on this, reports only _some_ WASM libraries generate "CloudFlare Worker Compliant" WASM (eg: the Golang wasm compiler doesn't seem to work, but the Rust wasm compiler worked fine). Seems CloudFlare uses Rust internally for a lot of there stuff, so at least that has pretty good support.
 
@@ -48,7 +48,7 @@ Uses API tokens, can be fairly granularly configured. In this context, Zone = DN
 
 ![API Tokens](./docs/wrangler-preview.png)
 
-Not quite as detailed as eg: AWS IAM or GCP IAM, but probably enough given what you can run (eg: theres not database offering, so you probably wouldn't store any seriously sensitive data here anyway).
+Not quite as granular as eg: AWS IAM or GCP IAM, but probably enough given what you can run (eg: theres not database offering, so you probably wouldn't store any seriously sensitive data here anyway).
 
 ## Dev Experience
 
@@ -81,6 +81,20 @@ Need to re-deploy to see changes. On the free plan, can sometimes take a few req
 
 Publishes to the domain + route specified in the `wrangler.toml`. If no domain or route provided, will deploy to `<project_name>.<account_username>.workers.dev`, a free domain provided under either plan.
 
+## Worker KV (KeyValue Store)
+
+Persistent Key-Value store (string to string), available to workers as global variables bound into the script.
+Fast, and cheap to read/write, but $0.50 a month per GB past the first is quite expensive.
+
+In addition, its $5 per 1mil writes, deletes, or list ops, past the first chunk you get with the subscription.
+
+### Stats
+
+* Fully globally accessible (eventually consistent)
+* TTL support for cached values
+* 512B keys, 2MB values
+* 1GB free storage + 10mil reads + 1mil write/delete/list with $5 monthly worker subscription
+
 ## Integrations
 
 For Infra-As-Code, they have the wrangler CLI (just a NPM package, so can be installed anywhere), as well as support from:
@@ -103,13 +117,20 @@ However, since you just need the `wrangler` CLI via NPM, its not too hard to do 
 ### Cons
 
 * Relatively immature tooling and support
-* No "wiring" or "piping" capabilities like AWS Lambda or Firebase Functions (eg: on S3 write, trigger Lambda. Theres not really an equivilant for CF Workers)
-* 
+* No "wiring" or "piping" capabilities like AWS Lambda or GCP Cloud Functions (eg: on S3 write, trigger Lambda. Theres not really an equivilant for CF Workers)
+* No "serious" business-data persistence, meaning you wouldn't want this for your "primary" app data source.
 
-## Probable Use Cases
+## Verdict + Probable Use Cases
 
-* Mostly-Static sites. Automatic global scaling, free tier is quite generous, can do basic logic eg: auth, dynamic redirects, etc.
-* Hyper performance requirements. If you want to scale to millions of users, especially in short bursts, may be worth considering.
-* WASM support.
-* Existing CloudFlare usage, and extremely simple use case.
-* On-the-fly request/response editing (eg: adding a WAF script to every HTML page served, or scanning for blacklisted regex strings in all requests).
+This doesn't feel like a competitor to AWS Lambda or GCP Cloud Functions.
+
+Its oriented a different way, and there marketing speaks the same. Designed to handle a specific use case.
+
+The examples they give are pretty indicative of this:
+
+* Content customization (eg: on-the-fly A/B testing, retargetting, etc)
+* Malicious user tracking (eg: detecting and blocking input injection attacks)
+* Dynamic redirect links
+
+High traffic, low compute, low storage. If it fits in that box, its probably suited for CloudFlare Workers.
+I'd probably describe it as "middleware". Its a great "middleware" host, which is weird for a standalone platform, but thats what it seems to be.
