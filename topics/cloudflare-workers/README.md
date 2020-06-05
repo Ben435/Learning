@@ -42,6 +42,14 @@ Also supports WASM. Seems to have had mixed reception on this, reports only _som
 
 Designed around running stateless/serverless blocks of code, however, can do some rudimentary storage. For example, its mentioned you can use global vars to store _some_ data, but its volatile and gets wiped occassionally, so don't rely on it. The Worker KV storage is recommended for long-er term storage, however, its query capabilities are limited (its a fairly strict Key-Val store, with )
 
+## Security
+
+Uses API tokens, can be fairly granularly configured. In this context, Zone = DNS Zone.
+
+![API Tokens](./docs/wrangler-preview.png)
+
+Not quite as detailed as eg: AWS IAM or GCP IAM, but probably enough given what you can run (eg: theres not database offering, so you probably wouldn't store any seriously sensitive data here anyway).
+
 ## Dev Experience
 
 ### `wrangler`
@@ -54,7 +62,7 @@ Can also generate template projects (`wrangler generate` for a full folder, `wra
 Whole CLI seems rather primitive. Very few commands, <5 arguments or flags on most commands, everything's at the top level, etc.
 Lots of little annoyances, examples:
 * Doesn't have a "builder" for `wrangler generate` like with `npm init`, so you have to go into the `wrangler.toml` to add extra stuff
-* Default `wrangler generate` comes with `prettier`, and two seperate licenses, for some reason? Bit of an odd choice to include
+* Default `wrangler generate` comes with `prettier`, and two seperate licenses? Bit of an odd choice to include
 * Doesn't allow you to tell it to not initialize a git repo when generating from a template
 * `wrangler preview` includes an incredibly basic request builder, similar to postman, but with no built-in JSON support, no ability to save your requests, not even a way to see timings or anything?
 * The `wrangler kv:*` commands will often return something like "Add the following to your wrangler.toml", instead of just adding it for you, like in eg: `cargo` or `npm i` of `go`.
@@ -82,3 +90,26 @@ For Infra-As-Code, they have the wrangler CLI (just a NPM package, so can be ins
 
 They also have a [Github Actions](https://github.com/cloudflare/wrangler-action) integration to help with CI. 
 However, since you just need the `wrangler` CLI via NPM, its not too hard to do something custom.
+
+## Overall Pros/Cons
+
+### Pros
+
+* Fast to get started and get deployed.
+* Simple tooling makes it quick to learn
+* Nice abstraction makes it easy to reason with (don't have to worry about zones or regions or API gateways)
+* Quite nice tooling for "security" style requirements (eg: simple tracking between requests, inline req/resp re-writes, etc.)
+
+### Cons
+
+* Relatively immature tooling and support
+* No "wiring" or "piping" capabilities like AWS Lambda or Firebase Functions (eg: on S3 write, trigger Lambda. Theres not really an equivilant for CF Workers)
+* 
+
+## Probable Use Cases
+
+* Mostly-Static sites. Automatic global scaling, free tier is quite generous, can do basic logic eg: auth, dynamic redirects, etc.
+* Hyper performance requirements. If you want to scale to millions of users, especially in short bursts, may be worth considering.
+* WASM support.
+* Existing CloudFlare usage, and extremely simple use case.
+* On-the-fly request/response editing (eg: adding a WAF script to every HTML page served, or scanning for blacklisted regex strings in all requests).
