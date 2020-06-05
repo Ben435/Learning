@@ -61,7 +61,7 @@ In addition, its $5 per 1mil writes, deletes, or list ops, past the first chunk 
 
 Uses API tokens, can be fairly granularly configured. In this context, Zone = DNS Zone.
 
-![API Tokens](./docs/wrangler-preview.png)
+![API Tokens](./docs/token-generation-params.png)
 
 Not quite as granular as eg: AWS IAM or GCP IAM, but probably enough given what you can run (eg: theres not database offering, so you probably wouldn't store any seriously sensitive data here anyway).
 
