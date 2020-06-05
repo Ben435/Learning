@@ -33,12 +33,31 @@ providing DNS black holes and stepping in during large scale DDOS ransom attempt
 * Every request will be lowest latency
 * Access to worker KV storage (100 namespaces, 1gb storage 10mil read, 1mil write, 1mil delete, 1mil list, pay for more)
 
+## Runtime Environment
+
+Running in essentially V8 isolates. Looks modified, as they've overriden some functionality, especially around web requests and the time API's.
+Supports raw V8 JS, so essentially anything you can run in Chrome. This can be a bit weird, because as a server-side environment, you might expect NodeJS support, but its not. Can use `type = 'webpack'` in the `wrangler.toml` to run the default webpack config over your code, else it'll error on NodeJS stuff like `require('lib')` or similar.
+
+Also supports WASM. Seems to have had mixed reception on this, reports only _some_ WASM libraries generate "CloudFlare Worker Compliant" WASM (eg: the Golang wasm compiler doesn't seem to work, but the Rust wasm compiler worked fine). Seems CloudFlare uses Rust internally for a lot of there stuff, so at least that has pretty good support.
+
+Designed around running stateless/serverless blocks of code, however, can do some rudimentary storage. For example, its mentioned you can use global vars to store _some_ data, but its volatile and gets wiped occassionally, so don't rely on it. The Worker KV storage is recommended for long-er term storage, however, its query capabilities are limited (its a fairly strict Key-Val store, with )
+
 ## Dev Experience
 
 ### `wrangler`
 
 The CloudFlare version of `gcloud` or `aws` CLI's. Only used for CloudFlare workers and the worker KV database.
+Configuration mostly done in the project `wrangler.toml` file.
+
 Can also generate template projects (`wrangler generate` for a full folder, `wrangler init` for just the `wrangler.toml` config file)
+
+Whole CLI seems rather primitive. Very few commands, <5 arguments or flags on most commands, everything's at the top level, etc.
+Lots of little annoyances, examples:
+* Doesn't have a "builder" for `wrangler generate` like with `npm init`, so you have to go into the `wrangler.toml` to add extra stuff
+* Default `wrangler generate` comes with `prettier`, and two seperate licenses, for some reason? Bit of an odd choice to include
+* Doesn't allow you to tell it to not initialize a git repo when generating from a template
+* `wrangler preview` includes an incredibly basic request builder, similar to postman, but with no built-in JSON support, no ability to save your requests, not even a way to see timings or anything?
+* The `wrangler kv:*` commands will often return something like "Add the following to your wrangler.toml", instead of just adding it for you, like in eg: `cargo` or `npm i` of `go`.
 
 #### `wrangler preview`
 
@@ -54,4 +73,12 @@ Need to re-deploy to see changes. On the free plan, can sometimes take a few req
 
 Publishes to the domain + route specified in the `wrangler.toml`. If no domain or route provided, will deploy to `<project_name>.<account_username>.workers.dev`, a free domain provided under either plan.
 
+## Integrations
 
+For Infra-As-Code, they have the wrangler CLI (just a NPM package, so can be installed anywhere), as well as support from:
+* [Terraform](https://www.terraform.io/docs/providers/cloudflare/guides/version-2-upgrade.html)
+* [Serverless](https://www.serverless.com/framework/docs/providers/cloudflare/)
+* Or a [Rest API](https://developers.cloudflare.com/workers/tooling/api), if you want to do something custom.
+
+They also have a [Github Actions](https://github.com/cloudflare/wrangler-action) integration to help with CI. 
+However, since you just need the `wrangler` CLI via NPM, its not too hard to do something custom.
