@@ -17,6 +17,24 @@ cfg_if! {
 }
 
 #[wasm_bindgen]
-pub fn greet() -> String {
-    "Hello, wasm-worker!".to_string()
+pub fn run(num: u32) -> u32 {
+    let res = fibonnaci(num);
+
+    return res;
+}
+
+pub fn fibonnaci(num: u32) -> u32 {
+    let mut cur = 1;
+    let mut prev = 0;
+    let mut i = 0;
+
+    while i < num {
+        let tmp = cur + prev;
+        prev = cur;
+        cur = tmp;
+
+        i += 1;
+    }
+
+    return cur
 }

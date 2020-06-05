@@ -53,7 +53,7 @@ In addition, its $5 per 1mil writes, deletes, or list ops, past the first chunk 
 ### Stats
 
 * Fully globally accessible (eventually consistent)
-* TTL support for cached values
+* TTL support
 * 512B keys, 2MB values
 * 1GB free storage + 10mil reads + 1mil write/delete/list with $5 monthly worker subscription
 
@@ -81,7 +81,7 @@ Because it runs on V8, I found myself almost _always_ using `type = webpack` to 
 
 #### Additional Runtime APIs
 
-Didn't use many of them, but looked fairly basic. They provide some Crypto, a region based Cache, and a HTMLRewriter tool.
+Didn't use many of them, but looked fairly basic. They provide some Crypto, a region based Cache (different to KV), and a HTMLRewriter tool.
 The HTMLRewriter tool seemed the most advanced, they describe it as  "jQuery for Workers". Provides a huge amount of parsing and editing capability.
 
 #### KV API
