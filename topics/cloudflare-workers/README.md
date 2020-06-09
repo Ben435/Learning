@@ -4,7 +4,8 @@ Investigation into CloudFlare Workers, and the CloudFlare platform in general.
 
 ## Background
 
-I know of CloudFlare as a security company, providing DDOS protection and various other high-bandwidth defense mechanisms.
+I know of CloudFlare as a CDN and a security company, providing DOS protection and various other high-bandwidth defense mechanisms.
+They seem to be most well known for there CloudFlare CDN, and there CloudFlare DOS protection.
 In amongst that, they also do bot protection (ScrapeShield), content delivery (Stream Delivery for media, cache and hosting 
 for general web traffic), web-app firewalls, among a few other things. They've also done some virus defense stuff in the past, 
 providing DNS black holes and stepping in during large scale DDOS ransom attempts.
@@ -154,13 +155,15 @@ However, since you just need the `wrangler` CLI via NPM, its not too hard to do 
 
 This doesn't feel like a competitor to AWS Lambda or GCP Cloud Functions.
 
-Its oriented a different way, and there marketing speaks the same. Designed to handle a specific use case.
+Its oriented a different way, and there marketing speaks the same. Designed to handle some specific use cases.
 
 The examples they give are pretty indicative of this:
 
 * Content customization (eg: on-the-fly A/B testing, retargetting, etc)
 * Malicious user tracking (eg: detecting and blocking input injection attacks)
 * Dynamic redirect links
+* Authentication and Session Tracking
+* Custom Caching logic
 
-High traffic, low compute, low storage. If it fits in that box, its probably suited for CloudFlare Workers.
-I'd probably describe it as "middleware". Its a great "middleware" host, which is weird for a standalone platform, but thats what it seems to be.
+High traffic, low compute, low (or deferrable) storage. If it fits in that box, its probably suited for CloudFlare Workers.
+I'd probably describe it as "middleware". It's a great "middleware" host, which is weird for a standalone platform, but thats what it seems to be.
