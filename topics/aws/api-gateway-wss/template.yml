@@ -7,16 +7,71 @@ Parameters:
     Default: experiment.bens-stuff.net
 
 Resources:
-    DomainCertificate:
-        Type: 'AWS::CertificateManager::Certificate'
+    ConnectLambda:
+        Type: AWS::Lambda::Function 
         Properties:
-          DomainName: !Ref DomainName
+            FunctionName: ConnectHandler
+            Description: "$connect handler"
+            Code: ./out/connect.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+
+    ConnectRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$connect"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref ApiIntegration
+
+    DefaultRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$default"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref ApiIntegration
+
+    ApiIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt ConnectLambda.Arn
+                    - /invocations
 
     Domain:
         Type: AWS::ApiGateway::DomainName
         Properties:
             DomainName: !Ref DomainName
-            CertificateArn: !Ref DomainCertificate
+            EndpointConfiguration:
+                Types: 
+                    - REGIONAL
+            RegionalCertificateArn: arn:aws:acm:ap-southeast-2:307795561406:certificate/cc90cb4b-05f6-4930-ba4a-3674dcebbc5c
+            SecurityPolicy: TLS_1_2
+
+    DNSGroup:
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneName: bens-stuff.net.
+            RecordSets:
+                - Name: !Ref DomainName
+                  Type: A
+                  AliasTarget:
+                    DNSName: !GetAtt Domain.RegionalDomainName
+                    HostedZoneId: !GetAtt Domain.RegionalHostedZoneId
 
     ApiGateway:
         Type: AWS::ApiGatewayV2::Api
@@ -32,9 +87,16 @@ Resources:
             Description: Prod Stage
             ApiId: !Ref ApiGateway
 
+    ApiDeployment: 
+        Type: AWS::ApiGatewayV2::Deployment
+        Properties:
+            Description: CloudFormation Deployment
+            ApiId: !Ref ApiGateway
+            StageName: !Ref ProdStage
+
     ApiMapping:
         Type: AWS::ApiGatewayV2::ApiMapping
         Properties:
             DomainName: !Ref Domain
             ApiId: !Ref ApiGateway
-            Stage: !Ref ProdStage
+            Stage: !Ref ProdStage            

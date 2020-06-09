@@ -4,8 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "stack-deploy": "aws cloudformation deploy --template-file template.yml --stack-name api-gateway-wss"
+    "build": "npm-run-all --parallel build:*",
+    "build:connect": "(export PROJECT=connect; npm run lambda-package)",
+    "lambda-package": "cd src/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
+    "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
+    "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",
+    "stack:delete": "aws cloudformation delete-stack --stack-name api-gateway-wss"
   },
   "author": "Ben Clare",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "wscat": "^4.0.0"
+  }
 }
