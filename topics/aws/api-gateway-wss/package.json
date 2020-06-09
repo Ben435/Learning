@@ -9,7 +9,8 @@
     "lambda-package": "cd src/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
     "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
     "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",
-    "stack:delete": "aws cloudformation delete-stack --stack-name api-gateway-wss"
+    "stack:delete": "aws cloudformation delete-stack --stack-name api-gateway-wss",
+    "deploy": "npm-run-all build stack:package stack:deploy"
   },
   "author": "Ben Clare",
   "license": "ISC",

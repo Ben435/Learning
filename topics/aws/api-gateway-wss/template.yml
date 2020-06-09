@@ -2,9 +2,9 @@ AWSTemplateFormatVersion : '2010-09-09'
 Description: ApiGatewayWss
 
 Parameters:
-  DomainName:
-    Type: String
-    Default: experiment.bens-stuff.net
+    DomainName:
+        Type: String
+        Default: experiment.bens-stuff.net
 
 Resources:
     ConnectLambda:
@@ -86,6 +86,7 @@ Resources:
             StageName: Prod
             Description: Prod Stage
             ApiId: !Ref ApiGateway
+            AutoDeploy: true
 
     ApiDeployment: 
         Type: AWS::ApiGatewayV2::Deployment

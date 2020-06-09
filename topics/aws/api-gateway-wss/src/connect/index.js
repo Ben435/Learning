@@ -1,3 +1,4 @@
 exports.handler = async function(event, context) {
-    return { statusCode: 200, data: event }
+    console.log('Got:', event)
+    return { statusCode: 200, body: 'Connected.' }
 }
