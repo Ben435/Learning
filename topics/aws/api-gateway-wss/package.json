@@ -1,0 +1,11 @@
+{
+  "name": "api-gateway-wss",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "stack-deploy": "aws cloudformation deploy --template-file template.yml --stack-name api-gateway-wss"
+  },
+  "author": "Ben Clare",
+  "license": "ISC"
+}
