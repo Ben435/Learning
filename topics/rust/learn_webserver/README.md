@@ -10,4 +10,4 @@ Uses a hand-rolled thread pool. Just "request -> push job down channel to _some_
 # How to use:
 
 * `cargo run`
-* goto [http://localhost:8080]
+* goto http://localhost:8080
