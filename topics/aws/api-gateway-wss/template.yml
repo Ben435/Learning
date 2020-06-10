@@ -41,6 +41,40 @@ Resources:
                     - ':lambda:path/2015-03-31/functions/'
                     - !GetAtt ConnectLambda.Arn
                     - /invocations
+    DisconnectLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - DisconnectHandler
+            Description: "$disconnect handler"
+            Code: ./out/disconnect.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    DisconnectLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt DisconnectLambda.Arn
+                    - /invocations
 
     DefaultLambda:
         Type: AWS::Lambda::Function 
@@ -86,6 +120,16 @@ Resources:
                 - '/'
                 -   - integrations
                     - !Ref ConnectLambdaIntegration
+
+    DisconnectRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$disconnect"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref DisconnectLambdaIntegration
 
     DefaultRoute:
         Type: AWS::ApiGatewayV2::Route
