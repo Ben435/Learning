@@ -74,7 +74,17 @@ Made a few basic projects, see rest of this folder. Mostly just off the tutorial
 
 Pretty standard, very similar to AWS Lambda.
 
-![Worker API](./docs/worker-api.png)
+```js
+async function handleRequest(request) {
+    /*
+    ...Code goes here...
+    */
+}
+
+addEventListener('fetch', event => {
+    event.respondWith(handleRequest(event.request))
+})
+```
 
 Works the same with WASM projects (you just have the above call the WASM functions as needed).
 
