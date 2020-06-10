@@ -19,11 +19,18 @@ Resources:
             Handler: index.handler
             Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
             Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
 
     ConnectLambdaIntegration:
         Type: AWS::ApiGatewayV2::Integration
         Properties:
             ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
             IntegrationType: AWS_PROXY
             IntegrationUri: !Join
                 - ''
@@ -47,11 +54,18 @@ Resources:
             Handler: index.handler
             Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
             Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    ConnectionTableName: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
 
     DefaultLambdaIntegration:
         Type: AWS::ApiGatewayV2::Integration
         Properties:
             ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
             IntegrationType: AWS_PROXY
             IntegrationUri: !Join
                 - ''
@@ -82,6 +96,25 @@ Resources:
                 - '/'
                 -   - integrations
                     - !Ref DefaultLambdaIntegration
+
+    ChatTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - ConnectionsTable
+            AttributeDefinitions:
+                - AttributeName: "connectionId"
+                  AttributeType: "S"
+            KeySchema:
+                - AttributeName: "connectionId"
+                  KeyType: "HASH"
+            ProvisionedThroughput:
+                ReadCapacityUnits: 5
+                WriteCapacityUnits: 5
+            SSESpecification:
+                SSEEnabled: True
     
     Domain:
         Type: AWS::ApiGateway::DomainName

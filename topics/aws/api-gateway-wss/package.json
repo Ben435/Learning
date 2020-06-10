@@ -4,19 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm-run-all --parallel build:*",
-    "build:connect": "(export PROJECT=connect; npm run lambda-package)",
-    "build:default": "(export PROJECT=default; npm run lambda-package)",
-    "lambda-package": "cd src/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
+    "build": "webpack",
+    "package": "npm-run-all --parallel package:*",
+    "package:connect": "(export PROJECT=connect; npm run lambda-package)",
+    "package:default": "(export PROJECT=default; npm run lambda-package)",
+    "lambda-package": "cd dist/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
     "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
     "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",
     "stack:delete": "aws cloudformation delete-stack --stack-name api-gateway-wss",
-    "deploy": "npm-run-all build stack:package stack:deploy"
+    "deploy": "npm-run-all build package stack:package stack:deploy"
   },
   "author": "Ben Clare",
   "license": "ISC",
   "devDependencies": {
+    "compression-webpack-plugin": "^4.0.0",
     "npm-run-all": "^4.1.5",
-    "wscat": "^4.0.0"
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "wscat": "^4.0.0",
+    "zip-webpack-plugin": "^3.0.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.693.0"
   }
 }
