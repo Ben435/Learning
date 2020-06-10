@@ -90,7 +90,7 @@ Resources:
             Runtime: nodejs12.x
             Environment:
                 Variables:
-                    ConnectionTableName: !Join
+                    TABLE_NAME: !Join
                         - ''
                         -   - !Ref AWS::StackName
                             - ConnectionsTable
@@ -109,6 +109,41 @@ Resources:
                     - !Ref 'AWS::Region'
                     - ':lambda:path/2015-03-31/functions/'
                     - !GetAtt DefaultLambda.Arn
+                    - /invocations
+
+    SendMessageLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - SendMessageHandler
+            Description: "sendMessage handler"
+            Code: ./out/sendMessage.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    SendMessageLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt SendMessageLambda.Arn
                     - /invocations
 
     ConnectRoute:
@@ -140,6 +175,16 @@ Resources:
                 - '/'
                 -   - integrations
                     - !Ref DefaultLambdaIntegration
+    
+    SendMessageRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "sendMessage"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref SendMessageLambdaIntegration
 
     ChatTable:
         Type: AWS::DynamoDB::Table
@@ -161,14 +206,16 @@ Resources:
                 SSEEnabled: True
     
     Domain:
-        Type: AWS::ApiGateway::DomainName
+        Type: AWS::ApiGatewayV2::DomainName
         Properties:
             DomainName: !Ref DomainName
-            EndpointConfiguration:
-                Types: 
-                    - REGIONAL
-            RegionalCertificateArn: arn:aws:acm:ap-southeast-2:307795561406:certificate/cc90cb4b-05f6-4930-ba4a-3674dcebbc5c
-            SecurityPolicy: TLS_1_2
+            DomainNameConfigurations:
+                - EndpointType: REGIONAL
+                  CertificateName: !Join
+                    - ''
+                    -   - !Ref AWS::StackName
+                        - Certificate
+                  CertificateArn: arn:aws:acm:ap-southeast-2:307795561406:certificate/cc90cb4b-05f6-4930-ba4a-3674dcebbc5c
 
     DNSGroup:
         Type: AWS::Route53::RecordSetGroup

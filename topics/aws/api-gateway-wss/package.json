@@ -9,6 +9,7 @@
     "package:connect": "(export PROJECT=connect; npm run lambda-package)",
     "package:disconnect": "(export PROJECT=disconnect; npm run lambda-package)",
     "package:default": "(export PROJECT=default; npm run lambda-package)",
+    "package:sendMessage": "(export PROJECT=sendMessage; npm run lambda-package)",
     "lambda-package": "cd dist/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
     "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
     "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",

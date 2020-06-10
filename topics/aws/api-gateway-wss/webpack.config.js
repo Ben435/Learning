@@ -4,7 +4,8 @@ module.exports = {
     entry: {
         default: './src/default/index.js',
         connect: './src/connect/index.js',
-        disconnect: './src/disconnect/index.js'
+        disconnect: './src/disconnect/index.js',
+        sendMessage: './src/sendMessage/index.js',
     },
     output: {
         filename: '[name]/index.js',
