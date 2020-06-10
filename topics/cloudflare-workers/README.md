@@ -109,16 +109,20 @@ Lots of little annoyances, examples:
 * Doesn't have a "builder" for `wrangler generate` like with `npm init`, so you have to go into the `wrangler.toml` to add extra stuff
 * Default `wrangler generate` comes with `prettier`, and two seperate licenses? Bit of an odd choice to include
 * Doesn't allow you to tell it to not initialize a git repo when generating from a template
-* `wrangler preview` includes an incredibly basic request builder, similar to postman, but with no built-in JSON support, no ability to save your requests, not even a way to see timings or anything?
+* `wrangler preview` includes an incredibly basic request builder, similar to postman, but with no built-in JSON support, no ability to save your requests, not even a way to see timings?
 * The `wrangler kv:*` commands will often return something like "Add the following to your wrangler.toml", instead of just adding it for you, like in eg: `cargo` or `npm i` of `go`.
+
+#### `wrangler dev
+
+Loads the local code into a local dev server, and watches for changes. Works pretty well for local testing.
 
 #### `wrangler preview`
 
-Basic "npm start" equivilant. Builds and uploads the local code to a push-button-esque environment, exposing an "IDE" style environment.
+Builds and uploads the local code to a push-button-esque environment, exposing an "IDE" in the browser.
 Shows the response from the worker on the first page, a rudimentary request crafter + sender on the second, and an iframe to the CloudFormation docs on the third.
 
-Need to re-deploy to see changes. On the free plan, can sometimes take a few requests to actually start responding 
-(its got a some sort of warmup time).
+Need to re-deploy to see changes. On the free plan, can sometimes take a few requests to actually start responding (its got a some sort of 
+warmup time).
 
 ![Wrangler-Preview-Example](./docs/wrangler-preview.png)
 
