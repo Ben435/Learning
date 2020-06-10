@@ -6,6 +6,7 @@
   "scripts": {
     "build": "npm-run-all --parallel build:*",
     "build:connect": "(export PROJECT=connect; npm run lambda-package)",
+    "build:default": "(export PROJECT=default; npm run lambda-package)",
     "lambda-package": "cd src/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
     "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
     "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",

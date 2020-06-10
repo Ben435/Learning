@@ -10,34 +10,17 @@ Resources:
     ConnectLambda:
         Type: AWS::Lambda::Function 
         Properties:
-            FunctionName: ConnectHandler
+            FunctionName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - ConnectHandler
             Description: "$connect handler"
             Code: ./out/connect.zip
             Handler: index.handler
             Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
             Runtime: nodejs12.x
 
-    ConnectRoute:
-        Type: AWS::ApiGatewayV2::Route
-        Properties:
-            ApiId: !Ref ApiGateway
-            RouteKey: "$connect"
-            Target: !Join
-                - '/'
-                -   - integrations
-                    - !Ref ApiIntegration
-
-    DefaultRoute:
-        Type: AWS::ApiGatewayV2::Route
-        Properties:
-            ApiId: !Ref ApiGateway
-            RouteKey: "$default"
-            Target: !Join
-                - '/'
-                -   - integrations
-                    - !Ref ApiIntegration
-
-    ApiIntegration:
+    ConnectLambdaIntegration:
         Type: AWS::ApiGatewayV2::Integration
         Properties:
             ApiId: !Ref ApiGateway
@@ -52,6 +35,54 @@ Resources:
                     - !GetAtt ConnectLambda.Arn
                     - /invocations
 
+    DefaultLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - DefaultHandler
+            Description: "$default handler"
+            Code: ./out/default.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+
+    DefaultLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt DefaultLambda.Arn
+                    - /invocations
+
+    ConnectRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$connect"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref ConnectLambdaIntegration
+
+    DefaultRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$default"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref DefaultLambdaIntegration
+    
     Domain:
         Type: AWS::ApiGateway::DomainName
         Properties:
@@ -76,7 +107,10 @@ Resources:
     ApiGateway:
         Type: AWS::ApiGatewayV2::Api
         Properties:
-            Name: WssGateway
+            Name: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - WssGateway
             ProtocolType: WEBSOCKET
             RouteSelectionExpression: ${request.body.action}
 
@@ -87,13 +121,6 @@ Resources:
             Description: Prod Stage
             ApiId: !Ref ApiGateway
             AutoDeploy: true
-
-    ApiDeployment: 
-        Type: AWS::ApiGatewayV2::Deployment
-        Properties:
-            Description: CloudFormation Deployment
-            ApiId: !Ref ApiGateway
-            StageName: !Ref ProdStage
 
     ApiMapping:
         Type: AWS::ApiGatewayV2::ApiMapping
