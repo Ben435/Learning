@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+    webapp:
+        build:
+            context: .
+        image: webapp:latest
+        environment: 
+            PORT: 9000
+        ports: 
+            - 9000:9000
+
+    database:
+        image: mongo:latest
+        environment: 
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: example
