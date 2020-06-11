@@ -1,0 +1,301 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Description: ApiGatewayWss
+
+Parameters:
+    DomainName:
+        Type: String
+        Default: experiment.bens-stuff.net
+
+Resources:
+    ConnectLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - ConnectHandler
+            Description: "$connect handler"
+            Code: ./out/connect.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    ConnectLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt ConnectLambda.Arn
+                    - /invocations
+    DisconnectLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - DisconnectHandler
+            Description: "$disconnect handler"
+            Code: ./out/disconnect.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    DisconnectLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt DisconnectLambda.Arn
+                    - /invocations
+
+    DefaultLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - DefaultHandler
+            Description: "$default handler"
+            Code: ./out/default.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    DefaultLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt DefaultLambda.Arn
+                    - /invocations
+
+    RegisterLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - RegisterHandler
+            Description: "register handler"
+            Code: ./out/register.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    RegisterLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt RegisterLambda.Arn
+                    - /invocations
+
+    SendMessageLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - SendMessageHandler
+            Description: "sendMessage handler"
+            Code: ./out/sendMessage.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    SendMessageLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt SendMessageLambda.Arn
+                    - /invocations
+
+    ConnectRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$connect"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref ConnectLambdaIntegration
+
+    DisconnectRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$disconnect"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref DisconnectLambdaIntegration
+
+    DefaultRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "$default"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref DefaultLambdaIntegration
+    
+    SendMessageRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "sendMessage"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref SendMessageLambdaIntegration
+
+    RegisterRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "register"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref RegisterLambdaIntegration
+
+    ChatTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - ConnectionsTable
+            AttributeDefinitions:
+                - AttributeName: "connectionId"
+                  AttributeType: "S"
+                - AttributeName: "username"
+                  AttributeType: "S"
+            KeySchema:
+                - AttributeName: "connectionId"
+                  KeyType: "HASH"
+            ProvisionedThroughput:
+                ReadCapacityUnits: 5
+                WriteCapacityUnits: 5
+            SSESpecification:
+                SSEEnabled: True
+    
+    Domain:
+        Type: AWS::ApiGatewayV2::DomainName
+        Properties:
+            DomainName: !Ref DomainName
+            DomainNameConfigurations:
+                - EndpointType: REGIONAL
+                  CertificateName: !Join
+                    - ''
+                    -   - !Ref AWS::StackName
+                        - Certificate
+                  CertificateArn: arn:aws:acm:ap-southeast-2:307795561406:certificate/cc90cb4b-05f6-4930-ba4a-3674dcebbc5c
+
+    DNSGroup:
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneName: bens-stuff.net.
+            RecordSets:
+                - Name: !Ref DomainName
+                  Type: A
+                  AliasTarget:
+                    DNSName: !GetAtt Domain.RegionalDomainName
+                    HostedZoneId: !GetAtt Domain.RegionalHostedZoneId
+
+    ApiGateway:
+        Type: AWS::ApiGatewayV2::Api
+        Properties:
+            Name: !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - WssGateway
+            ProtocolType: WEBSOCKET
+            RouteSelectionExpression: "$request.body.action"
+
+    ProdStage:
+        Type: AWS::ApiGatewayV2::Stage
+        Properties:
+            StageName: Prod
+            Description: Prod Stage
+            ApiId: !Ref ApiGateway
+            AutoDeploy: true
+
+    ApiMapping:
+        Type: AWS::ApiGatewayV2::ApiMapping
+        Properties:
+            DomainName: !Ref Domain
+            ApiId: !Ref ApiGateway
+            Stage: !Ref ProdStage            

@@ -1,0 +1,28 @@
+{
+  "name": "api-gateway-wss",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "config": {
+    "stackname": "ApiGatewayWss"
+  },
+  "scripts": {
+    "build": "webpack",
+    "package": "cd dist && for PROJECT in *; do cd ${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ..; done && cd ../..",
+    "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
+    "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name $npm_package_config_stackname",
+    "stack:delete": "aws cloudformation delete-stack --stack-name $npm_package_config_stackname",
+    "deploy": "npm-run-all build package stack:package stack:deploy"
+  },
+  "author": "Ben Clare",
+  "license": "ISC",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "wscat": "^4.0.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.693.0"
+  }
+}
