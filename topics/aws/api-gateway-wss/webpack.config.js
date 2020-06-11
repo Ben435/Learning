@@ -1,12 +1,22 @@
+const { join } = require('path')
+const { readdirSync, existsSync } = require('fs')
+
+const entries = () => {
+    const srcDir = './src'
+    const entryFile = 'index.js'
+    return readdirSync(srcDir)
+        .filter(folderName => existsSync(join(srcDir, folderName, entryFile)))
+        .reduce((agg, folderName) => {
+            agg[folderName] = './' + join(srcDir, folderName, entryFile)
+
+            return agg
+        }, {})
+}
+
 module.exports = {
     mode: 'production',
     target: 'node',
-    entry: {
-        default: './src/default/index.js',
-        connect: './src/connect/index.js',
-        disconnect: './src/disconnect/index.js',
-        sendMessage: './src/sendMessage/index.js',
-    },
+    entry: entries(),
     output: {
         filename: '[name]/index.js',
         library: '[name]',

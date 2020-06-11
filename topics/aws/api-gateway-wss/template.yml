@@ -111,6 +111,41 @@ Resources:
                     - !GetAtt DefaultLambda.Arn
                     - /invocations
 
+    RegisterLambda:
+        Type: AWS::Lambda::Function 
+        Properties:
+            FunctionName:  !Join
+                - ''
+                -   - !Ref AWS::StackName
+                    - RegisterHandler
+            Description: "register handler"
+            Code: ./out/register.zip
+            Handler: index.handler
+            Role: arn:aws:iam::307795561406:role/ApiGatewayWssLambda
+            Runtime: nodejs12.x
+            Environment:
+                Variables:
+                    TABLE_NAME: !Join
+                        - ''
+                        -   - !Ref AWS::StackName
+                            - ConnectionsTable
+
+    RegisterLambdaIntegration:
+        Type: AWS::ApiGatewayV2::Integration
+        Properties:
+            ApiId: !Ref ApiGateway
+            CredentialsArn: arn:aws:iam::307795561406:role/ApiGatewayWssLambdaExecution
+            IntegrationType: AWS_PROXY
+            IntegrationUri: !Join
+                - ''
+                -   - 'arn:'
+                    - !Ref 'AWS::Partition'
+                    - ':apigateway:'
+                    - !Ref 'AWS::Region'
+                    - ':lambda:path/2015-03-31/functions/'
+                    - !GetAtt RegisterLambda.Arn
+                    - /invocations
+
     SendMessageLambda:
         Type: AWS::Lambda::Function 
         Properties:
@@ -186,6 +221,16 @@ Resources:
                 -   - integrations
                     - !Ref SendMessageLambdaIntegration
 
+    RegisterRoute:
+        Type: AWS::ApiGatewayV2::Route
+        Properties:
+            ApiId: !Ref ApiGateway
+            RouteKey: "register"
+            Target: !Join
+                - '/'
+                -   - integrations
+                    - !Ref RegisterLambdaIntegration
+
     ChatTable:
         Type: AWS::DynamoDB::Table
         Properties:
@@ -195,6 +240,8 @@ Resources:
                     - ConnectionsTable
             AttributeDefinitions:
                 - AttributeName: "connectionId"
+                  AttributeType: "S"
+                - AttributeName: "username"
                   AttributeType: "S"
             KeySchema:
                 - AttributeName: "connectionId"
@@ -236,7 +283,7 @@ Resources:
                 -   - !Ref AWS::StackName
                     - WssGateway
             ProtocolType: WEBSOCKET
-            RouteSelectionExpression: ${request.body.action}
+            RouteSelectionExpression: "$request.body.action"
 
     ProdStage:
         Type: AWS::ApiGatewayV2::Stage

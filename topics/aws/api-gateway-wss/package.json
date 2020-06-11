@@ -3,17 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "config": {
+    "stackname": "ApiGatewayWss"
+  },
   "scripts": {
     "build": "webpack",
-    "package": "npm-run-all --parallel package:*",
-    "package:connect": "(export PROJECT=connect; npm run lambda-package)",
-    "package:disconnect": "(export PROJECT=disconnect; npm run lambda-package)",
-    "package:default": "(export PROJECT=default; npm run lambda-package)",
-    "package:sendMessage": "(export PROJECT=sendMessage; npm run lambda-package)",
-    "lambda-package": "cd dist/${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ../..",
+    "package": "cd dist && for PROJECT in *; do cd ${PROJECT} && zip -r ../../out/${PROJECT}.zip * && cd ..; done && cd ../..",
     "stack:package": "aws cloudformation package --template-file template.yml --s3-bucket deploy-temp --output-template-file package.yml",
-    "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name api-gateway-wss",
-    "stack:delete": "aws cloudformation delete-stack --stack-name api-gateway-wss",
+    "stack:deploy": "aws cloudformation deploy --template-file package.yml --stack-name $npm_package_config_stackname",
+    "stack:delete": "aws cloudformation delete-stack --stack-name $npm_package_config_stackname",
     "deploy": "npm-run-all build package stack:package stack:deploy"
   },
   "author": "Ben Clare",

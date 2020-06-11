@@ -12,19 +12,5 @@ exports.handler = async event => {
 
     console.log('New connection:', connectionId)
 
-    const putParams = {
-        TableName: TABLE_NAME,
-        Item: {
-            connectionId
-        }
-    };
-
-    try {
-        await ddb.put(putParams).promise();
-    } catch (err) {
-        console.error(err)
-        return { statusCode: 500, body: 'Failed to connect to db: ' + JSON.stringify(err) };
-    }
-
     return { statusCode: 200, body: 'Connected' }
 }

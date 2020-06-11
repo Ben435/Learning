@@ -1,8 +1,9 @@
-const AWS = require('aws-sdk');
+const DDB = require('aws-sdk/clients/dynamodb');
+const ApiGatewayManagementApi = require('aws-sdk/clients/apigatewaymanagementapi')
 
 const { TABLE_NAME, AWS_REGION } = process.env;
 
-const ddb = new AWS.DynamoDB.DocumentClient({
+const ddb = new DDB.DocumentClient({
     apiVersion: '2012-08-10', 
     region: AWS_REGION 
 });
@@ -10,13 +11,16 @@ const ddb = new AWS.DynamoDB.DocumentClient({
 exports.handler = async event => {
     const {
         domainName,
+        connectionId
     } = event.requestContext;
+
+    const senderConnectionId = connectionId;
 
     const { body } = event;
 
     const scanParams = {
         TableName: TABLE_NAME,
-        ProjectionExpression: 'connectionId'
+        ProjectionExpression: 'connectionId,username'
     };
 
     let connectionData;
@@ -28,17 +32,21 @@ exports.handler = async event => {
         return { statusCode: 500, body: 'Failed to connect to db: ' + JSON.stringify(err) };
     }
 
-    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+    const apigwManagementApi = new ApiGatewayManagementApi({
         apiVersion: '2018-11-29',
-        endpoint: `${domainName}`
+        endpoint: `${domainName}`,
     });
+
+    const username = connectionData.Items
+        .find(({ connectionId }) => connectionId === senderConnectionId)
+        .username
 
     const postData = JSON.parse(body).data;
 
     const postCalls = connectionData.Items.map(async ({ connectionId }) => {
         try {
             await apigwManagementApi
-                .postToConnection({ ConnectionId: connectionId, Data: postData})
+                .postToConnection({ ConnectionId: connectionId, Data: `${username}: ${postData}`})
                 .promise();
         } catch (e) {
             if (e.statusCode === 410) {
