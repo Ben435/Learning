@@ -8,6 +8,8 @@ const main = async () => {
 
     const wasm_pong = await import('wasm-pong/wasm_pong');
 
+    wasm_pong.init();
+
     const gameState = wasm_pong.GameState.new(500, 500, 1, 2);
     const ballPos = gameState.get_ball_position();
     const aiPaddlePos = gameState.get_ai_paddle_position();

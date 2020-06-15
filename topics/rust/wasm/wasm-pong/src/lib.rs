@@ -11,6 +11,11 @@ use std::f32::consts;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
+pub fn init() {
+    utils::set_panic_hook();
+}
+
+#[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
 pub struct Point {
     pub x: f32,
@@ -27,20 +32,10 @@ impl Point {
     }
 
     pub fn transform(&self, vel: Velocity, step_time: u32) -> Point {
-        // Cardinal angles for conversation to quadrant angle.
-        let pi_2 = 2.0 * consts::PI;
-
-        let relative_angle = match vel.angle {
-            angle if angle.in_range(0.0, pi_2) => Ok(angle),
-            _ => Err("Angle out of range, should be 0<=angle<=2pi (radians)")
-        };
-
-        let relative_angle = relative_angle.unwrap();
-
         let relative_speed = vel.speed * (step_time as f32 / 1000.0);
 
-        let translate_x = relative_angle.cos() * relative_speed;
-        let translate_y = relative_angle.sin() * relative_speed;
+        let translate_x = vel.angle.cos() * relative_speed;
+        let translate_y = vel.angle.sin() * relative_speed;
         
         Point{
             x: self.x + translate_x, 
@@ -82,8 +77,20 @@ impl InRange for f32 {
 }
 
 impl Ball {
-    fn update_position(&mut self, step_time: u32) {
+    fn update_position(&mut self, step_time: u32, play_space: PlaySpace) {
         let new_point = self.position.transform(self.velocity, step_time);
+
+        match play_space.is_out_of_bounds(new_point) {
+            // Reflect over Y axis
+            Some(CollisionType::Horizontal) => {
+                self.velocity.angle = (consts::PI - self.velocity.angle) % (2.0 * consts::PI);
+            },
+            // Reflect over X axis
+            Some(CollisionType::Vertical) => {
+                self.velocity.angle = -1.0 * self.velocity.angle;
+            }
+            None => {}
+        }
 
         self.position = new_point;
     }
@@ -94,6 +101,41 @@ impl Ball {
 pub struct PlaySpace {
     pub width: f32,
     pub height: f32,
+}
+
+// CollisionType: Describes collision.
+// 
+// * Horizontal = hit while travelling along the X axis
+// * Vertical = hit while travelling along the Y axis
+pub enum CollisionType {
+    Horizontal = 0,
+    Vertical = 1,
+}
+
+impl PlaySpace {
+    pub fn is_out_of_bounds(&self, point: Point) -> Option<CollisionType> {
+        let is_outside_horiz = match point.get_x() {
+            x if x < 0.0 => true,
+            x if x > self.width => true,
+            _ => false,
+        };
+
+        if is_outside_horiz {
+            return Some(CollisionType::Horizontal);
+        }
+
+        let is_outside_vert = match point.get_y() {
+            y if y < 0.0 => true,
+            y if y > self.height => true,
+            _ => false,
+        };
+        
+        if is_outside_vert {
+            return Some(CollisionType::Vertical);
+        }
+        
+        return None;
+    }
 }
 
 #[wasm_bindgen]
@@ -132,8 +174,8 @@ impl GameState {
         };
     
         let ball = Ball{
-            position: Point{ x: width / 2.0, y: height / 2.0},
-            velocity: Velocity{ speed: 10.0, angle: consts::FRAC_PI_4 },
+            position: Point{ x: width / 3.0, y: height / 2.0},
+            velocity: Velocity{ speed: 50.0, angle: consts::FRAC_PI_4 },
         };
     
         let play_space = PlaySpace{
@@ -165,12 +207,12 @@ impl GameState {
     }
 
     pub fn tick(&mut self, step_time: u32) {
-        // No-op of no time has passed.
+        // No-op if no time has passed.
         if step_time == 0 {
             return;
         }
 
-        self.ball.update_position(step_time);
+        self.ball.update_position(step_time, self.play_space);
     }
 }
 
@@ -188,6 +230,11 @@ mod tests {
         assert!(subject.in_range(lower, upper), "expected {} to be in range lower={}, upper={}", subject, lower, upper)
     }
 
+    static DUMMY_PLAY_SPACE: PlaySpace = PlaySpace{
+        width: 100.0,
+        height: 100.0,
+    };
+
     #[test]
     fn update_ball_position_horizontal() {
         let mut ball = Ball{
@@ -195,7 +242,7 @@ mod tests {
             velocity: Velocity{ angle: 0.0, speed: 2.0 }    // East
         };
 
-        ball.update_position(1000);
+        ball.update_position(1000, DUMMY_PLAY_SPACE);
 
         assert_float32_eq(ball.position.get_x(), 2.0);
         assert_float32_eq(ball.position.get_y(), 0.0);
@@ -208,7 +255,7 @@ mod tests {
             velocity: Velocity{ angle: consts::FRAC_PI_2, speed: 2.0 }  // South
         };
 
-        ball.update_position(1000);
+        ball.update_position(1000, DUMMY_PLAY_SPACE);
 
         assert_float32_eq(ball.position.get_x(), 0.0);
         assert_float32_eq(ball.position.get_y(), 2.0);
@@ -221,7 +268,7 @@ mod tests {
             velocity: Velocity{ angle: consts::FRAC_PI_4, speed: consts::SQRT_2 }  // South-East
         };
 
-        ball.update_position(1000);
+        ball.update_position(1000, DUMMY_PLAY_SPACE);
 
         assert_float32_eq(ball.position.get_x(), 1.0);
         assert_float32_eq(ball.position.get_y(), 1.0);
@@ -234,7 +281,7 @@ mod tests {
             velocity: Velocity{ angle: consts::PI + consts::FRAC_PI_6, speed: 2.0 }  // North-West-Ish
         };
 
-        ball.update_position(1000);
+        ball.update_position(1000, DUMMY_PLAY_SPACE);
 
         assert_float32_eq(ball.position.get_x(), 2.0 + -1.0 * (3.0 as f32).sqrt());
         assert_float32_eq(ball.position.get_y(), 3.0 + -1.0);
@@ -247,7 +294,7 @@ mod tests {
             velocity: Velocity{ angle: 0.0, speed: 2.0 }  // South-East
         };
 
-        ball.update_position(500);
+        ball.update_position(500, DUMMY_PLAY_SPACE);
 
         assert_float32_eq(ball.position.get_x(), 1.0);
         assert_float32_eq(ball.position.get_y(), 0.0);
