@@ -25,6 +25,28 @@ impl Point {
     pub fn get_y(&self) -> f32 {
         self.y
     }
+
+    pub fn transform(&self, vel: Velocity, step_time: u32) -> Point {
+        // Cardinal angles for conversation to quadrant angle.
+        let pi_2 = 2.0 * consts::PI;
+
+        let relative_angle = match vel.angle {
+            angle if angle.in_range(0.0, pi_2) => Ok(angle),
+            _ => Err("Angle out of range, should be 0<=angle<=2pi (radians)")
+        };
+
+        let relative_angle = relative_angle.unwrap();
+
+        let relative_speed = vel.speed * (step_time as f32 / 1000.0);
+
+        let translate_x = relative_angle.cos() * relative_speed;
+        let translate_y = relative_angle.sin() * relative_speed;
+        
+        Point{
+            x: self.x + translate_x, 
+            y: self.y + translate_y,
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -59,34 +81,11 @@ impl InRange for f32 {
     }
 }
 
-fn update_from_vel(vel: Velocity, step_time: u32, point: Point) -> Point  {
-    // Cardinal angles for conversation to quadrant angle.
-    let pi_2 = 2.0 * consts::PI;
-
-    let relative_angle = match vel.angle {
-        angle if angle.in_range(0.0, pi_2) => Ok(angle),
-        _ => Err("Angle out of range, should be 0<=angle<=2pi (radians)")
-    };
-
-    let relative_angle = relative_angle.unwrap();
-
-    let relative_speed = vel.speed * ((1000 / step_time) as f32);
-
-    let translate_x = relative_angle.cos() * relative_speed;
-    let translate_y = relative_angle.sin() * relative_speed;
-
-    println!("Got: {}, {}, tx: {}, ty: {}", relative_angle, relative_speed, translate_x, translate_y);
-    
-    Point{
-        x: point.x + translate_x, 
-        y: point.y + translate_y,
-    }
-}
-
-
 impl Ball {
     fn update_position(&mut self, step_time: u32) {
-        self.position = update_from_vel(self.velocity, step_time, self.position);
+        let new_point = self.position.transform(self.velocity, step_time);
+
+        self.position = new_point;
     }
 }
 
@@ -112,14 +111,11 @@ pub struct GameState {
     pub ai_paddle: Paddle,
     pub ball: Ball,
     pending_events: VecDeque<GameEvent>,
-    fps: u32,
-    time_through_current_frame: u32,
 }
 
 #[wasm_bindgen]
 impl GameState {
     pub fn new(
-        fps: u32, 
         width: f32, height: f32, 
         paddle_width: u32, paddle_height: u32
     ) -> GameState {
@@ -137,7 +133,7 @@ impl GameState {
     
         let ball = Ball{
             position: Point{ x: width / 2.0, y: height / 2.0},
-            velocity: Velocity{ speed: 1.0, angle: consts::FRAC_PI_4 },
+            velocity: Velocity{ speed: 10.0, angle: consts::FRAC_PI_4 },
         };
     
         let play_space = PlaySpace{
@@ -153,8 +149,6 @@ impl GameState {
             ai_paddle,
             ball,
             pending_events,
-            fps,
-            time_through_current_frame: 0,
         }
     }
 
@@ -171,14 +165,12 @@ impl GameState {
     }
 
     pub fn tick(&mut self, step_time: u32) {
-        self.time_through_current_frame += step_time;
-        let time_per_frame = 1000 / self.fps;
-
-        while self.time_through_current_frame > time_per_frame {
-            self.time_through_current_frame -= time_per_frame;
-
-            self.ball.update_position(time_per_frame);
+        // No-op of no time has passed.
+        if step_time == 0 {
+            return;
         }
+
+        self.ball.update_position(step_time);
     }
 }
 
@@ -246,5 +238,18 @@ mod tests {
 
         assert_float32_eq(ball.position.get_x(), 2.0 + -1.0 * (3.0 as f32).sqrt());
         assert_float32_eq(ball.position.get_y(), 3.0 + -1.0);
+    }
+
+    #[test]
+    fn update_ball_position_relative_to_time_passed() {        
+        let mut ball = Ball{ 
+            position: Point{x: 0.0, y: 0.0},
+            velocity: Velocity{ angle: 0.0, speed: 2.0 }  // South-East
+        };
+
+        ball.update_position(500);
+
+        assert_float32_eq(ball.position.get_x(), 1.0);
+        assert_float32_eq(ball.position.get_y(), 0.0);
     }
 }
