@@ -1,29 +1,18 @@
 
+const targetFps = 20;
+
 const paddleWidth = 10;
 const paddleHeight = 50;
 const ballRadius = 5;
 
 const courtWidth = 500;
 const courtHeight = 500;
-
-let currentKeyDowns = new Set()
+const currentKeys = new Set();
 
 const main = async () => {
     const cnvs = document.getElementById("gamespace");
     cnvs.width = courtWidth;
     cnvs.height = courtHeight;
-
-    cnvs.addEventListener("keydown", ev => {
-        if ([38, 40].find(code => ev.keyCode === code)) {
-            currentKeyDowns.add(ev.keyCode)
-        }
-    })
-
-    cnvs.addEventListener("keyup", ev => {
-        if ([38, 40].find(code => ev.keyCode === code)) {
-            currentKeyDowns.delete(ev.keyCode)
-        }
-    })
 
     const ctx = cnvs.getContext('2d');
 
@@ -33,7 +22,15 @@ const main = async () => {
 
     const gameState = wasm_pong.GameState.new(courtWidth, courtHeight, paddleWidth, paddleHeight);
 
-    renderAtFps(30, stepFunc(ctx, gameState, cnvs.width, cnvs.height));
+    cnvs.addEventListener("keydown", ev => {
+        currentKeys.add(ev.keyCode);
+    })
+
+    cnvs.addEventListener("keyup", ev => {
+        currentKeys.delete(ev.keyCode);
+    })
+
+    renderAtFps(targetFps, stepFunc(ctx, gameState, cnvs.width, cnvs.height));
 };
 
 const renderAtFps = (fps, cb) => {
@@ -55,10 +52,21 @@ const renderAtFps = (fps, cb) => {
     window.requestAnimationFrame(animate);
 }
 
+const maxTail = 50;
+const runningFps = new Array(maxTail);
+let curIndex = 0;
 const stepFunc = (ctx, gameState, width, height) => stepTime => {
-    gameState.tick(stepTime, currentKeyDowns.values());
+    runningFps[curIndex] = stepTime;
+    curIndex = (curIndex + 1) % maxTail
+    curAvgFps = runningFps.reduce((a, b) => a + b, 0) / maxTail;
+
+    gameState.tick(stepTime, Array.from(currentKeys));
 
     ctx.clearRect(0, 0, width, height);
+
+    ctx.font = '12px serif';
+    ctx.fillText(`${(1000/curAvgFps).toFixed(2)}fps`, 10, 20);
+
     ctx.lineWidth = 5;
 
     drawCourt(ctx);

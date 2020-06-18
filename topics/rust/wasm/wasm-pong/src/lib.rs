@@ -1,7 +1,6 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use std::collections::VecDeque;
 use std::f32::consts;
 use web_sys::console;
 
@@ -10,6 +9,9 @@ use web_sys::console;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+static ARROW_DOWN: u32 = 38;
+static ARROW_UP: u32 = 40;
 
 #[wasm_bindgen]
 pub fn init() {
@@ -147,20 +149,12 @@ impl PlaySpace {
 }
 
 #[wasm_bindgen]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GameEvent {
-    PlayerMoveUp = 0,
-    PlayerMoveDown = 1
-}
-
-#[wasm_bindgen]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct GameState {
     pub play_space: PlaySpace,
     pub player_paddle: Paddle,
     pub ai_paddle: Paddle,
     pub ball: Ball,
-    pending_events: VecDeque<GameEvent>,
 }
 
 #[wasm_bindgen]
@@ -190,15 +184,12 @@ impl GameState {
             width,
             height
         };
-
-        let pending_events = VecDeque::with_capacity(5);
     
         return GameState{
             play_space,
             player_paddle,
             ai_paddle,
             ball,
-            pending_events,
         }
     }
 
@@ -214,13 +205,40 @@ impl GameState {
         self.ball.position
     }
 
-    pub fn tick(&mut self, step_time: u32) {
+    pub fn tick(&mut self, step_time: u32, current_keys: &[u32]) {
         // No-op if no time has passed.
         if step_time == 0 {
             return;
         }
 
+        self.process_events(step_time, current_keys);
+
         self.ball.update_position(step_time, self.play_space);
+    }
+
+    fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {
+        let usable_key_codes = [ARROW_UP, ARROW_DOWN];
+        let upper_bound = self.play_space.height - self.player_paddle.height as f32;
+        let lower_bound = 0.0;
+
+        let move_speed = 100.0;
+
+        for key_code in current_keys.iter().filter(|key_code| usable_key_codes.contains(key_code)) {
+            let base_speed = match *key_code {
+                k if k == ARROW_UP => move_speed,
+                k if k == ARROW_DOWN => -move_speed,
+                _ => 0.0,
+            };
+
+            let relative_speed = (step_time as f32 / 1000.0) * base_speed;
+            let new_y = self.player_paddle.position.y + relative_speed;
+
+            self.player_paddle.position.y = match new_y {
+                new_y if new_y > upper_bound => upper_bound,
+                new_y if new_y < lower_bound => lower_bound,
+                new_y => new_y,
+            };
+        }
     }
 }
 
