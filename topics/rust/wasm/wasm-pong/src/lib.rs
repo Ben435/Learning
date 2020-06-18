@@ -79,17 +79,22 @@ impl InRange for f32 {
     }
 }
 
+trait CollideWith<T> {
+    fn collision(&self, other: T) -> Option<CollisionType>;
+}
+
 impl Ball {
     fn update_position(&mut self, step_time: u32, play_space: PlaySpace) {
         let new_point = self.position.transform(self.velocity, step_time);
 
+        // Restrict angle to between PI and -PI
         let constricted_angle = match self.velocity.angle % (2.0 * consts::PI) {
             angle if angle > consts::PI => angle - (2.0 * consts::PI),
             angle if angle < -consts::PI => angle + (2.0 * consts::PI),
             angle => angle,
         };
 
-        match play_space.is_out_of_bounds(new_point) {
+        match play_space.collision(new_point) {
             Some(CollisionType::Right) => {
                 // If angled right, then flip over the Y axis
                 if constricted_angle > -consts::FRAC_PI_2 && constricted_angle < consts::FRAC_PI_2 {
@@ -128,16 +133,8 @@ pub struct PlaySpace {
     pub height: f32,
 }
 
-// CollisionType: Describes collision.
-pub enum CollisionType {
-    Top = 0,
-    Right = 1,
-    Bottom = 2,
-    Left = 3,
-}
-
-impl PlaySpace {
-    pub fn is_out_of_bounds(&self, point: Point) -> Option<CollisionType> {
+impl CollideWith<Point> for PlaySpace {
+    fn collision(&self, point: Point) -> Option<CollisionType> {
         match point {
             p if p.get_x() < 0.0 => Some(CollisionType::Left),
             p if p.get_x() > self.width => Some(CollisionType::Right),
@@ -146,6 +143,14 @@ impl PlaySpace {
             _ => None,
         }
     }
+}
+
+// CollisionType: Describes collision.
+pub enum CollisionType {
+    Top = 0,
+    Right = 1,
+    Bottom = 2,
+    Left = 3,
 }
 
 #[wasm_bindgen]
