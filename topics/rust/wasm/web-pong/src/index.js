@@ -6,10 +6,24 @@ const ballRadius = 5;
 const courtWidth = 500;
 const courtHeight = 500;
 
+let currentKeyDowns = new Set()
+
 const main = async () => {
     const cnvs = document.getElementById("gamespace");
     cnvs.width = courtWidth;
     cnvs.height = courtHeight;
+
+    cnvs.addEventListener("keydown", ev => {
+        if ([38, 40].find(code => ev.keyCode === code)) {
+            currentKeyDowns.add(ev.keyCode)
+        }
+    })
+
+    cnvs.addEventListener("keyup", ev => {
+        if ([38, 40].find(code => ev.keyCode === code)) {
+            currentKeyDowns.delete(ev.keyCode)
+        }
+    })
 
     const ctx = cnvs.getContext('2d');
 
@@ -42,9 +56,10 @@ const renderAtFps = (fps, cb) => {
 }
 
 const stepFunc = (ctx, gameState, width, height) => stepTime => {
-    gameState.tick(stepTime);
+    gameState.tick(stepTime, currentKeyDowns.values());
 
     ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 5;
 
     drawCourt(ctx);
 
@@ -53,9 +68,7 @@ const stepFunc = (ctx, gameState, width, height) => stepTime => {
     drawAiPaddle(ctx, gameState);
 }
 
-const drawCourt = (ctx) => {
-    ctx.lineWidth = 5;
-    
+const drawCourt = (ctx) => {    
     ctx.strokeRect(0, 0, courtWidth, courtHeight);
     ctx.stroke();
 }

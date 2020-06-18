@@ -3,6 +3,7 @@ mod utils;
 use wasm_bindgen::prelude::*;
 use std::collections::VecDeque;
 use std::f32::consts;
+use web_sys::console;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -80,14 +81,36 @@ impl Ball {
     fn update_position(&mut self, step_time: u32, play_space: PlaySpace) {
         let new_point = self.position.transform(self.velocity, step_time);
 
+        let constricted_angle = match self.velocity.angle % (2.0 * consts::PI) {
+            angle if angle > consts::PI => angle - (2.0 * consts::PI),
+            angle if angle < -consts::PI => angle + (2.0 * consts::PI),
+            angle => angle,
+        };
+
         match play_space.is_out_of_bounds(new_point) {
-            // Reflect over Y axis
-            Some(CollisionType::Horizontal) => {
-                self.velocity.angle = (consts::PI - self.velocity.angle) % (2.0 * consts::PI);
+            Some(CollisionType::Right) => {
+                // If angled right, then flip over the Y axis
+                if constricted_angle > -consts::FRAC_PI_2 && constricted_angle < consts::FRAC_PI_2 {
+                    self.velocity.angle = consts::PI - constricted_angle;
+                }
             },
-            // Reflect over X axis
-            Some(CollisionType::Vertical) => {
-                self.velocity.angle = -1.0 * self.velocity.angle;
+            Some(CollisionType::Left) => {
+                // If angled left, then flip over the Y axis
+                if constricted_angle < -consts::FRAC_PI_2 || constricted_angle > consts::FRAC_PI_2 {
+                    self.velocity.angle = consts::PI - constricted_angle;
+                }
+            },
+            Some(CollisionType::Top) => {
+                // If angled top, then flip over the X axis
+                if constricted_angle < 0.0 {
+                    self.velocity.angle = -1.0 * constricted_angle;
+                }
+            }
+            Some(CollisionType::Bottom) => {
+                // If angled bottom, then flip over the X axis
+                if constricted_angle > 0.0 {
+                    self.velocity.angle = -1.0 * constricted_angle;
+                }
             }
             None => {}
         }
@@ -104,37 +127,22 @@ pub struct PlaySpace {
 }
 
 // CollisionType: Describes collision.
-// 
-// * Horizontal = hit while travelling along the X axis
-// * Vertical = hit while travelling along the Y axis
 pub enum CollisionType {
-    Horizontal = 0,
-    Vertical = 1,
+    Top = 0,
+    Right = 1,
+    Bottom = 2,
+    Left = 3,
 }
 
 impl PlaySpace {
     pub fn is_out_of_bounds(&self, point: Point) -> Option<CollisionType> {
-        let is_outside_horiz = match point.get_x() {
-            x if x < 0.0 => true,
-            x if x > self.width => true,
-            _ => false,
-        };
-
-        if is_outside_horiz {
-            return Some(CollisionType::Horizontal);
+        match point {
+            p if p.get_x() < 0.0 => Some(CollisionType::Left),
+            p if p.get_x() > self.width => Some(CollisionType::Right),
+            p if p.get_y() < 0.0 => Some(CollisionType::Top),
+            p if p.get_y() > self.height => Some(CollisionType::Bottom),
+            _ => None,
         }
-
-        let is_outside_vert = match point.get_y() {
-            y if y < 0.0 => true,
-            y if y > self.height => true,
-            _ => false,
-        };
-        
-        if is_outside_vert {
-            return Some(CollisionType::Vertical);
-        }
-        
-        return None;
     }
 }
 
@@ -291,7 +299,7 @@ mod tests {
     fn update_ball_position_relative_to_time_passed() {        
         let mut ball = Ball{ 
             position: Point{x: 0.0, y: 0.0},
-            velocity: Velocity{ angle: 0.0, speed: 2.0 }  // South-East
+            velocity: Velocity{ angle: 0.0, speed: 2.0 }  // East
         };
 
         ball.update_position(500, DUMMY_PLAY_SPACE);
