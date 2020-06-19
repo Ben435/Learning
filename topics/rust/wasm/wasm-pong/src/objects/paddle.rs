@@ -1,10 +1,8 @@
 use wasm_bindgen::prelude::*;
-use crate::physics::Point;
+use crate::physics::Rectangle;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
 pub struct Paddle {
-    pub width: u32,
-    pub height: u32,
-    pub position: Point
+    pub body: Rectangle,
 }

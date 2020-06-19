@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use std::f32::consts;
-use crate::physics::{Point,Velocity,CollideWith,CollisionType};
-use crate::objects::PlaySpace;
+use crate::physics::*;
+use crate::objects::*;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
@@ -11,9 +11,13 @@ pub struct Ball {
 }
 
 impl Ball {
-    pub fn update_position(&mut self, step_time: u32, play_space: PlaySpace) {
+    pub fn update_position(&mut self, step_time: u32) {
         let new_point = self.position.transform(self.velocity, step_time);
 
+        self.position = new_point;
+    }
+
+    pub fn check_collisions(&mut self, play_space: PlaySpace, player_paddle: Paddle, ai_paddle: Paddle) {
         // Restrict angle to between PI and -PI
         let constricted_angle = match self.velocity.angle % (2.0 * consts::PI) {
             angle if angle > consts::PI => angle - (2.0 * consts::PI),
@@ -21,7 +25,12 @@ impl Ball {
             angle => angle,
         };
 
-        match play_space.collision(new_point) {
+        let collision = play_space
+            .collision(self.position)
+            .or(player_paddle.body.collision(self.position))
+            .or(ai_paddle.body.collision(self.position));
+
+        match collision {
             Some(CollisionType::Right) => {
                 // If angled right, then flip over the Y axis
                 if constricted_angle > -consts::FRAC_PI_2 && constricted_angle < consts::FRAC_PI_2 {
@@ -48,8 +57,6 @@ impl Ball {
             }
             None => {}
         }
-
-        self.position = new_point;
     }
 }
 
@@ -68,11 +75,6 @@ mod tests {
         assert!(subject.in_range(lower, upper), "expected {} to be in range lower={}, upper={}", subject, lower, upper)
     }
 
-    static DUMMY_PLAY_SPACE: PlaySpace = PlaySpace{
-        width: 100.0,
-        height: 100.0,
-    };
-
     #[test]
     fn update_ball_position_horizontal() {
         let mut ball = Ball{
@@ -80,7 +82,7 @@ mod tests {
             velocity: Velocity{ angle: 0.0, speed: 2.0 }    // East
         };
 
-        ball.update_position(1000, DUMMY_PLAY_SPACE);
+        ball.update_position(1000);
 
         assert_float32_eq(ball.position.get_x(), 2.0);
         assert_float32_eq(ball.position.get_y(), 0.0);
@@ -93,7 +95,7 @@ mod tests {
             velocity: Velocity{ angle: consts::FRAC_PI_2, speed: 2.0 }  // South
         };
 
-        ball.update_position(1000, DUMMY_PLAY_SPACE);
+        ball.update_position(1000);
 
         assert_float32_eq(ball.position.get_x(), 0.0);
         assert_float32_eq(ball.position.get_y(), 2.0);
@@ -106,7 +108,7 @@ mod tests {
             velocity: Velocity{ angle: consts::FRAC_PI_4, speed: consts::SQRT_2 }  // South-East
         };
 
-        ball.update_position(1000, DUMMY_PLAY_SPACE);
+        ball.update_position(1000);
 
         assert_float32_eq(ball.position.get_x(), 1.0);
         assert_float32_eq(ball.position.get_y(), 1.0);
@@ -119,7 +121,7 @@ mod tests {
             velocity: Velocity{ angle: consts::PI + consts::FRAC_PI_6, speed: 2.0 }  // North-West-Ish
         };
 
-        ball.update_position(1000, DUMMY_PLAY_SPACE);
+        ball.update_position(1000);
 
         assert_float32_eq(ball.position.get_x(), 2.0 + -1.0 * (3.0 as f32).sqrt());
         assert_float32_eq(ball.position.get_y(), 3.0 + -1.0);
@@ -132,7 +134,7 @@ mod tests {
             velocity: Velocity{ angle: 0.0, speed: 2.0 }  // East
         };
 
-        ball.update_position(500, DUMMY_PLAY_SPACE);
+        ball.update_position(500);
 
         assert_float32_eq(ball.position.get_x(), 1.0);
         assert_float32_eq(ball.position.get_y(), 0.0);
