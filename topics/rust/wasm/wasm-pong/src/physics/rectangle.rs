@@ -22,7 +22,6 @@ impl Rectangle {
 impl CollideWith<Circle> for Rectangle {
     fn collision(&self, obj: Circle, movement: Velocity) -> (Point, Velocity) {
         // Easy case: circle origin is within rectangle bounds.
-        (obj.origin, movement)
 
 
 
