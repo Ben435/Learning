@@ -10,43 +10,50 @@ pub struct PlaySpace {
 }
 
 impl CollideWith<Circle> for PlaySpace {
-    fn collision(&self, obj: Circle, movement: Velocity) -> Velocity {
-        let constricted_angle = match movement.angle % (2.0 * consts::PI) {
-            angle if angle > consts::PI => angle - (2.0 * consts::PI),
-            angle if angle < -consts::PI => angle + (2.0 * consts::PI),
-            angle => angle,
-        };
+    fn collision(&self, obj: Circle, movement: Velocity) -> (Point, Velocity) {
+        let mut new_origin = obj.origin;
+        let mut new_vel = movement;
 
-        if obj.origin.x + obj.radius > self.width {
-            if constricted_angle > -consts::FRAC_PI_2 && constricted_angle < consts::FRAC_PI_2 {
-                return Velocity{
-                    angle: consts::PI - constricted_angle,
-                    speed: movement.speed,
-                }
-            }
-        } else if obj.origin.x - obj.radius < 0.0 {
-            if constricted_angle < -consts::FRAC_PI_2 || constricted_angle > consts::FRAC_PI_2 {
-                return Velocity{
-                    angle: consts::PI - constricted_angle,
-                    speed: movement.speed,
-                }
-            }
-        } else if obj.origin.y + obj.radius > self.height {
-            if constricted_angle > 0.0 {
-                return Velocity{
-                    angle: -1.0 * constricted_angle,
-                    speed: movement.speed,
-                }
-            }
-        } else if obj.origin.y - obj.radius < 0.0 {
-            if constricted_angle < 0.0 {
-                return Velocity{
-                    angle: -1.0 * constricted_angle,
-                    speed: movement.speed,
-                }
-            }
+        if new_origin.x + obj.radius > self.width {
+            new_vel = Velocity{
+                angle: consts::PI - new_vel.angle,
+                speed: movement.speed,
+            };
+            new_origin = Point{
+                x: self.width - obj.radius,
+                y: new_origin.y,
+            };
+        } else if new_origin.x - obj.radius < 0.0 {
+            new_vel = Velocity{
+                angle: consts::PI - new_vel.angle,
+                speed: movement.speed,
+            };
+            new_origin = Point{
+                x: obj.radius,
+                y: new_origin.y,
+            };
         }
-
-        return movement
+        
+        if new_origin.y + obj.radius > self.height {
+            new_vel = Velocity{
+                angle: -1.0 * new_vel.angle,
+                speed: movement.speed,
+            };
+            new_origin = Point{
+                x: new_origin.x,
+                y: self.height - obj.radius,
+            };
+        } else if obj.origin.y - obj.radius < 0.0 {
+            new_vel = Velocity{
+                angle: -1.0 * new_vel.angle,
+                speed: movement.speed,
+            };
+            new_origin = Point{
+                x: new_origin.x,
+                y: obj.radius,
+            };
+        }
+        
+        (new_origin, new_vel)
     }
 }

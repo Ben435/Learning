@@ -16,7 +16,10 @@ impl Ball {
     }
 
     pub fn check_collisions(&mut self, play_space: PlaySpace, player_paddle: Paddle, ai_paddle: Paddle) {
-        self.velocity = play_space.collision(self.body, self.velocity);
+        let (new_origin, new_vel) = play_space.collision(self.body, self.velocity);
+
+        self.body.origin = new_origin;
+        self.velocity = new_vel;
             // .or(player_paddle.body.collision(self.body))
             // .or(ai_paddle.body.collision(self.body))
     }
