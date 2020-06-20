@@ -15,10 +15,8 @@ export const stepFunc = (ctx, gameState, width, height) => stepTime => {
     ctx.font = '12px serif';
     ctx.fillText(`${(1000/curAvgFps).toFixed(2)}fps`, 10, 20);
 
-    ctx.lineWidth = 5;
-
+    ctx.lineWidth = 1;
     drawCourt(ctx);
-
     drawBall(ctx, gameState);
     drawPlayerPaddle(ctx, gameState);
     drawAiPaddle(ctx, gameState);

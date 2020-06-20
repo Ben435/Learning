@@ -34,7 +34,8 @@ pub struct GameState {
 impl GameState {
     pub fn new(
         width: f32, height: f32, 
-        paddle_width: f32, paddle_height: f32
+        paddle_width: f32, paddle_height: f32,
+        ball_radius: f32,
     ) -> GameState {
         let player_paddle = Paddle{
             body: Rectangle{
@@ -53,8 +54,8 @@ impl GameState {
         };
     
         let ball = Ball{
-            position: Point{ x: width / 3.0, y: height / 3.0},
-            velocity: Velocity{ speed: 50.0, angle: consts::PI },
+            body: Circle::new(width / 3.0, height / 3.0, ball_radius),
+            velocity: Velocity{ speed: 50.0, angle: consts::PI - consts::FRAC_PI_6 },
         };
     
         let play_space = PlaySpace{
@@ -79,7 +80,7 @@ impl GameState {
     }
 
     pub fn get_ball_position(&self) -> Point {
-        self.ball.position
+        self.ball.body.origin
     }
 
     pub fn tick(&mut self, step_time: u32, current_keys: &[u32]) {

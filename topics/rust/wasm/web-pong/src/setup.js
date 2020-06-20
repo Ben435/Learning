@@ -1,12 +1,12 @@
 
-import { targetFps, courtWidth, courtHeight, currentKeys, paddleWidth, paddleHeight } from './globals';
+import { targetFps, courtWidth, courtHeight, currentKeys, paddleWidth, paddleHeight, ballRadius } from './globals';
 import { stepFunc } from './mainloop';
 
 export const init = async () => {
     const gameState = import('wasm-pong/wasm_pong')
         .then(wasm_pong => {
             wasm_pong.init();
-            return wasm_pong.GameState.new(courtWidth, courtHeight, paddleWidth, paddleHeight);
+            return wasm_pong.GameState.new(courtWidth, courtHeight, paddleWidth, paddleHeight, ballRadius);
         });
 
     const cnvs = document.getElementById("gamespace");
