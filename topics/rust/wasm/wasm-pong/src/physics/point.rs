@@ -9,6 +9,9 @@ pub struct Point {
 }
 #[wasm_bindgen]
 impl Point {
+    pub fn new(x: f32, y: f32) -> Point {
+        Point{x, y}
+    }
     pub fn get_x(&self) -> f32 {
         self.x
     }
@@ -18,14 +21,14 @@ impl Point {
     }
 
     pub fn transform(&self, vel: Velocity, step_time: u32) -> Point {
-        let relative_speed = vel.speed * (step_time as f32 / 1000.0);
-
-        let translate_x = vel.angle.cos() * relative_speed;
-        let translate_y = vel.angle.sin() * relative_speed;
+        // Time units = 1 unit per 1000ms
+        let time_units_passed = step_time as f32 / 1000.0;
+        let relative_x_speed = vel.x_speed * time_units_passed;
+        let relative_y_speed = vel.y_speed * time_units_passed;
         
         Point{
-            x: self.x + translate_x, 
-            y: self.y + translate_y,
+            x: self.x + relative_x_speed, 
+            y: self.y + relative_y_speed,
         }
     }
 }

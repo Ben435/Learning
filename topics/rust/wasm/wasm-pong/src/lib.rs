@@ -35,7 +35,7 @@ impl GameState {
     pub fn new(
         width: f32, height: f32, 
         paddle_width: f32, paddle_height: f32,
-        ball_radius: f32,
+        ball_radius: f32, ball_speed: f32,
     ) -> GameState {
         let player_paddle = Paddle{
             body: Rectangle{
@@ -55,7 +55,7 @@ impl GameState {
     
         let ball = Ball{
             body: Circle::new(width / 3.0, height / 3.0, ball_radius),
-            velocity: Velocity{ speed: 50.0, angle: consts::PI - consts::FRAC_PI_6 },
+            velocity: Velocity{ x_speed: ball_speed, y_speed: 0.0 },
         };
     
         let play_space = PlaySpace{

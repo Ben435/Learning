@@ -1,5 +1,4 @@
 use wasm_bindgen::prelude::*;
-use std::f32::consts;
 use crate::physics::*;
 use crate::objects::*;
 
@@ -44,7 +43,7 @@ mod tests {
     fn update_ball_position_horizontal() {
         let mut ball = Ball{
             body: Circle::new(0.0, 0.0, 1.0),
-            velocity: Velocity{ angle: 0.0, speed: 2.0 }    // East
+            velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }    // East
         };
 
         ball.update_position(1000);
@@ -57,7 +56,7 @@ mod tests {
     fn update_ball_position_vertical() {        
         let mut ball = Ball{ 
             body: Circle::new(0.0, 0.0, 1.0),
-            velocity: Velocity{ angle: consts::FRAC_PI_2, speed: 2.0 }  // South
+            velocity: Velocity{ y_speed: -2.0, x_speed: 0.0 }  // South
         };
 
         ball.update_position(1000);
@@ -70,7 +69,7 @@ mod tests {
     fn update_ball_position_45deg() {        
         let mut ball = Ball{ 
             body: Circle::new(0.0, 0.0, 1.0),
-            velocity: Velocity{ angle: consts::FRAC_PI_4, speed: consts::SQRT_2 }  // South-East
+            velocity: Velocity{ x_speed: 1.0, y_speed: 1.0 }  // South-East
         };
 
         ball.update_position(1000);
@@ -80,23 +79,10 @@ mod tests {
     }
 
     #[test]
-    fn update_ball_position_outside_first_quadrant() {        
-        let mut ball = Ball{
-            body: Circle::new(2.0, 3.0, 1.0),
-            velocity: Velocity{ angle: consts::PI + consts::FRAC_PI_6, speed: 2.0 }  // North-West-Ish
-        };
-
-        ball.update_position(1000);
-
-        assert_float32_eq(ball.body.origin.get_x(), 2.0 + -1.0 * (3.0 as f32).sqrt());
-        assert_float32_eq(ball.body.origin.get_y(), 3.0 + -1.0);
-    }
-
-    #[test]
     fn update_ball_position_relative_to_time_passed() {        
         let mut ball = Ball{ 
             body: Circle::new(0.0, 0.0, 1.0),
-            velocity: Velocity{ angle: 0.0, speed: 2.0 }  // East
+            velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }  // East
         };
 
         ball.update_position(500);

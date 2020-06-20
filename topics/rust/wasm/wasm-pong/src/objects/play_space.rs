@@ -1,6 +1,5 @@
 use wasm_bindgen::prelude::*;
 use crate::physics::*;
-use std::f32::consts;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
@@ -16,8 +15,8 @@ impl CollideWith<Circle> for PlaySpace {
 
         if new_origin.x + obj.radius > self.width {
             new_vel = Velocity{
-                angle: consts::PI - new_vel.angle,
-                speed: movement.speed,
+                x_speed: -movement.x_speed,
+                y_speed: movement.y_speed,
             };
             new_origin = Point{
                 x: self.width - obj.radius,
@@ -25,8 +24,8 @@ impl CollideWith<Circle> for PlaySpace {
             };
         } else if new_origin.x - obj.radius < 0.0 {
             new_vel = Velocity{
-                angle: consts::PI - new_vel.angle,
-                speed: movement.speed,
+                x_speed: -movement.x_speed,
+                y_speed: movement.y_speed,
             };
             new_origin = Point{
                 x: obj.radius,
@@ -36,8 +35,8 @@ impl CollideWith<Circle> for PlaySpace {
         
         if new_origin.y + obj.radius > self.height {
             new_vel = Velocity{
-                angle: -1.0 * new_vel.angle,
-                speed: movement.speed,
+                x_speed: movement.x_speed,
+                y_speed: -movement.y_speed,
             };
             new_origin = Point{
                 x: new_origin.x,
@@ -45,8 +44,8 @@ impl CollideWith<Circle> for PlaySpace {
             };
         } else if obj.origin.y - obj.radius < 0.0 {
             new_vel = Velocity{
-                angle: -1.0 * new_vel.angle,
-                speed: movement.speed,
+                x_speed: movement.x_speed,
+                y_speed: -movement.y_speed,
             };
             new_origin = Point{
                 x: new_origin.x,
