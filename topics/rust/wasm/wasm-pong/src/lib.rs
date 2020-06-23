@@ -57,7 +57,7 @@ impl GameState {
                 width / 3.0, height / 3.0, 
                 ball_size, ball_size,
             ),
-            velocity: Velocity{ x_speed: ball_speed, y_speed: 0.0 },
+            velocity: Velocity{ x_speed: ball_speed / 2.0, y_speed: ball_speed / 2.0 },
         };
     
         let play_space = PlaySpace{
@@ -92,11 +92,12 @@ impl GameState {
         }
 
         self.process_events(step_time, current_keys);
+        self.update_ai(step_time);
         self.ball.update_position(step_time);
 
         self.ball.handle_play_space_collision(self.play_space);
         self.ball.handle_rect_collision(self.player_paddle.body);
-        self.ball.handle_rect_collision(self.player_paddle.body);
+        self.ball.handle_rect_collision(self.ai_paddle.body);
     }
 
     fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {
@@ -122,5 +123,24 @@ impl GameState {
                 new_y => new_y,
             };
         }
+    }
+
+    fn update_ai(&mut self, step_time: u32) {
+        let ai_base_speed = 100.0;
+        let relative_speed = (step_time as f32 / 1000.0) * ai_base_speed;
+
+        // Move towards ball y.
+
+        let target_y = self.ball.body.origin.y - (self.ai_paddle.body.height / 2.0);
+        let current_y = self.ai_paddle.body.origin.y;
+
+        let new_y;
+        if target_y > current_y {
+            new_y = current_y + relative_speed.min(target_y - current_y);
+        } else {
+            new_y = current_y - relative_speed.min(current_y - target_y);
+        }
+
+        self.ai_paddle.body.origin.y = new_y;
     }
 }

@@ -47,7 +47,7 @@ impl Ball {
 
 
         // TODO: Handle corners better (currently just defaults to horiz)        
-        if top_right_in && bottom_left_in {
+        if top_right_in && bottom_right_in {
             // Right edge fully contained
             self.velocity.x_speed = self.velocity.x_speed.abs() * -1.0;
             self.body.origin.x = rect.origin.x - self.body.width;
