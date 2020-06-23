@@ -3,7 +3,6 @@ mod objects;
 mod physics;
 
 use wasm_bindgen::prelude::*;
-use std::f32::consts;
 use objects::*;
 use physics::*;
 
@@ -35,7 +34,7 @@ impl GameState {
     pub fn new(
         width: f32, height: f32, 
         paddle_width: f32, paddle_height: f32,
-        ball_radius: f32, ball_speed: f32,
+        ball_size: f32, ball_speed: f32,
     ) -> GameState {
         let player_paddle = Paddle{
             body: Rectangle{
@@ -54,7 +53,10 @@ impl GameState {
         };
     
         let ball = Ball{
-            body: Circle::new(width / 3.0, height / 3.0, ball_radius),
+            body: Rectangle::new(
+                width / 3.0, height / 3.0, 
+                ball_size, ball_size,
+            ),
             velocity: Velocity{ x_speed: ball_speed, y_speed: 0.0 },
         };
     
@@ -92,7 +94,7 @@ impl GameState {
         self.process_events(step_time, current_keys);
         self.ball.update_position(step_time);
 
-        self.ball.check_collisions(self.play_space, self.player_paddle, self.ai_paddle);
+        self.ball.handle_collision(self.play_space);
     }
 
     fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {

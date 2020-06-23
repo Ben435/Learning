@@ -1,5 +1,5 @@
 
-import { targetFps, courtWidth, courtHeight, currentKeys, paddleWidth, paddleHeight, ballRadius, ballSpeed } from './globals';
+import { targetFps, courtWidth, courtHeight, currentKeys, paddleWidth, paddleHeight, ballSize, ballSpeed } from './globals';
 import { stepFunc } from './mainloop';
 
 export const init = async () => {
@@ -9,7 +9,7 @@ export const init = async () => {
             return wasm_pong.GameState.new(
                 courtWidth, courtHeight, 
                 paddleWidth, paddleHeight, 
-                ballRadius, ballSpeed
+                ballSize, ballSpeed
             );
         });
 

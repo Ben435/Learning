@@ -5,7 +5,7 @@ use crate::objects::*;
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
 pub struct Ball {
-    pub body: Circle,
+    pub body: Rectangle,
     pub velocity: Velocity,
 }
 
@@ -14,13 +14,26 @@ impl Ball {
         self.body.origin = self.body.origin.transform(self.velocity, step_time);
     }
 
-    pub fn check_collisions(&mut self, play_space: PlaySpace, player_paddle: Paddle, ai_paddle: Paddle) {
-        let (new_origin, new_vel) = play_space.collision(self.body, self.velocity);
+    pub fn handle_play_space_collision(&mut self, play_space: PlaySpace) {
+        if self.body.origin.x < 0.0 {
+            self.body.origin.x = 0.0;
+            self.velocity.x_speed = self.velocity.x_speed.abs()
+        } else if (self.body.origin.x + self.body.width) > play_space.width {
+            self.body.origin.x = play_space.width - self.body.width;
+            self.velocity.x_speed = self.velocity.x_speed.abs() * -1.0;
+        }
 
-        self.body.origin = new_origin;
-        self.velocity = new_vel;
-            // .or(player_paddle.body.collision(self.body))
-            // .or(ai_paddle.body.collision(self.body))
+        if self.body.origin.y < 0.0 {
+            self.body.origin.y = 0.0;
+            self.velocity.y_speed = self.velocity.y_speed.abs()
+        } else if (self.body.origin.y + self.body.height) > play_space.height {
+            self.body.origin.y = play_space.height - self.body.height;
+            self.velocity.y_speed = self.velocity.y_speed.abs() * -1.0;
+        }
+    }
+
+    pub fn handle_rect_collision(&mut self, rect: Rectangle) {
+        
     }
 }
 
@@ -32,6 +45,7 @@ mod tests {
 
     // Floats are a pain, this allows for a few stacked precision errors, but not drastic issues.
     const CMP_EPSILON: f32 = EPSILON * 5.0;
+    const DEFAULT_BODY: Rectangle = Rectangle::new(0.0, 0.0, 5.0, 5.0);
 
     fn assert_float32_eq(subject: f32, expected: f32) {
         let lower = expected - CMP_EPSILON;
@@ -42,7 +56,7 @@ mod tests {
     #[test]
     fn update_ball_position_horizontal() {
         let mut ball = Ball{
-            body: Circle::new(0.0, 0.0, 1.0),
+            body: DEFAULT_BODY,
             velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }    // East
         };
 
@@ -54,8 +68,8 @@ mod tests {
 
     #[test]
     fn update_ball_position_vertical() {        
-        let mut ball = Ball{ 
-            body: Circle::new(0.0, 0.0, 1.0),
+        let mut ball = Ball{
+            body: DEFAULT_BODY,
             velocity: Velocity{ y_speed: -2.0, x_speed: 0.0 }  // South
         };
 
@@ -67,8 +81,8 @@ mod tests {
 
     #[test]
     fn update_ball_position_45deg() {        
-        let mut ball = Ball{ 
-            body: Circle::new(0.0, 0.0, 1.0),
+        let mut ball = Ball{
+            body: DEFAULT_BODY,
             velocity: Velocity{ x_speed: 1.0, y_speed: 1.0 }  // South-East
         };
 
@@ -80,8 +94,8 @@ mod tests {
 
     #[test]
     fn update_ball_position_relative_to_time_passed() {        
-        let mut ball = Ball{ 
-            body: Circle::new(0.0, 0.0, 1.0),
+        let mut ball = Ball{
+            body: DEFAULT_BODY,
             velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }  // East
         };
 

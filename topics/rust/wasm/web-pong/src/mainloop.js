@@ -1,4 +1,4 @@
-import { ballRadius, currentKeys, courtHeight, courtWidth, paddleWidth, paddleHeight } from './globals';
+import { ballSize, currentKeys, courtHeight, courtWidth, paddleWidth, paddleHeight } from './globals';
 
 const maxTail = 50;
 const runningFps = new Array(maxTail);
@@ -31,7 +31,7 @@ const drawBall = (ctx, gameState) => {
     const ballPos = gameState.get_ball_position();
 
     ctx.beginPath();
-    ctx.arc(ballPos.get_x(), ballPos.get_y(), ballRadius, 0, 2 * Math.PI);
+    ctx.fillRect(ballPos.get_x(), ballPos.get_y(), ballSize, ballSize);
     ctx.stroke();
 }
 

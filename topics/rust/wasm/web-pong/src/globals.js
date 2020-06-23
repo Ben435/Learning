@@ -1,11 +1,11 @@
 // Warning: reality will only ever be the closest 60/2*n. eg: 60fps, 30fps, 15fps, 7.5fps, etc.
 // So eg: targetFps = 20, will actually be ~15fps.
-export const targetFps = 40;
+export const targetFps = 20;
 
 export const paddleWidth = 10;
 export const paddleHeight = 50;
 export const ballSpeed = 250;
-export const ballRadius = 5;
+export const ballSize = 7;
 
 export const courtWidth = 500;
 export const courtHeight = 500;
