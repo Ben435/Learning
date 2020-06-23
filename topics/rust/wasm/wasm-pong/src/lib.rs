@@ -94,7 +94,9 @@ impl GameState {
         self.process_events(step_time, current_keys);
         self.ball.update_position(step_time);
 
-        self.ball.handle_collision(self.play_space);
+        self.ball.handle_play_space_collision(self.play_space);
+        self.ball.handle_rect_collision(self.player_paddle.body);
+        self.ball.handle_rect_collision(self.player_paddle.body);
     }
 
     fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {

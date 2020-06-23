@@ -33,7 +33,47 @@ impl Ball {
     }
 
     pub fn handle_rect_collision(&mut self, rect: Rectangle) {
-        
+        let top_left_corner = self.body.origin;
+        let top_left_in = point_within_rect(top_left_corner, rect);
+
+        let top_right_corner = Point::new(self.body.origin.x + self.body.width, self.body.origin.y);
+        let top_right_in = point_within_rect(top_right_corner, rect);
+
+        let bottom_right_corner = Point::new(self.body.origin.x + self.body.width, self.body.origin.y + self.body.height);
+        let bottom_right_in = point_within_rect(bottom_right_corner, rect);
+
+        let bottom_left_corner = Point::new(self.body.origin.x, self.body.origin.y + self.body.height);
+        let bottom_left_in = point_within_rect(bottom_left_corner, rect);
+
+
+        // TODO: Handle corners better (currently just defaults to horiz)        
+        if top_right_in && bottom_left_in {
+            // Right edge fully contained
+            self.velocity.x_speed = self.velocity.x_speed.abs() * -1.0;
+            self.body.origin.x = rect.origin.x - self.body.width;
+        } else if top_left_in && bottom_left_in {
+            // Left edge fully contained
+            self.velocity.x_speed = self.velocity.x_speed.abs();
+            self.body.origin.x = rect.origin.x + rect.width;
+        } else if bottom_left_in && bottom_right_in {
+            // Bottom edge fully contained
+            self.velocity.y_speed = self.velocity.y_speed.abs() * -1.0;
+            self.body.origin.y = rect.origin.y - self.body.height;
+        } else if top_left_in && top_right_in {
+            // Top edge fully contained
+            self.velocity.y_speed = self.velocity.y_speed.abs();
+            self.body.origin.y = rect.origin.y + rect.height;
+        } else if top_left_in || top_right_in {
+            // Only top left corner in
+            // Treat like left edge contained
+            self.velocity.x_speed = self.velocity.x_speed.abs();
+            self.body.origin.x = rect.origin.x + rect.width;
+        } else if bottom_left_in || bottom_right_in {
+            // Only bottom left corner in
+            // Treat like left edge contained
+            self.velocity.x_speed = self.velocity.x_speed.abs();
+            self.body.origin.x = rect.origin.x + rect.width;
+        }
     }
 }
 
@@ -43,7 +83,7 @@ mod tests {
     use std::f32::EPSILON;
     use crate::utils::InRange;
 
-    // Floats are a pain, this allows for a few stacked precision errors, but not drastic issues.
+    // Floats are a pain, this allows for a few compounded precision errors, but not drastic issues.
     const CMP_EPSILON: f32 = EPSILON * 5.0;
     const DEFAULT_BODY: Rectangle = Rectangle::new(0.0, 0.0, 5.0, 5.0);
 
