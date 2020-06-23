@@ -63,16 +63,16 @@ impl Ball {
             // Top edge fully contained
             self.velocity.y_speed = self.velocity.y_speed.abs();
             self.body.origin.y = rect.origin.y + rect.height;
-        } else if top_left_in || top_right_in {
+        } else if top_left_in || bottom_left_in {
             // Only top left corner in
             // Treat like left edge contained
             self.velocity.x_speed = self.velocity.x_speed.abs();
             self.body.origin.x = rect.origin.x + rect.width;
-        } else if bottom_left_in || bottom_right_in {
+        } else if top_right_in || bottom_right_in {
             // Only bottom left corner in
-            // Treat like left edge contained
-            self.velocity.x_speed = self.velocity.x_speed.abs();
-            self.body.origin.x = rect.origin.x + rect.width;
+            // Treat like right edge contained
+            self.velocity.x_speed = self.velocity.x_speed.abs() * -1.0;
+            self.body.origin.x = rect.origin.x - self.body.width;
         }
     }
 }
