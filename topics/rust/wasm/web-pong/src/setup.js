@@ -13,6 +13,7 @@ export const init = async () => {
             );
         });
 
+    const docBody = document.getElementsByTagName("body").item(0);
     const cnvs = document.getElementById("gamespace");
     cnvs.width = courtWidth;
     cnvs.height = courtHeight;
