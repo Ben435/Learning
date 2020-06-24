@@ -13,10 +13,13 @@ export const init = async () => {
             );
         });
 
-    const docBody = document.getElementsByTagName("body").item(0);
+    const gameWrapper = document.getElementById("game-wrapper");
+    let { width, height } = gameWrapper.getBoundingClientRect();
+    // We want a square field (else rectangles get weird)
+    width = height = Math.min(width, height)
     const cnvs = document.getElementById("gamespace");
-    cnvs.width = courtWidth;
-    cnvs.height = courtHeight;
+    cnvs.width = width;
+    cnvs.height = height;
 
     const ctx = cnvs.getContext('2d');
 
@@ -28,7 +31,7 @@ export const init = async () => {
         currentKeys.delete(ev.keyCode);
     })
 
-    renderAtFps(targetFps, stepFunc(ctx, await gameState, cnvs.width, cnvs.height));
+    renderAtFps(targetFps, stepFunc(ctx, await gameState, width, height));
 };
 
 const renderAtFps = (fps, cb) => {

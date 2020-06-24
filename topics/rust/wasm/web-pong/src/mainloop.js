@@ -1,8 +1,5 @@
-import { currentKeys } from './globals';
+import { currentKeys, courtWidth, courtHeight } from './globals';
 
-const maxTail = 50;
-const runningFps = new Array(maxTail);
-let curIndex = 0;
 export const stepFunc = (ctx, gameState, width, height) => stepTime => {
     gameState.tick(stepTime, Array.from(currentKeys));
 
@@ -16,9 +13,12 @@ export const stepFunc = (ctx, gameState, width, height) => stepTime => {
     ctx.lineWidth = 1;
     drawCourt(ctx, width, height);
     drawScore(ctx, score[0], score[1], width)
-    rects.forEach(rect => drawRect(ctx, rect));
+    rects.forEach(rect => drawRect(ctx, width, height, rect));
 }
 
+const maxTail = 50;
+const runningFps = new Array(maxTail);
+let curIndex = 0;
 const drawFps = (ctx, stepTime) => {
     runningFps[curIndex] = stepTime;
     curIndex = (curIndex + 1) % maxTail
@@ -31,7 +31,7 @@ const drawFps = (ctx, stepTime) => {
 }
 
 const drawCourt = (ctx, width, height) => {    
-    ctx.strokeRect(0, 0, width, height);
+    ctx.strokeRect(0, 0, width-1, height-1);
     ctx.stroke();
 }
 
@@ -46,8 +46,15 @@ const drawScore = (ctx, player_score, ai_score, width) => {
 }
 
 // Rect in form [x, y, width, height]
-const drawRect = (ctx, rect) => {
+const drawRect = (ctx, width, height, rect) => {
+    const width_multiplier = width / courtWidth;
+    const height_multiplier = height / courtHeight;
     ctx.beginPath();
-    ctx.fillRect(rect[0], rect[1], rect[2], rect[3]);
+    ctx.fillRect(
+        rect[0] * width_multiplier, 
+        rect[1] * height_multiplier, 
+        rect[2] * width_multiplier, 
+        rect[3] * height_multiplier,
+    );
     ctx.stroke();
 }
