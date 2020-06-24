@@ -97,6 +97,18 @@ impl GameState {
                 });
     }
 
+    pub fn get_score(&self) -> Array {
+        // TODO: Actually track and expose score.
+        let player_score = 0;
+        let ai_score = 0;
+
+        let ret_arr = Array::new_with_length(2);
+        ret_arr.set(0, JsValue::from(player_score));
+        ret_arr.set(1, JsValue::from(ai_score));
+
+        return ret_arr;
+    }
+
     pub fn tick(&mut self, step_time: u32, current_keys: &[u32]) {
         // No-op if no time has passed.
         // Simplifies logic, as a bunch of stuff divides by the step_time, 
