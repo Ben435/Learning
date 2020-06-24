@@ -6,6 +6,7 @@ export const paddleWidth = 10;
 export const paddleHeight = 50;
 export const ballSpeed = 250;
 export const ballSize = 7;
+export const ballInitAngle = Math.PI / 3;
 
 export const courtWidth = 500;
 export const courtHeight = 500;

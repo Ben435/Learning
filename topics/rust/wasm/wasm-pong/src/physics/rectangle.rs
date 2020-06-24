@@ -1,6 +1,9 @@
 use wasm_bindgen::prelude::*;
 use crate::physics::*;
 
+// [x, y, width, height]
+pub type RectTuple = (f32, f32, f32, f32);
+
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug)]
 pub struct Rectangle {
@@ -16,5 +19,10 @@ impl Rectangle {
             width,
             height,
         }
+    }
+
+    // to_arr: used to pass back to renderer.
+    pub fn to_arr(&self) -> RectTuple {
+        (self.origin.x, self.origin.y, self.width, self.height)
     }
 }

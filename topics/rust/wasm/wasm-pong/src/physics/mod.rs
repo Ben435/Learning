@@ -4,8 +4,8 @@ mod collision;
 mod rectangle;
 mod circle;
 
-pub use velocity::Velocity;
-pub use point::Point;
+pub use velocity::*;
+pub use point::*;
 pub use collision::*;
-pub use rectangle::Rectangle;
-pub use circle::Circle;
+pub use rectangle::*;
+pub use circle::*;

@@ -1,4 +1,4 @@
-import { ballSize, currentKeys, courtHeight, courtWidth, paddleWidth, paddleHeight } from './globals';
+import { currentKeys, courtHeight, courtWidth } from './globals';
 
 const maxTail = 50;
 const runningFps = new Array(maxTail);
@@ -16,10 +16,9 @@ export const stepFunc = (ctx, gameState, width, height) => stepTime => {
     ctx.fillText(`${(1000/curAvgFps).toFixed(2)}fps`, 10, 20);
 
     ctx.lineWidth = 1;
+    const rects = gameState.get_rects();
     drawCourt(ctx);
-    drawBall(ctx, gameState);
-    drawPlayerPaddle(ctx, gameState);
-    drawAiPaddle(ctx, gameState);
+    rects.forEach(rect => drawRect(ctx, rect));
 }
 
 const drawCourt = (ctx) => {    
@@ -27,25 +26,9 @@ const drawCourt = (ctx) => {
     ctx.stroke();
 }
 
-const drawBall = (ctx, gameState) => {
-    const ballPos = gameState.get_ball_position();
-
+// Rect in form [x, y, width, height]
+const drawRect = (ctx, rect) => {
     ctx.beginPath();
-    ctx.fillRect(ballPos.get_x(), ballPos.get_y(), ballSize, ballSize);
-    ctx.stroke();
-}
-
-const drawPlayerPaddle = (ctx, gameState) => {
-    const playerPaddlePos = gameState.get_player_paddle_position();
-    ctx.beginPath();
-    ctx.fillRect(playerPaddlePos.get_x(), playerPaddlePos.get_y(), paddleWidth, paddleHeight);
-    ctx.stroke();
-}
-
-const drawAiPaddle = (ctx, gameState) => {
-    const aiPaddlePos = gameState.get_ai_paddle_position();
-
-    ctx.beginPath();
-    ctx.fillRect(aiPaddlePos.get_x(), aiPaddlePos.get_y(), paddleWidth, paddleHeight);
+    ctx.fillRect(rect[0], rect[1], rect[2], rect[3]);
     ctx.stroke();
 }

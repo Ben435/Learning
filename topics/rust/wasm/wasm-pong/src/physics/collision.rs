@@ -1,7 +1,4 @@
 use crate::physics::*;
-use crate::objects::*;
-use web_sys::console;
-
 
 pub fn distance_between_points(p1: Point, p2: Point) -> f32 {
     // Pythag formula
