@@ -1,6 +1,5 @@
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
-use web_sys::console;
 use crate::objects::*;
 use crate::player::*;
 use crate::physics::*;
@@ -12,6 +11,7 @@ pub struct GameState {
     pub ball: Ball,
     pub human_player: Player,
     pub ai_player: Player,
+    pause_handler: PauseHandler,
 }
 
 #[wasm_bindgen]
@@ -48,7 +48,6 @@ impl GameState {
         // Convert initial angle into x and y speeds.
         let x_speed = ball_starting_angle.sin() * ball_speed;
         let y_speed = ball_starting_angle.cos() * ball_speed;
-        console::log_1(&format!("For speed={}, angle={}, got x_s={} and y_s={}", ball_speed, ball_starting_angle, x_speed, y_speed).into());
         let ball = Ball{
             body: Rectangle::new(
                 width / 3.0, height / 3.0, 
@@ -61,12 +60,15 @@ impl GameState {
             width,
             height
         };
+
+        let pause_handler = PauseHandler::new(false);
     
         return GameState{
             human_player,
             ai_player,
             ball,
             play_space,
+            pause_handler,
         }
     }
 
@@ -104,6 +106,11 @@ impl GameState {
         }
 
         self.process_events(step_time, current_keys);
+
+        if self.pause_handler.get_paused() {
+            return;
+        }
+
         update_simple_ai(self, step_time);
         self.ball.update_position(step_time);
 
@@ -113,27 +120,43 @@ impl GameState {
     }
 
     fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {
-        let usable_key_codes = [keys::ARROW_UP, keys::ARROW_DOWN];
+        const ARROW_KEYS: [u32; 2] = [keys::ARROW_UP, keys::ARROW_DOWN];
+        for key_code in current_keys.iter() {
+            match *key_code {
+                k if ARROW_KEYS.contains(key_code) => self.process_movement_key(k, step_time),
+                k if k == keys::P => self.process_paused_key(),
+                _ => {},
+            }
+        }
+    }
+
+    fn process_paused_key(&mut self) {
+        self.pause_handler.key_toggle_pause();
+    }
+
+    fn process_movement_key(&mut self, key_code: u32, step_time: u32) {
+        if self.pause_handler.get_paused() {
+            // No moving while paused!
+            return;
+        }
+
         let upper_bound = self.play_space.height - self.human_player.paddle.body.height;
         let lower_bound = 0.0;
-
         let move_speed = 100.0;
 
-        for key_code in current_keys.iter().filter(|key_code| usable_key_codes.contains(key_code)) {
-            let base_speed = match *key_code {
-                k if k == keys::ARROW_UP => move_speed,
-                k if k == keys::ARROW_DOWN => -move_speed,
-                _ => 0.0,
-            };
+        let base_speed = match key_code {
+            k if k == keys::ARROW_UP => move_speed,
+            k if k == keys::ARROW_DOWN => -move_speed,
+            _ => 0.0,
+        };
 
-            let relative_speed = (step_time as f32 / 1000.0) * base_speed;
-            let new_y = self.human_player.paddle.body.origin.y + relative_speed;
+        let relative_speed = (step_time as f32 / 1000.0) * base_speed;
+        let new_y = self.human_player.paddle.body.origin.y + relative_speed;
 
-            self.human_player.paddle.body.origin.y = match new_y {
-                new_y if new_y > upper_bound => upper_bound,
-                new_y if new_y < lower_bound => lower_bound,
-                new_y => new_y,
-            };
-        }
+        self.human_player.paddle.body.origin.y = match new_y {
+            new_y if new_y > upper_bound => upper_bound,
+            new_y if new_y < lower_bound => lower_bound,
+            new_y => new_y,
+        };
     }
 }

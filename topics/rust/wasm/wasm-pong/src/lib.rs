@@ -6,7 +6,6 @@ mod game;
 
 use wasm_bindgen::prelude::*;
 use game::*;
-use std::f32::consts;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
