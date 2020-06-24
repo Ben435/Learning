@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --open -d",
-    "build": "webpack"
+    "build": "webpack",
+    "build:prod": "npm run clean && webpack --prod",
+    "clean": "rm -rf dist"
   },
   "author": "Ben Clare",
   "license": "ISC",
