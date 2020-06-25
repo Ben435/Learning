@@ -14,22 +14,30 @@ impl Ball {
         self.body.origin = self.body.origin.transform(self.velocity, step_time);
     }
 
-    pub fn handle_play_space_collision(&mut self, play_space: PlaySpace) {
+    pub fn handle_play_space_collision(&mut self, play_space: PlaySpace) -> bool {
+        let mut collided = false;
+
         if self.body.origin.x < 0.0 {
             self.body.origin.x = 0.0;
-            self.velocity.x_speed = self.velocity.x_speed.abs()
+            self.velocity.x_speed = self.velocity.x_speed.abs();
+            collided = true;
         } else if (self.body.origin.x + self.body.width) > play_space.width {
             self.body.origin.x = play_space.width - self.body.width;
             self.velocity.x_speed = self.velocity.x_speed.abs() * -1.0;
+            collided = true;
         }
 
         if self.body.origin.y < 0.0 {
             self.body.origin.y = 0.0;
-            self.velocity.y_speed = self.velocity.y_speed.abs()
+            self.velocity.y_speed = self.velocity.y_speed.abs();
+            collided = true;
         } else if (self.body.origin.y + self.body.height) > play_space.height {
             self.body.origin.y = play_space.height - self.body.height;
             self.velocity.y_speed = self.velocity.y_speed.abs() * -1.0;
+            collided = true;
         }
+
+        collided
     }
 
     pub fn handle_rect_collision(&mut self, rect: Rectangle) {

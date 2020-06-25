@@ -16,7 +16,8 @@ export const stepFunc = (ctx, gameState, width, height) => stepTime => {
     rects.forEach(rect => drawRect(ctx, width, height, rect));
 }
 
-const maxTail = 50;
+// Higher tail makes it more stable, but less accurate.
+const maxTail = 60;
 const runningFps = new Array(maxTail);
 let curIndex = 0;
 const drawFps = (ctx, stepTime) => {
@@ -41,7 +42,7 @@ const drawScore = (ctx, player_score, ai_score, width) => {
     // These offsets are arbitrary, just going by eye.
     // Puts the text in the centre top, and puts a box around it.
     ctx.fillText(`${player_score} : ${ai_score}`, width/2 - 12, 20);
-    ctx.rect(width/2 - 20, 0, 40, 30)
+    ctx.rect(width/2 - 20, 0, 43, 30)
     ctx.stroke();
 }
 

@@ -2,15 +2,15 @@ use js_sys::Date;
 
 const DEFAULT_DEBOUNCE_TIME_MILLIS: f64 = 200.0;
 
-pub struct PauseHandler {
+pub struct PauseManager {
     is_paused: bool,
     last_change_utc_millis: f64,
     debounce_time_millis: f64, // millis
 }
 
-impl PauseHandler {
-    pub fn new(init_paused: bool) -> PauseHandler {
-        PauseHandler{
+impl PauseManager {
+    pub fn new(init_paused: bool) -> PauseManager {
+        PauseManager{
             is_paused: init_paused,
             last_change_utc_millis: Date::now(),
             debounce_time_millis: DEFAULT_DEBOUNCE_TIME_MILLIS,

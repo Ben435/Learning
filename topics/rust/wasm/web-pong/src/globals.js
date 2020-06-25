@@ -4,7 +4,7 @@ export const targetFps = 70;
 
 export const paddleWidth = 10;
 export const paddleHeight = 50;
-export const ballSpeed = 250;
+export const ballSpeed = 200;
 export const ballSize = 7;
 export const ballInitAngle = Math.PI / 3;
 
