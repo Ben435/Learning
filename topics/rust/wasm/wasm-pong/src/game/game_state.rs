@@ -11,6 +11,7 @@ pub struct GameState {
     game_objects: GameObjects,
     pause_manager: PauseManager,
     animation_manager: AnimationManager,
+    random_manager: RandomManager,
 }
 
 pub struct GameObjects {
@@ -35,7 +36,7 @@ impl GameState {
     }
 
     fn begin_reset_animation(&mut self) {
-        self.animation_manager.trigger_animation(Box::new(ResetAnimation::new()));
+        self.animation_manager.trigger_animation(Box::new(ResetAnimation::new(&mut self.random_manager)));
     }
 
     fn process_events(&mut self, step_time: u32, current_keys: &[u32]) {
@@ -85,6 +86,7 @@ impl GameState {
         width: f32, height: f32, 
         paddle_width: f32, paddle_height: f32,
         ball_size: f32, ball_speed: f32, ball_starting_angle: f32,
+        seed: u64,
     ) -> GameState {
         let player_paddle = Paddle{
             body: Rectangle{
@@ -127,6 +129,7 @@ impl GameState {
         };
 
         let pause_manager = PauseManager::new(false);
+        let random_manager = RandomManager::new(seed);
         let animation_manager = AnimationManager::new();
     
         return GameState{
@@ -134,6 +137,7 @@ impl GameState {
             play_space,
             pause_manager,
             animation_manager,
+            random_manager,
         }
     }
 
@@ -212,7 +216,6 @@ impl GameState {
                 self.begin_reset_animation();
             }
         }
-
 
         self.game_objects.ball.handle_rect_collision(self.game_objects.human_player.paddle.body);
         self.game_objects.ball.handle_rect_collision(self.game_objects.ai_player.paddle.body);

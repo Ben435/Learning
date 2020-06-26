@@ -5,6 +5,7 @@ mod player;
 mod game;
 
 use wasm_bindgen::prelude::*;
+use js_sys::Date;
 use game::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -28,5 +29,6 @@ pub fn new_game(
         width, height, 
         paddle_width, paddle_height,
         ball_size, ball_speed, ball_init_angle,
+        Date::now().round().abs() as u64,
     );
 }
