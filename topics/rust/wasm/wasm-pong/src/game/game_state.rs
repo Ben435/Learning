@@ -202,7 +202,7 @@ impl GameState {
             return;
         }
 
-        update_simple_ai(&mut self.game_objects, step_time);
+        update_simple_ai(&self.play_space, &mut self.game_objects, step_time);
         self.game_objects.ball.update_position(step_time);
 
         let collided_with_wall = self.game_objects.ball.handle_play_space_collision(self.play_space);
