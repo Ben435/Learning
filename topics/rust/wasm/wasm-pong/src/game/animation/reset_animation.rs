@@ -1,61 +1,8 @@
 
-use wasm_bindgen::prelude::*;
-use std::collections::VecDeque;
 use std::f32::consts::PI;
-use rand::{Rng, SeedableRng};
-use rand::rngs::SmallRng;
-use web_sys::console;
-use crate::game::GameObjects;
 use crate::game::RandomManager;
-
-
-#[wasm_bindgen]
-pub struct AnimationManager {
-    currently_running_animations: VecDeque<Box<dyn Animation>>
-}
-
-pub trait Animation {
-    // tick: return true if done, false, if more frames.
-    fn tick(&mut self, step_time: u32, game_objects: &mut GameObjects);
-    fn is_done(&self) -> bool;
-    fn block_game(&self) -> bool;
-}
-
-impl AnimationManager {
-    pub fn new() -> AnimationManager {
-        AnimationManager{
-            currently_running_animations: VecDeque::new(),
-        }
-    }
-}
-
-impl AnimationManager {
-    pub fn tick(&mut self, step_time: u32, game_objects: &mut GameObjects) {
-        let mut to_process = self.currently_running_animations.len();
-
-        while to_process > 0  {
-            let mut anim = self.currently_running_animations.pop_front().unwrap();
-
-            anim.tick(step_time, game_objects);
-
-            if !anim.is_done() {
-                self.currently_running_animations.push_back(anim);
-            }
-
-            to_process -= 1;
-        }
-    }
-
-    pub fn block_game(&self) -> bool {
-        self.currently_running_animations
-            .iter()
-            .fold(false, |prev, anim| prev || anim.block_game())
-    }
-
-    pub fn trigger_animation(&mut self, animation: Box<dyn Animation>) {
-        self.currently_running_animations.push_back(animation);
-    }
-}
+use crate::game::GameObjects;
+use crate::game::animation::Animation;
 
 pub struct ResetAnimation {
     current_time_millis: u32,
@@ -98,7 +45,6 @@ impl Animation for ResetAnimation {
                 a if a < (PI/2.0) => a - (PI/4.0),
                 a => a + (PI/4.0),
             };
-            console::log_1(&format!("Got clipped random angle: {}", clipped_angle).into());
             let speed_init = 200.0;
             
             game_objects.ball.velocity.x_speed = clipped_angle.cos() * speed_init;

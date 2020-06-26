@@ -4,6 +4,7 @@ use crate::objects::*;
 use crate::player::*;
 use crate::physics::*;
 use crate::game::*;
+use crate::game::animation::*;
 
 #[wasm_bindgen]
 pub struct GameState {
