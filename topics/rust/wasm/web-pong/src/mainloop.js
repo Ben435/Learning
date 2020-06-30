@@ -5,14 +5,24 @@ export const stepFunc = (ctx, gameState, width, height) => stepTime => {
 
     const rects = gameState.get_rects();
     const score = gameState.get_score();
+    const ball_trail = gameState.get_animated_rects();
 
     ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#000000';
 
     drawFps(ctx, stepTime);
-
-    ctx.lineWidth = 1;
     drawCourt(ctx, width, height);
     drawScore(ctx, score[0], score[1], width)
+    ball_trail.forEach((rect, index) => {
+        const color = '#aaaaaa';
+        ctx.strokeStyle = color
+        ctx.fillStyle = color
+        drawRect(ctx, width, height, rect)
+    });
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#000000';
     rects.forEach(rect => drawRect(ctx, width, height, rect));
 }
 

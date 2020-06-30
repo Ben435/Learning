@@ -1,15 +1,26 @@
-use wasm_bindgen::prelude::*;
 use crate::physics::*;
 use crate::objects::*;
 
-#[wasm_bindgen]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Ball {
+    starting_origin: Point,
     pub body: Rectangle,
     pub velocity: Velocity,
 }
 
 impl Ball {
+    pub fn new(body: Rectangle, init_vel: Velocity) -> Ball {
+        Ball{
+            starting_origin: body.origin.clone(),
+            body,
+            velocity: init_vel,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.body.origin = self.starting_origin.clone();
+    }
+
     pub fn update_position(&mut self, step_time: u32) {
         self.body.origin = self.body.origin.transform(self.velocity, step_time);
     }
@@ -104,10 +115,10 @@ mod tests {
 
     #[test]
     fn update_ball_position_horizontal() {
-        let mut ball = Ball{
-            body: DEFAULT_BODY,
-            velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }    // East
-        };
+        let mut ball = Ball::new(
+            DEFAULT_BODY,
+            Velocity{ x_speed: 2.0, y_speed: 0.0 }    // East
+        );
 
         ball.update_position(1000);
 
@@ -117,10 +128,10 @@ mod tests {
 
     #[test]
     fn update_ball_position_vertical() {        
-        let mut ball = Ball{
-            body: DEFAULT_BODY,
-            velocity: Velocity{ y_speed: -2.0, x_speed: 0.0 }  // South
-        };
+        let mut ball = Ball::new(
+            DEFAULT_BODY,
+            Velocity{ y_speed: -2.0, x_speed: 0.0 }  // South
+        );
 
         ball.update_position(1000);
 
@@ -130,10 +141,10 @@ mod tests {
 
     #[test]
     fn update_ball_position_45deg() {        
-        let mut ball = Ball{
-            body: DEFAULT_BODY,
-            velocity: Velocity{ x_speed: 1.0, y_speed: 1.0 }  // South-East
-        };
+        let mut ball = Ball::new(
+            DEFAULT_BODY,
+            Velocity{ x_speed: 1.0, y_speed: 1.0 }  // South-East
+        );
 
         ball.update_position(1000);
 
@@ -143,10 +154,10 @@ mod tests {
 
     #[test]
     fn update_ball_position_relative_to_time_passed() {        
-        let mut ball = Ball{
-            body: DEFAULT_BODY,
-            velocity: Velocity{ x_speed: 2.0, y_speed: 0.0 }  // East
-        };
+        let mut ball = Ball::new(
+            DEFAULT_BODY,
+            Velocity{ x_speed: 2.0, y_speed: 0.0 }  // East
+        );
 
         ball.update_position(500);
 

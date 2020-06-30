@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use crate::game::RandomManager;
 use crate::game::GameObjects;
 use crate::game::animation::Animation;
+use crate::physics::Rectangle;
 
 pub struct ResetAnimation {
     current_time_millis: u32,
@@ -29,8 +30,7 @@ impl Animation for ResetAnimation {
         if self.stage < 1 && self.current_time_millis > (self.duration_millis / 3) {
             self.stage = 1;
 
-            game_objects.ball.body.origin.x = 250.0;
-            game_objects.ball.body.origin.y = 250.0;
+            game_objects.ball.reset();
         } else if self.stage < 2 && self.current_time_millis > ((2 * self.duration_millis) / 3) {
             self.stage = 2;
 
@@ -40,7 +40,7 @@ impl Animation for ResetAnimation {
             self.stage = 3;
 
             // Initialize ball with random angle.
-            // Make limit angle to reasonable (eg: not vertical)
+            // Make limit angle to reasonable (eg: not vertical, not impossible to block, etc)
             let clipped_angle = match self.random_num {
                 a if a < (PI/2.0) => a - (PI/4.0),
                 a => a + (PI/4.0),

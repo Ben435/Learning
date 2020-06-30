@@ -112,13 +112,13 @@ impl GameState {
         // Convert initial angle into x and y speeds.
         let x_speed = ball_starting_angle.sin() * ball_speed;
         let y_speed = ball_starting_angle.cos() * ball_speed;
-        let ball = Ball{
-            body: Rectangle::new(
-                width / 3.0, height / 3.0, 
+        let ball = Ball::new(
+            Rectangle::new(
+                width / 2.0, height / 2.0, 
                 ball_size, ball_size,
             ),
-            velocity: Velocity{ x_speed, y_speed },
-        };
+            Velocity{ x_speed, y_speed },
+        );
 
         let game_objects = GameObjects::new(
             ball, human_player, ai_player
@@ -131,7 +131,10 @@ impl GameState {
 
         let pause_manager = PauseManager::new(false);
         let random_manager = RandomManager::new(seed);
-        let animation_manager = AnimationManager::new();
+        let mut animation_manager = AnimationManager::new();
+
+        animation_manager.trigger_animation(Box::new(StartGameAnimation::new()));
+        animation_manager.trigger_animation(Box::new(BallTrailAnimation::new(&ball)));
     
         return GameState{
             game_objects,
@@ -140,6 +143,16 @@ impl GameState {
             animation_manager,
             random_manager,
         }
+    }
+
+    fn rect_to_js_array(&self, rect: &Rectangle) -> Array {
+        let rect_spec = Array::new_with_length(4);
+        rect_spec.set(0, JsValue::from(rect.origin.x));
+        rect_spec.set(1, JsValue::from(rect.origin.y));
+        rect_spec.set(2, JsValue::from(rect.width));
+        rect_spec.set(3, JsValue::from(rect.height));
+
+        return rect_spec;
     }
 
     pub fn get_rects(&self) -> Array {
@@ -155,16 +168,29 @@ impl GameState {
             .fold(
                 Array::new_with_length(rects.len() as u32), 
                 |arr, (index, rect)| {
-                    let rect_spec = Array::new_with_length(4);
-                    rect_spec.set(0, JsValue::from(rect.origin.x));
-                    rect_spec.set(1, JsValue::from(rect.origin.y));
-                    rect_spec.set(2, JsValue::from(rect.width));
-                    rect_spec.set(3, JsValue::from(rect.height));
+                    let rect_spec = self.rect_to_js_array(rect);
                     
                     arr.set(index as u32, JsValue::from(rect_spec));
 
                     return arr;
                 });
+    }
+
+    pub fn get_animated_rects(&self) -> Array {
+        let trail = self.animation_manager.get_elements();
+        return trail
+            .iter()
+            .enumerate()
+            .fold(
+                Array::new_with_length(trail.len() as u32),
+                |arr, (index, rect)| {
+                    let rect_spec = self.rect_to_js_array(rect);
+                    
+                    arr.set(index as u32, JsValue::from(rect_spec));
+
+                    return arr;
+                }
+            )
     }
 
     pub fn get_score(&self) -> Array {
