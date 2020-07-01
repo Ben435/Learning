@@ -1,4 +1,4 @@
-use rltk::{Rltk,RGB};
+use rltk::{Algorithm2D,BaseMap,Point};
 use std::cmp::{min,max};
 use crate::constants::*;
 use crate::rect::*;
@@ -14,6 +14,7 @@ pub struct Map {
     pub rooms: Vec<Rect>,
     pub width: i32,
     pub height: i32,
+    pub revealed_tiles: Vec<bool>,
 }
 
 impl Map {
@@ -44,12 +45,15 @@ impl Map {
     }
 
     pub fn new_map_rooms_and_corridors() -> Map {
+        let tile_count = WORLD_WIDTH as usize * WORLD_HEIGHT as usize;
         let mut map = Map {
-            tiles: vec![TileType::Wall; WORLD_WIDTH as usize * WORLD_HEIGHT as usize],
+            tiles: vec![TileType::Wall; tile_count],
             rooms: Vec::new(),
             width: WORLD_WIDTH,
             height: WORLD_HEIGHT,
+            revealed_tiles: vec![false; tile_count],
         };
+        
         const MAX_ROOMS : i32 = 30;
         const MIN_SIZE : i32 = 6;
         const MAX_SIZE : i32 = 10;
@@ -111,24 +115,14 @@ impl Map {
     }    
 }
 
-pub fn draw_map(map: &Map, ctx: &mut Rltk) {
-    let mut x = 0;
-    let mut y = 0;
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> Point {
+        Point::new(self.width, self.height)
+    }
+}
 
-    for tile in map.tiles.iter() {
-        match tile {
-            TileType::Floor => {
-                ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
-            }
-            TileType::Wall => {
-                ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
-            }
-        }
-
-        x += 1;
-        if x > WORLD_WIDTH - 1 {
-            x = 0;
-            y += 1;
-        }
+impl BaseMap for Map {
+    fn is_opaque(&self, idx:usize) -> bool {
+        self.tiles[idx as usize] == TileType::Wall
     }
 }
