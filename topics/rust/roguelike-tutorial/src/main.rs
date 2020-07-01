@@ -1,4 +1,4 @@
-use rltk::{Rltk,GameState,Console};
+use rltk::{Rltk,GameState};
 
 struct State{}
 impl GameState for State {
