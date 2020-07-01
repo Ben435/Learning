@@ -22,6 +22,7 @@ pub struct Player {}
 pub struct Viewshed {
     pub visible_tiles: Vec<rltk::Point>,
     pub range: i32,
+    pub dirty: bool,
 }
 
 pub fn register_components(ecs: &mut World) {

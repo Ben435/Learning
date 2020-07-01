@@ -14,7 +14,8 @@ pub struct Map {
     pub rooms: Vec<Rect>,
     pub width: i32,
     pub height: i32,
-    pub revealed_tiles: Vec<bool>,
+    pub revealed_tiles : Vec<bool>,
+    pub visible_tiles : Vec<bool>,
 }
 
 impl Map {
@@ -22,10 +23,14 @@ impl Map {
         (y as usize * self.width as usize) + x as usize
     }
 
-    /// set tile at co-ords to tile. Returns true if able to set, false if unable (eg: outside of bounds)
+    fn idx_in_bounds(&self, idx: usize) -> bool {
+        idx > 0 && idx < (self.width*self.height) as usize
+    }
+
+    /// Set tile at co-ords to tile. Returns true if successful, false if not (eg: outside of bounds)
     pub fn set_tile(&mut self, x: i32, y: i32, tile: TileType) -> bool {
         let idx = self.xy_idx(x, y);
-        if idx > 0 && idx < (self.width*self.height) as usize {
+        if self.idx_in_bounds(idx) {
             self.tiles[idx] = tile;
             return true;
         }
@@ -44,6 +49,28 @@ impl Map {
         Some(self.tiles[idx])
     }
 
+    /// Set co-ords to revealed. Returns true if successful, false if not (eg: outside of bounds)
+    pub fn set_revealed(&mut self, x: i32, y: i32, revealed: bool) -> bool {
+        let idx = self.xy_idx(x, y);
+        if self.idx_in_bounds(idx) {
+            self.revealed_tiles[idx] = revealed;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// Set co-ords to visible. Returns true if successful, false if not (eg: outside of bounds)
+    pub fn set_visible(&mut self, x: i32, y: i32, revealed: bool) -> bool {
+        let idx = self.xy_idx(x, y);
+        if self.idx_in_bounds(idx) {
+            self.visible_tiles[idx] = revealed;
+            return true;
+        }
+
+        return false;
+    }
+
     pub fn new_map_rooms_and_corridors() -> Map {
         let tile_count = WORLD_WIDTH as usize * WORLD_HEIGHT as usize;
         let mut map = Map {
@@ -52,8 +79,9 @@ impl Map {
             width: WORLD_WIDTH,
             height: WORLD_HEIGHT,
             revealed_tiles: vec![false; tile_count],
+            visible_tiles: vec![false; tile_count],
         };
-        
+
         const MAX_ROOMS : i32 = 30;
         const MIN_SIZE : i32 = 6;
         const MAX_SIZE : i32 = 10;

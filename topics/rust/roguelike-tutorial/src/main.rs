@@ -9,7 +9,7 @@ use components::*;
 use player::*;
 use visibility_system::VisibilitySystem;
 
-use rltk::{Rltk,GameState,RGB,Point};
+use rltk::{Rltk,GameState,RGB};
 use specs::prelude::*;
 
 
@@ -81,7 +81,9 @@ fn main() {
         })
         .with(Player{})
         .with(Viewshed {
-            visible_tiles: Vec::new(), range: 8,
+            visible_tiles: Vec::new(), 
+            range: 8,
+            dirty: true,
         })
         .build();
 
@@ -89,42 +91,57 @@ fn main() {
 }
 
 fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut players = ecs.write_storage::<Player>();
     let map = ecs.fetch::<Map>();
 
-    for (_player, viewshed) in (&mut players, &mut viewsheds).join() {
-        let mut x = 0;
-        let mut y = 0;
-        for tile in map.tiles.iter() {
-            let pt = Point::new(x, y);
+    let mut x = 0;
+    let mut y = 0;
 
-            // If visible, then draw
-            if viewshed.visible_tiles.contains(&pt) {
-                match tile {
-                    TileType::Floor => {
-                        ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
-                    }
-                    TileType::Wall => {
-                        ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
-                    }
+    for (idx,tile) in map.tiles.iter().enumerate() {
+        // If visible, then draw
+        if map.revealed_tiles[idx] {
+            let glyph;
+            let mut fg;
+            match tile {
+                TileType::Floor => {
+                    glyph = rltk::to_cp437('.');
+                    fg = RGB::from_f32(0.5, 0.5, 0.5);
                 }
-            } else if debug_mode {
-                match tile {
-                    TileType::Floor => {
-                        ctx.set(x, y, RGB::from_f32(0.1, 0.1, 0.1), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
-                    }
-                    TileType::Wall => {
-                        ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
-                    }
+                TileType::Wall => {
+                    glyph = rltk::to_cp437('#');
+                    fg = RGB::from_f32(0.0, 1.0, 0.0);
                 }
             }
-            
-            x += 1;
-            if x > map.width - 1 {
-                x = 0;
-                y += 1;
+            if !map.visible_tiles[idx] {
+                fg = fg.to_greyscale();
+            }
+            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+        } else if debug_mode {
+            match tile {
+                TileType::Floor => {
+                    ctx.set(x, y, RGB::from_f32(0.1, 0.1, 0.1), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+                }
+                TileType::Wall => {
+                    ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                }
             }
         }
+        
+        x += 1;
+        if x > map.width - 1 {
+            x = 0;
+            y += 1;
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn vec_test() {
+        let mut a = vec![1, 2, 3];
+        assert_eq!(a[1], 2);
+        a.clear();
+        a[2] = 6;
+        assert_eq!(a[1], 2);
     }
 }
