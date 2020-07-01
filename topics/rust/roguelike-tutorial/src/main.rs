@@ -8,10 +8,15 @@ const WORLD_HEIGHT: i32 = 50;
 
 struct State {
     ecs: World,
+    debug_mode: bool,
 }
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+        if self.debug_mode {
+            ctx.print(1, 1, format!("{:.2}fps", ctx.fps));
+        }
+        
 
         player_input(self, ctx);
         self.run_systems();
@@ -47,27 +52,6 @@ struct Renderable {
 }
 
 #[derive(Component)]
-struct LeftMover {
-    pub distance: i32,
-}
-
-struct LeftWalker {}
-
-impl<'a> System<'a> for LeftWalker {
-    type SystemData = (ReadStorage<'a, LeftMover>,
-                        WriteStorage<'a, Position>);
-
-    fn run(&mut self, (lefty, mut pos): Self::SystemData) {
-        for (lefty,pos) in (&lefty, &mut pos).join() {
-            pos.x -= lefty.distance;
-            if pos.x < 0 {
-                pos.x = WORLD_WIDTH - 1;
-            }
-        }
-    }
-}
-
-#[derive(Component)]
 struct Player {}
 
 fn main() {
@@ -79,26 +63,11 @@ fn main() {
 
     let mut gs = State {
         ecs: World::new(),
+        debug_mode: false,
     };
-    gs.ecs.register::<Position>();
-    gs.ecs.register::<Renderable>();
-    gs.ecs.register::<Player>();
-    gs.ecs.register::<LeftMover>();
+    
+    register_components(&mut gs.ecs);
 
-    for i in 0..5 {
-        gs.ecs
-            .create_entity()
-            .with(Position { x: i * 10, y: 20 })
-            .with(Renderable {
-                glyph: rltk::to_cp437('#'),
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(LeftMover {
-                distance: (i % 3) + 1,
-            })
-            .build();
-    }
     gs.ecs
         .create_entity()
         .with(Position { x: 40, y: 25 })
@@ -111,6 +80,12 @@ fn main() {
         .build();
 
     rltk::main_loop(ctx, gs).unwrap();
+}
+
+fn register_components(ecs: &mut World) {
+    ecs.register::<Position>();
+    ecs.register::<Renderable>();
+    ecs.register::<Player>();
 }
 
 fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
@@ -131,6 +106,8 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
             VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
             VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
             VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
+            VirtualKeyCode::Grave => gs.debug_mode = !gs.debug_mode,
+            VirtualKeyCode::Q => ctx.quit(),
             _ => {},
         }
     }
