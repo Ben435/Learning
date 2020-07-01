@@ -26,11 +26,19 @@ impl GameState for State {
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let map = self.ecs.fetch::<Map>();
         
-        draw_map(&self.ecs, ctx, self.debug_mode);
+        draw_map(&map, ctx, self.debug_mode);
 
         for (pos, render) in (&positions, &renderables).join() {
-            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+            let idx = map.xy_idx(pos.x, pos.y);
+
+            // Only render visible renderables.
+            if map.visible_tiles[idx] {
+                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+            } else if self.debug_mode {
+                ctx.set(pos.x, pos.y, render.fg.desaturate(), render.bg, render.glyph);
+            }
         }
 
         if self.debug_mode {
@@ -66,10 +74,10 @@ fn main() {
     register_components(&mut gs.ecs);
 
     let map = Map::new_map_rooms_and_corridors();
+
+    // Start the player in the center of a room
     let (player_x, player_y) = map.rooms[0].center();
     let player_start = Position { x: player_x, y: player_y };
-
-    gs.ecs.insert(map);
 
     gs.ecs
         .create_entity()
@@ -87,12 +95,34 @@ fn main() {
         })
         .build();
 
+    // Spawn some mobs
+    let mut rng = rltk::RandomNumberGenerator::new();
+    for room in map.rooms.iter().skip(1) {
+        let (x,y) = room.center();
+        let glyph : u16;
+        let roll = rng.roll_dice(1, 2);
+        match roll {
+            1 => { glyph = rltk::to_cp437('g') }
+            _ => { glyph = rltk::to_cp437('o') }
+        }
+
+        gs.ecs.create_entity()
+            .with(Position{ x, y })
+            .with(Renderable{
+                glyph: glyph,
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+            })
+            .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
+            .build();
+    }
+
+    gs.ecs.insert(map);
+
     rltk::main_loop(ctx, gs).unwrap();
 }
 
-fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
-    let map = ecs.fetch::<Map>();
-
+fn draw_map(map: &Map, ctx: &mut Rltk, debug_mode: bool) {
     let mut x = 0;
     let mut y = 0;
 
