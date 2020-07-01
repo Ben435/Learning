@@ -27,14 +27,18 @@ impl GameState for State {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
         
-        draw_map(&self.ecs, ctx);
+        draw_map(&self.ecs, ctx, self.debug_mode);
 
         for (pos, render) in (&positions, &renderables).join() {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
 
         if self.debug_mode {
-            ctx.print(1, 1, format!("{:.2}fps", ctx.fps));
+            ctx.print_color(
+                1, 1, 
+                RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), 
+                format!("{:.2}fps", ctx.fps)
+            );
         }
     }
 }
@@ -84,7 +88,7 @@ fn main() {
     rltk::main_loop(ctx, gs).unwrap();
 }
 
-fn draw_map(ecs: &World, ctx: &mut Rltk) {
+fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
     let mut viewsheds = ecs.write_storage::<Viewshed>();
     let mut players = ecs.write_storage::<Player>();
     let map = ecs.fetch::<Map>();
@@ -103,6 +107,15 @@ fn draw_map(ecs: &World, ctx: &mut Rltk) {
                     }
                     TileType::Wall => {
                         ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                    }
+                }
+            } else if debug_mode {
+                match tile {
+                    TileType::Floor => {
+                        ctx.set(x, y, RGB::from_f32(0.1, 0.1, 0.1), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+                    }
+                    TileType::Wall => {
+                        ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
                     }
                 }
             }
