@@ -59,7 +59,7 @@ fn main() {
 
     let player_start = Position { x: 40, y: 25 };
 
-    gs.ecs.insert(new_map(&player_start));
+    gs.ecs.insert(new_random_map(&player_start));
 
     gs.ecs
         .create_entity()
@@ -73,10 +73,4 @@ fn main() {
         .build();
 
     rltk::main_loop(ctx, gs).unwrap();
-}
-
-fn register_components(ecs: &mut World) {
-    ecs.register::<Position>();
-    ecs.register::<Renderable>();
-    ecs.register::<Player>();
 }

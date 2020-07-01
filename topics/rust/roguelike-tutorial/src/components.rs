@@ -17,3 +17,9 @@ pub struct Renderable {
 
 #[derive(Component)]
 pub struct Player {}
+
+pub fn register_components(ecs: &mut World) {
+    ecs.register::<Position>();
+    ecs.register::<Renderable>();
+    ecs.register::<Player>();
+}
