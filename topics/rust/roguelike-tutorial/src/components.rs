@@ -25,9 +25,19 @@ pub struct Viewshed {
     pub dirty: bool,
 }
 
+#[derive(Component, Debug)]
+pub struct Name {
+    pub name : String
+}
+
+#[derive(Component, Debug)]
+pub struct Monster {}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
     ecs.register::<Player>();
     ecs.register::<Viewshed>();
+    ecs.register::<Monster>();
+    ecs.register::<Name>();
 }

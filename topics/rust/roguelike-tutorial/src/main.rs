@@ -4,25 +4,35 @@ mod components;
 mod player;
 mod rect;
 mod visibility_system;
+mod monster_ai_system;
 use map::*;
 use components::*;
 use player::*;
 use visibility_system::VisibilitySystem;
+use monster_ai_system::MonsterAI;
 
-use rltk::{Rltk,GameState,RGB};
+use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum RunState { Paused, Running }
 
 pub struct State {
-    ecs: World,
-    debug_mode: bool,
+    pub ecs: World,
+    pub runstate : RunState,
+    pub debug_mode: bool,
 }
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
 
-        player_input(self, ctx);
-        self.run_systems();
+        if self.runstate == RunState::Running {
+            self.run_systems();
+
+            self.runstate = RunState::Paused;
+        } else {
+            self.runstate = player_input(self, ctx);
+        }       
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
@@ -55,6 +65,10 @@ impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
+
+        let mut monster_ai = MonsterAI{};
+        monster_ai.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -68,6 +82,7 @@ fn main() {
 
     let mut gs = State {
         ecs: World::new(),
+        runstate: RunState::Running,
         debug_mode: false,
     };
     
@@ -88,6 +103,7 @@ fn main() {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player{})
+        .with(Name{ name: "Player".to_string() })
         .with(Viewshed {
             visible_tiles: Vec::new(), 
             range: 8,
@@ -95,15 +111,24 @@ fn main() {
         })
         .build();
 
+    gs.ecs.insert(Point::new(player_x, player_y));
+
     // Spawn some mobs
     let mut rng = rltk::RandomNumberGenerator::new();
-    for room in map.rooms.iter().skip(1) {
+    for (idx,room) in map.rooms.iter().skip(1).enumerate() {
         let (x,y) = room.center();
-        let glyph : u16;
+        let glyph: u16;
+        let name: String;
         let roll = rng.roll_dice(1, 2);
         match roll {
-            1 => { glyph = rltk::to_cp437('g') }
-            _ => { glyph = rltk::to_cp437('o') }
+            1 => { 
+                glyph = rltk::to_cp437('g');
+                name = "Goblin".to_string();
+            }
+            _ => { 
+                glyph = rltk::to_cp437('o');
+                name = "Orc".to_string();
+            }
         }
 
         gs.ecs.create_entity()
@@ -113,7 +138,9 @@ fn main() {
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
+            .with(Name{ name: format!("{} #{}", name, idx) })
             .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
+            .with(Monster {})
             .build();
     }
 
