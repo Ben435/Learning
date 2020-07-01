@@ -23,6 +23,9 @@ impl GameState for State {
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let map = self.ecs.fetch::<Vec<TileType>>();
+        
+        draw_map(&map, ctx);
 
         for (pos, render) in (&positions, &renderables).join() {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
@@ -52,6 +55,12 @@ struct Renderable {
 #[derive(Component)]
 struct Player {}
 
+#[derive(PartialEq, Copy, Clone)]
+enum TileType {
+    Wall,
+    Floor,
+}
+
 fn main() {
     use rltk::RltkBuilder;
     let ctx = RltkBuilder::simple80x50()
@@ -66,9 +75,13 @@ fn main() {
     
     register_components(&mut gs.ecs);
 
+    let player_start = Position { x: 40, y: 25 };
+
+    gs.ecs.insert(new_map(&player_start));
+
     gs.ecs
         .create_entity()
-        .with(Position { x: 40, y: 25 })
+        .with(player_start)
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
@@ -107,6 +120,61 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
             VirtualKeyCode::Grave => gs.debug_mode = !gs.debug_mode,
             VirtualKeyCode::Q => ctx.quit(),
             _ => {},
+        }
+    }
+}
+
+fn xy_idx(x: i32, y: i32) -> usize {
+    (y as usize * WORLD_WIDTH as usize) + x as usize
+}
+
+fn new_map(player_start: &Position) -> Vec<TileType> {
+    let mut map = vec![TileType::Floor; WORLD_WIDTH as usize * WORLD_HEIGHT as usize];
+
+    // Map boundaries
+    for x in 0..WORLD_WIDTH {
+        map[xy_idx(x, 0)] = TileType::Wall;
+        map[xy_idx(x, WORLD_HEIGHT - 1)] = TileType::Wall;
+    };
+    for y in 0..WORLD_HEIGHT {
+        map[xy_idx(0, y)] = TileType::Wall;
+        map[xy_idx(WORLD_WIDTH - 1, y)] = TileType::Wall;
+    };
+
+    // Random walls
+    let mut rng = rltk::RandomNumberGenerator::new();
+    let player_start_idx = xy_idx(player_start.x, player_start.y);
+    for _ in 0..400 {
+        let x = rng.roll_dice(1, WORLD_WIDTH - 1);
+        let y = rng.roll_dice(1, WORLD_HEIGHT - 1);
+
+        let idx = xy_idx(x, y);
+        if idx != player_start_idx {
+            map[idx] = TileType::Wall;
+        }
+    };
+
+    map
+}
+
+fn draw_map(map: &[TileType], ctx: &mut Rltk) {
+    let mut x = 0;
+    let mut y = 0;
+
+    for tile in map.iter() {
+        match tile {
+            TileType::Floor => {
+                ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+            }
+            TileType::Wall => {
+                ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+            }
+        }
+
+        x += 1;
+        if x > WORLD_WIDTH - 1 {
+            x = 0;
+            y += 1;
         }
     }
 }
