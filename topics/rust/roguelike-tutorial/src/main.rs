@@ -2,6 +2,7 @@ mod map;
 mod constants;
 mod components;
 mod player;
+mod rect;
 use map::*;
 use components::*;
 use player::*;
@@ -57,9 +58,11 @@ fn main() {
     
     register_components(&mut gs.ecs);
 
-    let player_start = Position { x: 40, y: 25 };
+    let (rooms, map) = new_map_rooms_and_corridors();
+    gs.ecs.insert(map);
 
-    gs.ecs.insert(new_random_map(&player_start));
+    let (player_x, player_y) = rooms[0].center();
+    let player_start = Position { x: player_x, y: player_y };
 
     gs.ecs
         .create_entity()
