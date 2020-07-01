@@ -3,18 +3,22 @@ use specs::prelude::*;
 use std::cmp::{min,max};
 use crate::State;
 use crate::components::{Position,Player};
-use crate::map::{TileType,xy_idx};
+use crate::map::{TileType,Map};
 use crate::constants::*;
 
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<Player>();
-    let map = ecs.fetch::<Vec<TileType>>();
+    let map = ecs.fetch::<Map>();
 
     for (_player, pos) in (&mut players, &mut positions).join() {
-        let destination_idx = xy_idx(pos.x + delta_x, pos.y + delta_y);
+        let destination_map_tile = map.get_tile(pos.x + delta_x, pos.y + delta_y);
 
-        if map[destination_idx] != TileType::Wall {
+        let valid_destination = destination_map_tile
+            .map(|tile| tile != TileType::Wall)
+            .unwrap_or(false);
+
+        if valid_destination {
             pos.x = min(WORLD_WIDTH-1, max(0, pos.x + delta_x));
             pos.y = min(WORLD_HEIGHT-1, max(0, pos.y + delta_y));
         }
