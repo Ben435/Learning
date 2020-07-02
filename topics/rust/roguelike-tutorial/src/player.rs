@@ -42,7 +42,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
             VirtualKeyCode::Grave => gs.debug_mode = !gs.debug_mode,
             VirtualKeyCode::Q => ctx.quit(),
-            _ => {},
+            _ => { return RunState::Paused },
         }
     }
 
