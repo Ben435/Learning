@@ -5,11 +5,17 @@ mod player;
 mod rect;
 mod visibility_system;
 mod monster_ai_system;
+mod map_indexing_system;
+mod melee_combat_system;
+mod damage_system;
 use map::*;
 use components::*;
 use player::*;
 use visibility_system::VisibilitySystem;
 use monster_ai_system::MonsterAI;
+use map_indexing_system::MapIndexingSystem;
+use melee_combat_system::MeleeCombatSystem;
+use damage_system::{DamageSystem,delete_the_dead};
 
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
@@ -28,6 +34,7 @@ impl GameState for State {
 
         if self.runstate == RunState::Running {
             self.run_systems();
+            delete_the_dead(&mut self.ecs);
 
             self.runstate = RunState::Paused;
         } else {
@@ -69,6 +76,15 @@ impl State {
         let mut monster_ai = MonsterAI{};
         monster_ai.run_now(&self.ecs);
 
+        let mut map_indexing = MapIndexingSystem{};
+        map_indexing.run_now(&self.ecs);
+
+        let mut melee_combat_system = MeleeCombatSystem{};
+        melee_combat_system.run_now(&self.ecs);
+
+        let mut damage_system = DamageSystem{};
+        damage_system.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -94,7 +110,7 @@ fn main() {
     let (player_x, player_y) = map.rooms[0].center();
     let player_start = Position { x: player_x, y: player_y };
 
-    gs.ecs
+    let player_entity = gs.ecs
         .create_entity()
         .with(player_start)
         .with(Renderable {
@@ -109,8 +125,16 @@ fn main() {
             range: 8,
             dirty: true,
         })
+        .with(BlocksTile {})
+        .with(CombatStats {
+            max_hp: 30,
+            hp: 30,
+            defense: 2,
+            power: 5
+        })
         .build();
 
+    gs.ecs.insert(player_entity);
     gs.ecs.insert(Point::new(player_x, player_y));
 
     // Spawn some mobs
@@ -141,6 +165,13 @@ fn main() {
             .with(Name{ name: format!("{} #{}", name, idx) })
             .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
             .with(Monster {})
+            .with(BlocksTile {})
+            .with(CombatStats {
+                max_hp: 16,
+                hp: 16,
+                defense: 1,
+                power: 4
+            })
             .build();
     }
 
@@ -188,17 +219,5 @@ fn draw_map(map: &Map, ctx: &mut Rltk, debug_mode: bool) {
             x = 0;
             y += 1;
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn vec_test() {
-        let mut a = vec![1, 2, 3];
-        assert_eq!(a[1], 2);
-        a.clear();
-        a[2] = 6;
-        assert_eq!(a[1], 2);
     }
 }

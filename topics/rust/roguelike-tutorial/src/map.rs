@@ -1,4 +1,5 @@
-use rltk::{Algorithm2D,BaseMap,Point,SmallVec};
+use rltk::{Algorithm2D,BaseMap,Point,SmallVec,};
+use specs::Entity;
 use std::cmp::{min,max};
 use crate::constants::*;
 use crate::rect::*;
@@ -16,6 +17,8 @@ pub struct Map {
     pub height: i32,
     pub revealed_tiles : Vec<bool>,
     pub visible_tiles : Vec<bool>,
+    pub blocked_tiles: Vec<bool>,
+    pub tile_content: Vec<Vec<Entity>>,
 }
 
 impl Map {
@@ -69,6 +72,27 @@ impl Map {
         return false;
     }
 
+    pub fn is_blocked(&self, x:i32, y:i32) -> bool {
+        let idx = self.xy_idx(x, y);
+        if self.idx_in_bounds(idx) {
+            return self.blocked_tiles[idx];
+        }
+
+        return true;
+    }
+
+    pub fn populate_blocked(&mut self) {
+        for (i,tile) in self.tiles.iter().enumerate() {
+            self.blocked_tiles[i] = *tile == TileType::Wall;
+        }
+    }
+
+    pub fn clear_content_index(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
+    }
+
     pub fn new_map_rooms_and_corridors() -> Map {
         let tile_count = WORLD_WIDTH as usize * WORLD_HEIGHT as usize;
         let mut map = Map {
@@ -78,6 +102,8 @@ impl Map {
             height: WORLD_HEIGHT,
             revealed_tiles: vec![false; tile_count],
             visible_tiles: vec![false; tile_count],
+            blocked_tiles: vec![false; tile_count],
+            tile_content: vec![Vec::new(); tile_count],
         };
 
         const MAX_ROOMS : i32 = 30;
@@ -141,10 +167,7 @@ impl Map {
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        let opt = self.get_tile(x, y);
-        let mapped = opt.map(|tile| tile != TileType::Wall);
-        
-        return mapped.unwrap_or(false);
+        !self.is_blocked(x, y)
     }
 }
 
