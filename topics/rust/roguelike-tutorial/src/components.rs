@@ -85,6 +85,11 @@ pub struct WantsToPickupItem {
     pub item : Entity
 }
 
+#[derive(Component, Debug)]
+pub struct WantsToDrinkPotion {
+    pub potion : Entity
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -100,4 +105,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Potion>();
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
+    ecs.register::<WantsToDrinkPotion>();
 }
