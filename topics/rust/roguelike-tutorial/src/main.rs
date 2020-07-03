@@ -202,6 +202,7 @@ fn main() {
     }
 
     gs.ecs.insert(GameLog::new(&["Welcome to Rusty Roguelike".to_string()]));
+    gs.ecs.insert(rng);
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);

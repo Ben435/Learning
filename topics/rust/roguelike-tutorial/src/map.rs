@@ -75,7 +75,7 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors() -> Map {
+    pub fn new_map_rooms_and_corridors(rng: &mut rltk::RandomNumberGenerator) -> Map {
         let tile_count = WORLD_WIDTH as usize * WORLD_HEIGHT as usize;
         let mut map = Map {
             tiles: vec![TileType::Wall; tile_count],
@@ -91,8 +91,6 @@ impl Map {
         const MAX_ROOMS : i32 = 30;
         const MIN_SIZE : i32 = 6;
         const MAX_SIZE : i32 = 10;
-    
-        let mut rng = rltk::RandomNumberGenerator::new();
 
         for _ in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
