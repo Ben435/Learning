@@ -1,5 +1,5 @@
-use rltk::{Algorithm2D,BaseMap,Point,SmallVec,RGB,Rltk};
-use specs::{Entity,World};
+use rltk::{Algorithm2D,BaseMap,Point,SmallVec,RGB,Rltk,RandomNumberGenerator};
+use specs::prelude::*;
 use std::cmp::{min,max};
 use crate::constants::*;
 use crate::rect::*;
@@ -75,13 +75,15 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors(rng: &mut rltk::RandomNumberGenerator) -> Map {
-        let tile_count = WORLD_WIDTH as usize * WORLD_HEIGHT as usize;
+    pub fn new_map_rooms_and_corridors(ecs: &mut World) -> Map {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+
+        let tile_count = WORLD_WIDTH * WORLD_HEIGHT;
         let mut map = Map {
             tiles: vec![TileType::Wall; tile_count],
             rooms: Vec::new(),
-            width: WORLD_WIDTH,
-            height: WORLD_HEIGHT,
+            width: WORLD_WIDTH as i32,
+            height: WORLD_HEIGHT as i32,
             revealed_tiles: vec![false; tile_count],
             visible_tiles: vec![false; tile_count],
             blocked_tiles: vec![false; tile_count],
@@ -95,8 +97,8 @@ impl Map {
         for _ in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
             let h = rng.range(MIN_SIZE, MAX_SIZE);
-            let x = rng.roll_dice(1, WORLD_WIDTH - w - 1) - 1;
-            let y = rng.roll_dice(1, WORLD_HEIGHT - h - 1) - 1;
+            let x = rng.roll_dice(1, WORLD_WIDTH as i32 - w - 1) - 1;
+            let y = rng.roll_dice(1, WORLD_HEIGHT as i32 - h - 1) - 1;
             let new_room = Rect::new(x, y, w, h);
     
             let ok = map.rooms

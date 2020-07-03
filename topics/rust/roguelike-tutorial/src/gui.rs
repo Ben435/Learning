@@ -61,7 +61,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             .max()
             .unwrap() as i32 + 3;
 
-        if mouse_pos.0 > WORLD_WIDTH / 2 {
+        if mouse_pos.0 > WORLD_WIDTH as i32 / 2 {
             let arrow_pos = Point::new(mouse_pos.0 - 2, mouse_pos.1);
             let left_x = mouse_pos.0 - width;
             let mut y = mouse_pos.1;

@@ -1,2 +1,5 @@
-pub const WORLD_WIDTH: i32 = 80;
-pub const WORLD_HEIGHT: i32 = 43;
+pub const WORLD_WIDTH: usize = 80;
+pub const WORLD_HEIGHT: usize = 43;
+
+pub const MAX_MONSTERS : i32 = 4;
+pub const MAX_ITEMS : i32 = 2;
