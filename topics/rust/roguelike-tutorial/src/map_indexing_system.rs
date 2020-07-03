@@ -24,7 +24,6 @@ impl<'a> System<'a> for MapIndexingSystem {
             }
 
             map.tile_content[idx].push(entity);
-            
         }
     }
 }

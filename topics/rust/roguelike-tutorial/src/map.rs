@@ -1,5 +1,5 @@
-use rltk::{Algorithm2D,BaseMap,Point,SmallVec,};
-use specs::Entity;
+use rltk::{Algorithm2D,BaseMap,Point,SmallVec,RGB,Rltk};
+use specs::{Entity,World};
 use std::cmp::{min,max};
 use crate::constants::*;
 use crate::rect::*;
@@ -41,15 +41,6 @@ impl Map {
         return false;
     }
 
-    pub fn get_tile(&self, x: i32, y: i32) -> Option<TileType> {
-        if x < 1 || x > self.width-1 || y < 1 || y > self.height-1 { 
-            return None; 
-        }
-        let idx = self.xy_idx(x, y);
-
-        Some(self.tiles[idx])
-    }
-
     /// Set co-ords to revealed. Returns true if successful, false if not (eg: outside of bounds)
     pub fn set_revealed(&mut self, x: i32, y: i32, revealed: bool) -> bool {
         let idx = self.xy_idx(x, y);
@@ -70,15 +61,6 @@ impl Map {
         }
 
         return false;
-    }
-
-    pub fn is_blocked(&self, x:i32, y:i32) -> bool {
-        let idx = self.xy_idx(x, y);
-        if self.idx_in_bounds(idx) {
-            return self.blocked_tiles[idx];
-        }
-
-        return true;
     }
 
     pub fn populate_blocked(&mut self) {
@@ -111,6 +93,7 @@ impl Map {
         const MAX_SIZE : i32 = 10;
     
         let mut rng = rltk::RandomNumberGenerator::new();
+
         for _ in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
             let h = rng.range(MIN_SIZE, MAX_SIZE);
@@ -167,7 +150,12 @@ impl Map {
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        !self.is_blocked(x, y)
+        if x < 1 || x > self.width-1 || y < 1 || y > self.height-1 { 
+            return false;
+        }
+        let idx = self.xy_idx(x, y);
+
+        !self.blocked_tiles[idx]
     }
 }
 
@@ -178,49 +166,8 @@ impl Algorithm2D for Map {
 }
 
 impl BaseMap for Map {
-    fn is_opaque(&self, idx:usize) -> bool {
+    fn is_opaque(&self, idx: usize) -> bool {
         self.tiles[idx as usize] == TileType::Wall
-    }
-
-    fn get_available_exits(&self, idx: usize) -> SmallVec<[(usize, f32); 10]> {
-        let mut exits: Vec<(usize, f32)> = Vec::new();
-        let x = idx as i32 % self.width;
-        let y = idx as i32 / self.width;
-        let w = self.width as usize;
-
-        // Cardinal directions
-        // console::log(format!("Check ({},{})={}", x-1, y, self.is_exit_valid(x-1, y)));
-        if self.is_exit_valid(x-1, y) { 
-            exits.push((idx-1, 1.0)) 
-        };
-        // console::log(format!("Check ({},{})={}", x+1, y, self.is_exit_valid(x+1, y)));
-        if self.is_exit_valid(x+1, y) {
-            exits.push((idx+1, 1.0)) 
-        };
-        // console::log(format!("Check ({},{})={}", x, y-1, self.is_exit_valid(x, y-1)));
-        if self.is_exit_valid(x, y-1) { 
-            exits.push((idx-w, 1.0)) 
-        };
-        // console::log(format!("Check ({},{})={}", x, y+1, self.is_exit_valid(x, y+1)));
-        if self.is_exit_valid(x, y+1) { 
-            exits.push((idx+w, 1.0)) 
-        };
-
-        // Diagonals
-        if self.is_exit_valid(x-1, y-1) { 
-            exits.push(((idx-w)-1, 1.45)); 
-        }
-        if self.is_exit_valid(x+1, y-1) { 
-            exits.push(((idx-w)+1, 1.45)); 
-        }
-        if self.is_exit_valid(x-1, y+1) { 
-            exits.push(((idx+w)-1, 1.45)); 
-        }
-        if self.is_exit_valid(x+1, y+1) { 
-            exits.push(((idx+w)+1, 1.45)); 
-        }
-
-        SmallVec::from_vec(exits)
     }
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
@@ -229,5 +176,70 @@ impl BaseMap for Map {
         let p2 = Point::new(idx2 % w, idx2 / w);
 
         rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+    }
+
+    fn get_available_exits(&self, idx: usize) -> SmallVec<[(usize, f32); 10]> {
+        let mut exits = rltk::SmallVec::new();
+        let x = idx as i32 % self.width;
+        let y = idx as i32 / self.width;
+        let w = self.width as usize;
+
+        // Cardinal directions
+        if self.is_exit_valid(x-1, y) { exits.push((idx-1, 1.0)) };
+        if self.is_exit_valid(x+1, y) { exits.push((idx+1, 1.0)) };
+        if self.is_exit_valid(x, y-1) { exits.push((idx-w, 1.0)) };
+        if self.is_exit_valid(x, y+1) { exits.push((idx+w, 1.0)) };
+
+        // Diagonals
+        if self.is_exit_valid(x-1, y-1) { exits.push(((idx-w)-1, 1.45)); }
+        if self.is_exit_valid(x+1, y-1) { exits.push(((idx-w)+1, 1.45)); }
+        if self.is_exit_valid(x-1, y+1) { exits.push(((idx+w)-1, 1.45)); }
+        if self.is_exit_valid(x+1, y+1) { exits.push(((idx+w)+1, 1.45)); }
+
+        exits
+    }
+}
+
+pub fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
+    let map = ecs.fetch::<Map>();
+
+    let mut x = 0;
+    let mut y = 0;
+
+    for (idx,tile) in map.tiles.iter().enumerate() {
+        // If visible, then draw
+        if map.revealed_tiles[idx] {
+            let glyph;
+            let mut fg;
+            match tile {
+                TileType::Floor => {
+                    glyph = rltk::to_cp437('.');
+                    fg = RGB::from_f32(0.5, 0.5, 0.5);
+                }
+                TileType::Wall => {
+                    glyph = rltk::to_cp437('#');
+                    fg = RGB::from_f32(0.0, 1.0, 0.0);
+                }
+            }
+            if !map.visible_tiles[idx] {
+                fg = fg.to_greyscale();
+            }
+            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+        } else if debug_mode {
+            match tile {
+                TileType::Floor => {
+                    ctx.set(x, y, RGB::from_f32(0.1, 0.1, 0.1), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+                }
+                TileType::Wall => {
+                    ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                }
+            }
+        }
+        
+        x += 1;
+        if x > map.width - 1 {
+            x = 0;
+            y += 1;
+        }
     }
 }

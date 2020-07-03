@@ -20,32 +20,56 @@ use damage_system::{DamageSystem,delete_the_dead};
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum RunState { Paused, Running }
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum RunState { 
+    AwaitingInput, 
+    PreRun, 
+    PlayerTurn, 
+    MonsterTurn,
+}
 
 pub struct State {
     pub ecs: World,
-    pub runstate : RunState,
     pub debug_mode: bool,
 }
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
 
-        if self.runstate == RunState::Running {
-            self.run_systems();
-            delete_the_dead(&mut self.ecs);
+        let mut newrunstate;
+        {
+            let runstate = self.ecs.fetch::<RunState>();
+            newrunstate = *runstate;
+        }
 
-            self.runstate = RunState::Paused;
-        } else {
-            self.runstate = player_input(self, ctx);
-        }       
+        match newrunstate {
+            RunState::PreRun => {
+                self.run_systems();
+                newrunstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                newrunstate = player_input(self, ctx);
+            }
+            RunState::PlayerTurn => {
+                self.run_systems();
+                newrunstate = RunState::MonsterTurn;
+            }
+            RunState::MonsterTurn => {
+                self.run_systems();
+                newrunstate = RunState::AwaitingInput;
+            }
+        }
+        {
+            let mut runwriter = self.ecs.write_resource::<RunState>();
+            *runwriter = newrunstate;
+        }
+        delete_the_dead(&mut self.ecs);
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
         let map = self.ecs.fetch::<Map>();
         
-        draw_map(&map, ctx, self.debug_mode);
+        draw_map(&self.ecs, ctx, self.debug_mode);
 
         for (pos, render) in (&positions, &renderables).join() {
             let idx = map.xy_idx(pos.x, pos.y);
@@ -98,7 +122,6 @@ fn main() {
 
     let mut gs = State {
         ecs: World::new(),
-        runstate: RunState::Running,
         debug_mode: false,
     };
     
@@ -125,7 +148,6 @@ fn main() {
             range: 8,
             dirty: true,
         })
-        .with(BlocksTile {})
         .with(CombatStats {
             max_hp: 30,
             hp: 30,
@@ -133,9 +155,6 @@ fn main() {
             power: 5
         })
         .build();
-
-    gs.ecs.insert(player_entity);
-    gs.ecs.insert(Point::new(player_x, player_y));
 
     // Spawn some mobs
     let mut rng = rltk::RandomNumberGenerator::new();
@@ -176,48 +195,9 @@ fn main() {
     }
 
     gs.ecs.insert(map);
+    gs.ecs.insert(Point::new(player_x, player_y));
+    gs.ecs.insert(player_entity);
+    gs.ecs.insert(RunState::PreRun);
 
     rltk::main_loop(ctx, gs).unwrap();
-}
-
-fn draw_map(map: &Map, ctx: &mut Rltk, debug_mode: bool) {
-    let mut x = 0;
-    let mut y = 0;
-
-    for (idx,tile) in map.tiles.iter().enumerate() {
-        // If visible, then draw
-        if map.revealed_tiles[idx] {
-            let glyph;
-            let mut fg;
-            match tile {
-                TileType::Floor => {
-                    glyph = rltk::to_cp437('.');
-                    fg = RGB::from_f32(0.5, 0.5, 0.5);
-                }
-                TileType::Wall => {
-                    glyph = rltk::to_cp437('#');
-                    fg = RGB::from_f32(0.0, 1.0, 0.0);
-                }
-            }
-            if !map.visible_tiles[idx] {
-                fg = fg.to_greyscale();
-            }
-            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
-        } else if debug_mode {
-            match tile {
-                TileType::Floor => {
-                    ctx.set(x, y, RGB::from_f32(0.1, 0.1, 0.1), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
-                }
-                TileType::Wall => {
-                    ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
-                }
-            }
-        }
-        
-        x += 1;
-        if x > map.width - 1 {
-            x = 0;
-            y += 1;
-        }
-    }
 }
