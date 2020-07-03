@@ -8,6 +8,9 @@ mod monster_ai_system;
 mod map_indexing_system;
 mod melee_combat_system;
 mod damage_system;
+mod gui;
+mod gamelog;
+
 use map::*;
 use components::*;
 use player::*;
@@ -16,6 +19,8 @@ use monster_ai_system::MonsterAI;
 use map_indexing_system::MapIndexingSystem;
 use melee_combat_system::MeleeCombatSystem;
 use damage_system::{DamageSystem,delete_the_dead};
+use gui::draw_ui;
+use gamelog::GameLog;
 
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
@@ -81,6 +86,8 @@ impl GameState for State {
                 ctx.set(pos.x, pos.y, render.fg.desaturate(), render.bg, render.glyph);
             }
         }
+
+        draw_ui(&self.ecs, ctx);
 
         if self.debug_mode {
             ctx.print_color(
@@ -194,6 +201,7 @@ fn main() {
             .build();
     }
 
+    gs.ecs.insert(GameLog::new(&["Welcome to Rusty Roguelike".to_string()]));
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);

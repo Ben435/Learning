@@ -50,7 +50,10 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
             VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
             VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
-            VirtualKeyCode::Grave => gs.debug_mode = !gs.debug_mode,
+            VirtualKeyCode::Grave => {
+                gs.debug_mode = !gs.debug_mode;
+                return RunState::AwaitingInput;
+            }
             VirtualKeyCode::Space => {},    // Pass turn
             VirtualKeyCode::Q => ctx.quit(),
             _ => { return RunState::AwaitingInput },
