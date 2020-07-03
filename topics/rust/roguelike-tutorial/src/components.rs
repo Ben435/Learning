@@ -13,6 +13,7 @@ pub struct Renderable {
     pub glyph: u16,
     pub fg: RGB,
     pub bg: RGB,
+    pub render_order: i32
 }
 
 #[derive(Component)]
@@ -90,6 +91,11 @@ pub struct WantsToDrinkPotion {
     pub potion : Entity
 }
 
+#[derive(Component, Debug, Clone)]
+pub struct WantsToDropItem {
+    pub item : Entity
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -106,4 +112,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
     ecs.register::<WantsToDrinkPotion>();
+    ecs.register::<WantsToDropItem>();
 }
