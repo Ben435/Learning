@@ -11,6 +11,7 @@ mod damage_system;
 mod gui;
 mod gamelog;
 mod spawner;
+mod item_collection_system;
 
 use map::*;
 use components::*;
@@ -22,6 +23,7 @@ use melee_combat_system::MeleeCombatSystem;
 use damage_system::{DamageSystem,delete_the_dead};
 use gui::draw_ui;
 use gamelog::GameLog;
+use item_collection_system::ItemCollectionSystem;
 
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
@@ -32,6 +34,7 @@ pub enum RunState {
     PreRun, 
     PlayerTurn, 
     MonsterTurn,
+    ShowInventory,
 }
 
 pub struct State {
@@ -41,6 +44,8 @@ pub struct State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+
+        draw_map(&self.ecs, ctx, self.debug_mode);
 
         let mut newrunstate;
         {
@@ -64,6 +69,21 @@ impl GameState for State {
                 self.run_systems();
                 newrunstate = RunState::AwaitingInput;
             }
+            RunState::ShowInventory => {
+                let result = gui::show_inventory(self, ctx);
+                match result.0 {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {},
+                    gui::ItemMenuResult::Selected => {
+                        let item_entity = result.1.unwrap();
+                        let names = self.ecs.read_storage::<Name>();
+                        let mut gamelog = self.ecs.fetch_mut::<GameLog>();
+                        gamelog.info(format!("Using {}", names.get(item_entity).unwrap().name));
+
+                        newrunstate = RunState::AwaitingInput;
+                    }
+                }
+            }
         }
         {
             let mut runwriter = self.ecs.write_resource::<RunState>();
@@ -74,8 +94,6 @@ impl GameState for State {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
         let map = self.ecs.fetch::<Map>();
-        
-        draw_map(&self.ecs, ctx, self.debug_mode);
 
         for (pos, render) in (&positions, &renderables).join() {
             let idx = map.xy_idx(pos.x, pos.y);
@@ -116,6 +134,9 @@ impl State {
 
         let mut damage_system = DamageSystem{};
         damage_system.run_now(&self.ecs);
+
+        let mut pickup = ItemCollectionSystem{};
+        pickup.run_now(&self.ecs);
 
         self.ecs.maintain();
     }

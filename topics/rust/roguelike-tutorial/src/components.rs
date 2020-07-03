@@ -65,6 +65,26 @@ impl SufferDamage {
     }
 }
 
+#[derive(Component, Debug)]
+pub struct Item {}
+
+#[derive(Component, Debug)]
+pub struct Potion {
+    pub heal_amount : i32
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct InBackpack {
+    pub owner : Entity
+}
+
+
+#[derive(Component, Debug, Clone)]
+pub struct WantsToPickupItem {
+    pub collected_by : Entity,
+    pub item : Entity
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -76,4 +96,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<CombatStats>();
     ecs.register::<WantsToMelee>();
     ecs.register::<SufferDamage>();
+    ecs.register::<Item>();
+    ecs.register::<Potion>();
+    ecs.register::<InBackpack>();
+    ecs.register::<WantsToPickupItem>();
 }
