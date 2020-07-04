@@ -45,10 +45,25 @@ impl<'a> System<'a> for ItemUseSystem {
                         WriteStorage<'a, SufferDamage>,
                         ReadExpect<'a, Map>,
                         ReadStorage<'a, AreaOfEffect>,
+                        WriteStorage<'a, Confusion>,
                       );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_use, names, mut combat_stats, consumables, healing_items, inflicts_damage, mut suffer_damage, map, aoe) = data;
+        let (
+            player_entity, 
+            mut gamelog, 
+            entities, 
+            mut wants_use, 
+            names, 
+            mut combat_stats, 
+            consumables, 
+            healing_items, 
+            inflicts_damage, 
+            mut suffer_damage, 
+            map, 
+            aoe,
+            mut confused
+        ) = data;
 
         for (entity, useitem) in (&entities, &wants_use).join() {
             let mut used_item = false;
@@ -113,10 +128,32 @@ impl<'a> System<'a> for ItemUseSystem {
                             let item_name = names.get(useitem.item).unwrap();
                             gamelog.info(format!("You use {} on {}, inflicting {} hp.", item_name.name, mob_name.name, damage.damage));
                         }
-                        
+
                         used_item = true;
                     }
                 }
+            }
+
+            let mut add_confusion = Vec::new();
+            {
+                let causes_confusion = confused.get(useitem.item);
+                match causes_confusion {
+                    None => {}
+                    Some(confusion) => {
+                        used_item = false;
+                        for mob in targets.iter() {
+                            add_confusion.push((*mob, confusion.turns));
+                            if entity == *player_entity {
+                                let mob_name = names.get(*mob).unwrap();
+                                let item_name = names.get(useitem.item).unwrap();
+                                gamelog.info(format!("You use {} on {}, confusing them.", item_name.name, mob_name.name));
+                            }
+                        }
+                    }
+                }
+            }
+            for mob in add_confusion.iter() {
+                confused.insert(mob.0, Confusion{ turns: mob.1 }).expect("Unable to insert status");
             }
 
             if used_item {

@@ -114,6 +114,11 @@ pub struct InflictsDamage {
     pub damage : i32
 }
 
+#[derive(Component, Debug)]
+pub struct Confusion {
+    pub turns : i32
+}
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -135,4 +140,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Ranged>();
     ecs.register::<AreaOfEffect>();
     ecs.register::<InflictsDamage>();
+    ecs.register::<Confusion>();
 }
