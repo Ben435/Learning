@@ -1,3 +1,5 @@
+extern crate serde;
+
 mod map;
 mod constants;
 mod components;
@@ -24,14 +26,17 @@ use damage_system::{DamageSystem,delete_the_dead};
 use gamelog::GameLog;
 use inventory_system::*;
 
+use serde_json;
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
+use specs::saveload::{SimpleMarkerAllocator};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
     MainMenu {
         menu_selection: gui::MainMenuSelection
     },
+    SaveGame,
     AwaitingInput,
     PreRun,
     PlayerTurn,
@@ -59,7 +64,7 @@ impl GameState for State {
         ctx.cls();
 
         match newrunstate {
-            RunState::MainMenu{ menu_selection } => {
+            RunState::MainMenu{ .. } => {
                 let result = gui::main_menu(self, ctx);
                 match result {
                     gui::MainMenuResult::NoSelection{ selected } => newrunstate = RunState::MainMenu{ menu_selection: selected },
@@ -71,6 +76,12 @@ impl GameState for State {
                         }
                     }
                 }
+            }
+            RunState::SaveGame => {
+                let data = serde_json::to_string(&*self.ecs.fetch::<Map>()).unwrap();
+                println!("MapSaveData = {}", data);
+
+                newrunstate = RunState::MainMenu{ menu_selection: gui::MainMenuSelection::LoadGame };
             }
             _ => {
                 draw_map(&self.ecs, ctx, self.debug_mode);
@@ -242,6 +253,7 @@ fn main() {
         spawner::spawn_room(&mut gs.ecs, room);
     }
     
+    gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
     gs.ecs.insert(map);
     gs.ecs.insert(GameLog::new(&["Welcome to Rusty Roguelike".to_string()]));
     gs.ecs.insert(Point::new(player_x, player_y));

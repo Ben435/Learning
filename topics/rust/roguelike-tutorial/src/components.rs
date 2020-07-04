@@ -1,6 +1,7 @@
 use rltk::{RGB};
 use specs_derive::Component;
 use specs::prelude::*;
+use specs::saveload::SimpleMarker;
 
 #[derive(Component)]
 pub struct Position {
@@ -119,6 +120,9 @@ pub struct Confusion {
     pub turns : i32
 }
 
+// Marker to save/load.
+pub struct SerializeMe;
+
 pub fn register_components(ecs: &mut World) {
     ecs.register::<Position>();
     ecs.register::<Renderable>();
@@ -141,4 +145,5 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<AreaOfEffect>();
     ecs.register::<InflictsDamage>();
     ecs.register::<Confusion>();
+    ecs.register::<SimpleMarker<SerializeMe>>();
 }
