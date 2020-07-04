@@ -79,7 +79,6 @@ pub struct InBackpack {
     pub owner : Entity
 }
 
-
 #[derive(Component, Debug, Clone)]
 pub struct WantsToPickupItem {
     pub collected_by : Entity,
@@ -87,13 +86,21 @@ pub struct WantsToPickupItem {
 }
 
 #[derive(Component, Debug)]
-pub struct WantsToDrinkPotion {
-    pub potion : Entity
+pub struct WantsToUseItem {
+    pub item : Entity
 }
 
 #[derive(Component, Debug, Clone)]
 pub struct WantsToDropItem {
     pub item : Entity
+}
+
+#[derive(Component, Debug)]
+pub struct Consumable {}
+
+#[derive(Component, Debug)]
+pub struct ProvidesHealing {
+    pub heal_amount : i32
 }
 
 pub fn register_components(ecs: &mut World) {
@@ -111,6 +118,8 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Potion>();
     ecs.register::<InBackpack>();
     ecs.register::<WantsToPickupItem>();
-    ecs.register::<WantsToDrinkPotion>();
+    ecs.register::<WantsToUseItem>();
     ecs.register::<WantsToDropItem>();
+    ecs.register::<Consumable>();
+    ecs.register::<ProvidesHealing>();
 }
