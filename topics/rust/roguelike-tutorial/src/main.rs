@@ -14,6 +14,7 @@ mod gui;
 mod gamelog;
 mod spawner;
 mod inventory_system;
+mod saveload_system;
 
 use map::*;
 use components::*;
@@ -26,7 +27,6 @@ use damage_system::{DamageSystem,delete_the_dead};
 use gamelog::GameLog;
 use inventory_system::*;
 
-use serde_json;
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarkerAllocator};
@@ -78,8 +78,7 @@ impl GameState for State {
                 }
             }
             RunState::SaveGame => {
-                let data = serde_json::to_string(&*self.ecs.fetch::<Map>()).unwrap();
-                println!("MapSaveData = {}", data);
+                saveload_system::save_game(&mut self.ecs);
 
                 newrunstate = RunState::MainMenu{ menu_selection: gui::MainMenuSelection::LoadGame };
             }
@@ -240,6 +239,7 @@ fn main() {
     
     register_components(&mut gs.ecs);
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     let map = Map::new_map_rooms_and_corridors(&mut gs.ecs);
 
@@ -252,8 +252,7 @@ fn main() {
     for room in map.rooms.iter().skip(1) {
         spawner::spawn_room(&mut gs.ecs, room);
     }
-    
-    gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
+
     gs.ecs.insert(map);
     gs.ecs.insert(GameLog::new(&["Welcome to Rusty Roguelike".to_string()]));
     gs.ecs.insert(Point::new(player_x, player_y));
