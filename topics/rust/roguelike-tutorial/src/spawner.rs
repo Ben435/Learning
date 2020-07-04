@@ -83,7 +83,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect) {
             let y = *idx / WORLD_WIDTH;
             (x as i32, y as i32)
         })
-        .for_each(|(x, y)| health_potion(ecs, x, y));
+        .for_each(|(x, y)| random_item(ecs, x, y));
 }
 
 pub fn random_monster(ecs: &mut World, x: i32, y: i32) {
@@ -118,6 +118,18 @@ fn monster<S : ToString>(ecs: &mut World, x: i32, y: i32, glyph : u16, name : S)
         .build();
 }
 
+fn random_item(ecs: &mut World, x: i32, y: i32) {
+    let roll: i32;
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        roll = rng.roll_dice(1, 2);
+    }
+    match roll {
+        1 => { health_potion(ecs, x, y) },
+        _ => { magic_missile_scroll(ecs, x, y) },
+    }
+}
+
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()
         .with(Position{ x, y })
@@ -131,5 +143,22 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
         .with(Item{})
         .with(Consumable{})
         .with(ProvidesHealing{ heal_amount: 8 })
+        .build();
+}
+
+fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position{ x, y })
+        .with(Renderable{
+            glyph: rltk::to_cp437(')'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name{ name: "Magic Missile Scroll".to_string() })
+        .with(Item{})
+        .with(Consumable{})
+        .with(Ranged{ range: 6 })
+        .with(InflictsDamage{ damage: 8 })
         .build();
 }

@@ -56,14 +56,14 @@ impl<'a> System<'a> for ItemUseSystem {
                     if entity == *player_entity {
                         gamelog.info(format!("You drink to {}, healing {} hp", name, healer.heal_amount))
                     }
+                }
+            }
 
-                    let consumable = consumables.get(useitem.item);
-                    match consumable {
-                        None => {},
-                        Some(_) => {
-                            entities.delete(useitem.item).expect("Delete failed!");
-                        }
-                    }
+            let consumable = consumables.get(useitem.item);
+            match consumable {
+                None => {},
+                Some(_) => {
+                    entities.delete(useitem.item).expect("Delete failed!");
                 }
             }
         }
