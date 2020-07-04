@@ -21,15 +21,17 @@ use monster_ai_system::MonsterAI;
 use map_indexing_system::MapIndexingSystem;
 use melee_combat_system::MeleeCombatSystem;
 use damage_system::{DamageSystem,delete_the_dead};
-use gui::draw_ui;
 use gamelog::GameLog;
 use inventory_system::*;
 
 use rltk::{Rltk,GameState,RGB,Point};
 use specs::prelude::*;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub enum RunState { 
+#[derive(PartialEq, Copy, Clone)]
+pub enum RunState {
+    MainMenu {
+        menu_selection: gui::MainMenuSelection
+    },
     AwaitingInput,
     PreRun,
     PlayerTurn,
@@ -48,15 +50,58 @@ pub struct State {
 }
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
-        ctx.cls();
-
-        draw_map(&self.ecs, ctx, self.debug_mode);
-        draw_ui(&self.ecs, ctx);
-
         let mut newrunstate;
         {
             let runstate = self.ecs.fetch::<RunState>();
             newrunstate = *runstate;
+        }
+
+        ctx.cls();
+
+        match newrunstate {
+            RunState::MainMenu{ menu_selection } => {
+                let result = gui::main_menu(self, ctx);
+                match result {
+                    gui::MainMenuResult::NoSelection{ selected } => newrunstate = RunState::MainMenu{ menu_selection: selected },
+                    gui::MainMenuResult::Selected{ selected } => {
+                        match selected {
+                            gui::MainMenuSelection::NewGame => newrunstate = RunState::PreRun,
+                            gui::MainMenuSelection::LoadGame => newrunstate = RunState::PreRun, // TODO: Load _then_ goto pregame.
+                            gui::MainMenuSelection::Quit => ctx.quit(),
+                        }
+                    }
+                }
+            }
+            _ => {
+                draw_map(&self.ecs, ctx, self.debug_mode);
+
+                let positions = self.ecs.read_storage::<Position>();
+                let renderables = self.ecs.read_storage::<Renderable>();
+                let map = self.ecs.fetch::<Map>();
+
+                let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+                data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
+                for (pos, render) in data.iter() {
+                    let idx = map.xy_idx(pos.x, pos.y);
+
+                    // Only render visible renderables.
+                    if map.visible_tiles[idx] {
+                        ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+                    } else if self.debug_mode {
+                        ctx.set(pos.x, pos.y, render.fg.desaturate(), render.bg, render.glyph);
+                    }
+                }
+
+                if self.debug_mode {
+                    ctx.print_color(
+                        1, 1, 
+                        RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), 
+                        format!("{:.2}fps", ctx.fps)
+                    );
+                }
+
+                gui::draw_ui(&self.ecs, ctx);
+            }
         }
 
         match newrunstate {
@@ -129,37 +174,14 @@ impl GameState for State {
                     }
                 }
             }
+            _ => {}
         }
+
         {
             let mut runwriter = self.ecs.write_resource::<RunState>();
             *runwriter = newrunstate;
         }
         delete_the_dead(&mut self.ecs);
-
-        let positions = self.ecs.read_storage::<Position>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-        let map = self.ecs.fetch::<Map>();
-
-        let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-        data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
-        for (pos, render) in data.iter() {
-            let idx = map.xy_idx(pos.x, pos.y);
-
-            // Only render visible renderables.
-            if map.visible_tiles[idx] {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
-            } else if self.debug_mode {
-                ctx.set(pos.x, pos.y, render.fg.desaturate(), render.bg, render.glyph);
-            }
-        }
-
-        if self.debug_mode {
-            ctx.print_color(
-                1, 1, 
-                RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), 
-                format!("{:.2}fps", ctx.fps)
-            );
-        }
     }
 }
 
@@ -224,7 +246,7 @@ fn main() {
     gs.ecs.insert(GameLog::new(&["Welcome to Rusty Roguelike".to_string()]));
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);
-    gs.ecs.insert(RunState::PreRun);
+    gs.ecs.insert(RunState::MainMenu{ menu_selection: gui::MainMenuSelection::NewGame });
 
     rltk::main_loop(ctx, gs).unwrap();
 }

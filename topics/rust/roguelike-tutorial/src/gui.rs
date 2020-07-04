@@ -4,7 +4,7 @@ use specs::prelude::*;
 use crate::constants::*;
 use crate::map::Map;
 use crate::gamelog::GameLog;
-use crate::State;
+use crate::{State,RunState};
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     ctx.draw_box(0, WORLD_HEIGHT, WORLD_WIDTH-1, 6, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
@@ -234,4 +234,23 @@ pub fn ranged_target(gs : &mut State, ctx : &mut Rltk, range : i32) -> (ItemMenu
             _ => (ItemMenuResult::NoResponse, None),
         },
     }
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum MainMenuSelection {
+    NewGame,
+    LoadGame,
+    Quit,
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum MainMenuResult { 
+    NoSelection{ selected : MainMenuSelection }, 
+    Selected{ selected: MainMenuSelection },
+}
+
+pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
+    let runstate = gs.ecs.fetch::<RunState>();
+
+    MainMenuResult::NoSelection{ selected: MainMenuSelection::NewGame }
 }

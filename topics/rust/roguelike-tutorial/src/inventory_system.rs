@@ -140,7 +140,6 @@ impl<'a> System<'a> for ItemUseSystem {
                 match causes_confusion {
                     None => {}
                     Some(confusion) => {
-                        used_item = false;
                         for mob in targets.iter() {
                             add_confusion.push((*mob, confusion.turns));
                             if entity == *player_entity {
@@ -148,6 +147,7 @@ impl<'a> System<'a> for ItemUseSystem {
                                 let item_name = names.get(useitem.item).unwrap();
                                 gamelog.info(format!("You use {} on {}, confusing them.", item_name.name, mob_name.name));
                             }
+                            used_item = true;
                         }
                     }
                 }
