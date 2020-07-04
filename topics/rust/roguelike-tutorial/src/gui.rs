@@ -227,5 +227,11 @@ pub fn ranged_target(gs : &mut State, ctx : &mut Rltk, range : i32) -> (ItemMenu
         }
     }
 
-    (ItemMenuResult::NoResponse, None)
+    match ctx.key {
+        None => (ItemMenuResult::NoResponse, None),
+        Some(key) => match key {
+            VirtualKeyCode::Escape => (ItemMenuResult::Cancel, None),
+            _ => (ItemMenuResult::NoResponse, None),
+        },
+    }
 }

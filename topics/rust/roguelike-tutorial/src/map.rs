@@ -26,6 +26,14 @@ impl Map {
         (y as usize * self.width as usize) + x as usize
     }
 
+    pub fn point_in_map(&self, p: &Point) -> bool {
+        self.xy_in_map(p.x, p.y)
+    }
+
+    pub fn xy_in_map(&self, x: i32, y: i32) -> bool {
+        x > 0 && x < self.width-1 &&  y > 0 && y < self.height-1
+    }
+
     fn idx_in_bounds(&self, idx: usize) -> bool {
         idx > 0 && idx < (self.width*self.height) as usize
     }
@@ -150,7 +158,7 @@ impl Map {
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        if x < 1 || x > self.width-1 || y < 1 || y > self.height-1 { 
+        if !self.xy_in_map(x, y) { 
             return false;
         }
         let idx = self.xy_idx(x, y);

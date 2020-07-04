@@ -105,6 +105,11 @@ pub struct Ranged {
 }
 
 #[derive(Component, Debug)]
+pub struct AreaOfEffect {
+    pub radius : i32
+}
+
+#[derive(Component, Debug)]
 pub struct InflictsDamage {
     pub damage : i32
 }
@@ -128,5 +133,6 @@ pub fn register_components(ecs: &mut World) {
     ecs.register::<Consumable>();
     ecs.register::<ProvidesHealing>();
     ecs.register::<Ranged>();
+    ecs.register::<AreaOfEffect>();
     ecs.register::<InflictsDamage>();
 }

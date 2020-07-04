@@ -44,25 +44,60 @@ impl<'a> System<'a> for ItemUseSystem {
                         ReadStorage<'a, InflictsDamage>,
                         WriteStorage<'a, SufferDamage>,
                         ReadExpect<'a, Map>,
+                        ReadStorage<'a, AreaOfEffect>,
                       );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_use, names, mut combat_stats, consumables, healing_items, inflicts_damage, mut suffer_damage, map) = data;
+        let (player_entity, mut gamelog, entities, mut wants_use, names, mut combat_stats, consumables, healing_items, inflicts_damage, mut suffer_damage, map, aoe) = data;
 
-        for (entity, useitem, stats) in (&entities, &wants_use, &mut combat_stats).join() {
+        for (entity, useitem) in (&entities, &wants_use).join() {
             let mut used_item = false;
 
-            let item_heals = healing_items.get(useitem.item);
+            let mut targets: Vec<Entity> = Vec::new();
+            match useitem.target {
+                None => { targets.push(*player_entity); }
+                Some(target) => {
+                    let area_effect = aoe.get(useitem.item);
+                    match area_effect {
+                        None => {
+                            // Single tile
+                            let idx = map.xy_idx(target.x, target.y);
+                            for mob in map.tile_content[idx].iter() {
+                                targets.push(*mob);
+                            }
+                        }
+                        Some(area_effect) => {
+                            // AoE
+                            let mut blast_tiles = rltk::field_of_view(target, area_effect.radius, &*map);
+                            blast_tiles.retain(|p| map.point_in_map(p));
+                            for tile_idx in blast_tiles.iter() {
+                                let idx = map.xy_idx(tile_idx.x, tile_idx.y);
+                                for mob in map.tile_content[idx].iter() {
+                                    targets.push(*mob);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
+            let item_heals = healing_items.get(useitem.item);
             match item_heals {
                 None => {},
                 Some(healer) => {
-                    stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
-                    let name = &names.get(useitem.item).unwrap().name;
-                    if entity == *player_entity {
-                        gamelog.info(format!("You drink to {}, healing {} hp", name, healer.heal_amount))
+                    for target in targets.iter() {
+                        let stats = combat_stats.get_mut(*target);
+                        if let Some(stats) = stats {
+                            stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
+
+                            if entity == *player_entity {
+                                let name = &names.get(useitem.item).unwrap().name;
+                                gamelog.info(format!("You drink to {}, healing {} hp", name, healer.heal_amount))
+                            }
+                            
+                            used_item = true;
+                        }
                     }
-                    used_item = true;
                 }
             }
 
@@ -70,15 +105,15 @@ impl<'a> System<'a> for ItemUseSystem {
             match item_damages {
                 None => {},
                 Some(damage) => {
-                    let target_point = useitem.target.unwrap();
-                    let idx = map.xy_idx(target_point.x, target_point.y);
-                    for mob in map.tile_content[idx].iter() {
+                    for mob in targets.iter() {
                         SufferDamage::new_damage(&mut suffer_damage, *mob, damage.damage);
+
                         if entity == *player_entity {
                             let mob_name = names.get(*mob).unwrap();
                             let item_name = names.get(useitem.item).unwrap();
                             gamelog.info(format!("You use {} on {}, inflicting {} hp.", item_name.name, mob_name.name, damage.damage));
                         }
+                        
                         used_item = true;
                     }
                 }
