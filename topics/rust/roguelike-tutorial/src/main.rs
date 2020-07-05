@@ -273,17 +273,17 @@ impl State {
 
         // Gen new map
         let worldmap;
-        let current_depth;
+        let new_depth;
         {
             let worldmap_resource = self.ecs.write_resource::<Map>();
-            current_depth = worldmap_resource.depth;
+            new_depth = worldmap_resource.depth + 1;
         }
-        let new_map = Map::new_map_rooms_and_corridors(&mut self.ecs, current_depth + 1);
+        let new_map = Map::new_map_rooms_and_corridors(&mut self.ecs, new_depth);
         worldmap = new_map.clone();
 
         // Gen new stuff
         for room in worldmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room);
+            spawner::spawn_room(&mut self.ecs, room, new_depth);
         }
 
         // Move the player to a position on the new map
@@ -346,7 +346,7 @@ fn main() {
 
     // Spawn some mobs
     for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, room);
+        spawner::spawn_room(&mut gs.ecs, room, map.depth);
     }
 
     gs.ecs.insert(map);

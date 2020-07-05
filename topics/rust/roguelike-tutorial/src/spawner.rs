@@ -34,8 +34,8 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         .build()
 }
 
-pub fn spawn_room(ecs: &mut World, room: &Rect) {
-    let spawn_table = room_table();
+pub fn spawn_room(ecs: &mut World, room: &Rect, depth: i32) {
+    let spawn_table = room_table(depth);
     let mut spawn_points: HashMap<usize, String> = HashMap::new();
 
     {
@@ -98,13 +98,13 @@ fn monster<S : ToString>(ecs: &mut World, x: i32, y: i32, glyph : u16, name : S)
         .build();
 }
 
-fn room_table() -> RandomTable {
+fn room_table(depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Goblin", 10)
-        .add("Orc", 1)
+        .add("Orc", 1 + depth)
         .add("Health Potion", 7)
-        .add("Fireball Scroll", 2)
-        .add("Confusion Scroll", 2)
+        .add("Fireball Scroll", 2 + depth)
+        .add("Confusion Scroll", 2 + depth)
         .add("Magic Missile Scroll", 4)
 }
 
