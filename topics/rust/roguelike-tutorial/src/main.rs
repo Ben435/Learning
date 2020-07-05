@@ -15,6 +15,7 @@ mod gamelog;
 mod spawner;
 mod inventory_system;
 mod saveload_system;
+mod random_table;
 
 use map::*;
 use components::*;
