@@ -59,7 +59,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
                 return RunState::AwaitingInput;
             }
             VirtualKeyCode::G => get_item(&mut gs.ecs),
-            VirtualKeyCode::Space => {},    // Pass turn
+            VirtualKeyCode::Space => { return skip_turn(&mut gs.ecs) },    // Pass turn
             VirtualKeyCode::Q => ctx.quit(),
             _ => { return RunState::AwaitingInput },
         }
@@ -90,4 +90,31 @@ fn get_item(ecs: &mut World) {
             pickup.insert(*player_entity, WantsToPickupItem{ collected_by: *player_entity, item }).expect("Unable to insert want to pickup item");
         }
     }
+}
+
+fn skip_turn(ecs: &mut World) -> RunState {
+    let player_entity = ecs.fetch::<Entity>();
+    let viewshed_components = ecs.read_storage::<Viewshed>();
+    let monsters = ecs.read_storage::<Monster>();
+
+    let worldmap_resource = ecs.fetch::<Map>();
+
+    let viewshed = viewshed_components.get(*player_entity).unwrap();
+    
+    let can_heal = viewshed.visible_tiles.iter()
+        .map(|tile| worldmap_resource.xy_idx(tile.x, tile.y))
+        .flat_map(|idx| worldmap_resource.tile_content[idx].iter())
+        .map(|entity_id| monsters.get(*entity_id))
+        .all(|mob| match mob {
+            None => true,
+            Some(_) => false
+        });
+
+    if can_heal {
+        let mut health_components = ecs.write_storage::<CombatStats>();
+        let player_hp = health_components.get_mut(*player_entity).unwrap();
+        player_hp.hp = i32::min(player_hp.hp + 1, player_hp.max_hp);
+    }
+
+    RunState::PlayerTurn
 }
