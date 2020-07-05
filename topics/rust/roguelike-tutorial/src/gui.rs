@@ -9,6 +9,10 @@ use crate::{State,RunState};
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     ctx.draw_box(0, WORLD_HEIGHT, WORLD_WIDTH-1, 6, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
 
+    let map = ecs.fetch::<Map>();
+    let depth = format!("Depth: {}", map.depth);
+    ctx.print_color(2, 43, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), &depth);
+
     let combat_states = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
     for (_player, stats) in (&players, &combat_states).join() {

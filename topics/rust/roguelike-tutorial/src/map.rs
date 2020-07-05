@@ -9,6 +9,7 @@ use crate::rect::*;
 pub enum TileType {
     Wall,
     Floor,
+    DownStairs,
 }
 
 #[derive(Default, Serialize, Deserialize, Clone)]
@@ -20,6 +21,7 @@ pub struct Map {
     pub revealed_tiles : Vec<bool>,
     pub visible_tiles : Vec<bool>,
     pub blocked_tiles: Vec<bool>,
+    pub depth: i32,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -88,7 +90,7 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors(ecs: &mut World) -> Map {
+    pub fn new_map_rooms_and_corridors(ecs: &mut World, new_depth: i32) -> Map {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
 
         let tile_count = WORLD_WIDTH * WORLD_HEIGHT;
@@ -101,6 +103,7 @@ impl Map {
             visible_tiles: vec![false; tile_count],
             blocked_tiles: vec![false; tile_count],
             tile_content: vec![Vec::new(); tile_count],
+            depth: new_depth,
         };
 
         const MAX_ROOMS : i32 = 30;
@@ -138,6 +141,10 @@ impl Map {
                 map.rooms.push(new_room);
             }
         }
+
+        let stairs_position = map.rooms[map.rooms.len()-1].center();
+        let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
+        map.tiles[stairs_idx] = TileType::DownStairs;
     
         map
     }
@@ -233,6 +240,10 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
                     glyph = rltk::to_cp437('#');
                     fg = RGB::from_f32(0.0, 1.0, 0.0);
                 }
+                TileType::DownStairs => {
+                    glyph = rltk::to_cp437('>');
+                    fg = RGB::from_f32(0.0, 1.0, 1.0);
+                }
             }
             if !map.visible_tiles[idx] {
                 fg = fg.to_greyscale();
@@ -245,6 +256,9 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk, debug_mode: bool) {
                 }
                 TileType::Wall => {
                     ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                }
+                TileType::DownStairs => {
+                    ctx.set(x, y, RGB::from_f32(0.0, 0.2, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('>'));
                 }
             }
         }

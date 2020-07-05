@@ -4,7 +4,7 @@ use std::cmp::{min,max};
 use crate::gamelog::GameLog;
 use crate::{State,RunState};
 use crate::components::*;
-use crate::map::Map;
+use crate::map::*;
 
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
@@ -54,6 +54,11 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::I => return RunState::ShowInventory,
             VirtualKeyCode::D => return RunState::ShowDropItem,
             VirtualKeyCode::Escape => return RunState::SaveGame,
+            VirtualKeyCode::Period => {
+                if try_next_level(&mut gs.ecs) {
+                    return RunState::NextLevel;
+                }
+            }
             VirtualKeyCode::Grave => {
                 gs.debug_mode = !gs.debug_mode;
                 return RunState::AwaitingInput;
@@ -100,7 +105,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let worldmap_resource = ecs.fetch::<Map>();
 
     let viewshed = viewshed_components.get(*player_entity).unwrap();
-    
+
     let can_heal = viewshed.visible_tiles.iter()
         .map(|tile| worldmap_resource.xy_idx(tile.x, tile.y))
         .flat_map(|idx| worldmap_resource.tile_content[idx].iter())
@@ -117,4 +122,17 @@ fn skip_turn(ecs: &mut World) -> RunState {
     }
 
     RunState::PlayerTurn
+}
+
+fn try_next_level(ecs: &mut World) -> bool {
+    let player_pos = ecs.fetch::<Point>();
+    let map = ecs.fetch::<Map>();
+    let player_idx = map.xy_idx(player_pos.x, player_pos.y);
+    if map.tiles[player_idx] == TileType::DownStairs {
+        true
+    } else {
+        let mut gamelog = ecs.fetch_mut::<GameLog>();
+        gamelog.info("There is no way down from here.".to_string());
+        false
+    }
 }

@@ -3,4 +3,3 @@ pub const WORLD_HEIGHT: usize = 43;
 pub const MAPCOUNT: usize = WORLD_WIDTH * WORLD_HEIGHT;
 
 pub const MAX_MONSTERS : i32 = 4;
-pub const MAX_ITEMS : i32 = 2;
