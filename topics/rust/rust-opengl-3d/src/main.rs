@@ -33,10 +33,17 @@ fn main() {
         info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
     }
 
-    let triangle_vertices: [f32; 9] = [
-        -0.5, -0.5, 0.0,
-         0.5, -0.5, 0.0,
-         0.0,  0.5, 0.0,
+    let triangle_vertices: [f32; 32] = [
+        // positions       // colors        // texture coords
+         0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   // top right
+         0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   // bottom right
+        -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   // bottom left
+        -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    // top left 
+    ];
+
+    let indices = [
+        0, 1, 3,  // first Triangle
+        1, 2, 3   // second Triangle
     ];
 
     let resource_loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
@@ -96,10 +103,12 @@ fn main() {
 
 
     let mut vbo: gl::types::GLuint = 0;
+    let mut ebo: gl::types::GLuint = 0;
     let mut vao: gl::types::GLuint = 0;
     unsafe {
         gl::GenVertexArrays(1, &mut vao);
         gl::GenBuffers(1, &mut vbo);
+        gl::GenBuffers(1, &mut ebo);
 
         gl::BindVertexArray(vao);
 
@@ -110,34 +119,96 @@ fn main() {
             triangle_vertices.as_ptr() as *const gl::types::GLvoid,
             gl::STATIC_DRAW,
         );
+
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+        gl::BufferData(
+            gl::ELEMENT_ARRAY_BUFFER, 
+            (indices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+            indices.as_ptr() as *const gl::types::GLvoid,
+            gl::STATIC_DRAW,
+        );
+
+        let stride = (8 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
         
+        // Position attrib
         gl::VertexAttribPointer(
             0, 
-            3 as gl::types::GLsizei, 
+            3, 
             gl::FLOAT, 
             gl::FALSE, 
-            (3 * std::mem::size_of::<f32>()) as gl::types::GLsizei, 
+            stride, 
             ptr::null(),
         );
         gl::EnableVertexAttribArray(0);
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
 
-        gl::BindVertexArray(0);
+        // Color attrib
+        gl::VertexAttribPointer(
+            1, 
+            3, 
+            gl::FLOAT, 
+            gl::FALSE, 
+            stride, 
+            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+        );
+        gl::EnableVertexAttribArray(1);
+
+        // Texture attrib
+        gl::VertexAttribPointer(
+            2,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            stride,
+            (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+        );
+        gl::EnableVertexAttribArray(2);
     }
+
+    let texture = unsafe {
+        let img = image::open(&Path::new("assets/textures/container.jpg")).expect("Failed to load texture");
+        let img_buffer = img.into_rgb();
+        let (width, height) = (img_buffer.width(), img_buffer.height());
+        let raw_data = img_buffer.into_raw();
+
+        let mut tmp = 0;
+        gl::GenTextures(1, &mut tmp);
+        gl::BindTexture(gl::TEXTURE_2D, tmp);
+
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            gl::RGB as i32,
+            width as i32,
+            height as i32,
+            0,
+            gl::RGB,
+            gl::UNSIGNED_BYTE,
+            raw_data.as_ptr() as *const gl::types::GLvoid,
+        );
+        gl::GenerateMipmap(gl::TEXTURE_2D);
+
+        tmp
+    };
     
 
     while !window.should_close() {
-        unsafe {
-            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
-        }
-
         process_events(&mut window, &events);
 
         unsafe {
+            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT);
+
+            gl::BindTexture(gl::TEXTURE_2D, texture);
+            
             gl::UseProgram(shader_program);
             gl::BindVertexArray(vao);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
         }
 
         window.swap_buffers();

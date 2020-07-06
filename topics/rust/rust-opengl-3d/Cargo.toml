@@ -12,3 +12,4 @@ walkdir = "2.3"
 [dependencies]
 gl = "0.14.0"
 glfw = "0.39.0"
+image = "0.23.6"
