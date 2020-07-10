@@ -1,0 +1,16 @@
+[package]
+name = "rust-opengl"
+version = "0.1.0"
+authors = ["benc <ben.clare2@gmail.com>"]
+edition = "2018"
+
+[build-dependencies]
+walkdir = "2.3"
+
+[dependencies]
+gl = "0.14.0"
+render_gl_derive = { path = "render_gl_derive" }
+
+[dependencies.sdl2]
+version = "0.34.2"
+features = ["bundled", "static-link"]
