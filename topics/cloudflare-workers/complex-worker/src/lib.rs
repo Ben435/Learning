@@ -24,17 +24,11 @@ pub fn run(num: u32) -> u32 {
 }
 
 pub fn fibonnaci(num: u32) -> u32 {
-    let mut cur = 1;
-    let mut prev = 0;
-    let mut i = 0;
-
-    while i < num {
-        let tmp = cur + prev;
-        prev = cur;
-        cur = tmp;
-
-        i += 1;
+    if num == 1 {
+        return 1
+    } else if num == 0 {
+        return 0
+    } else {
+        return fibonnaci(num-1) + fibonnaci(num-2)
     }
-
-    return cur
 }

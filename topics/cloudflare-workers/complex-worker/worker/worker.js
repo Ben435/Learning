@@ -3,19 +3,13 @@ addEventListener('fetch', event => {
 })
 
 const fib = target => {
-  let current = 1
-  let prev = 0
-  let i = 0
-
-  while (i < target) {
-    const tmp = current + prev
-    prev = current
-    current = tmp
-
-    i++
+  if (target === 1) {
+    return 1
+  } else if (target === 0) {
+    return 0
+  } else {
+    return fib(target-1) + fib(target-2)
   }
-
-  return current
 }
 
 /**
