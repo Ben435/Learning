@@ -2,7 +2,7 @@ use gl;
 use std::ptr;
 use std::ffi::CString;
 use std::collections::{HashMap,HashSet};
-use cgmath::Matrix4;
+use cgmath::{Matrix4,Vector3};
 use cgmath::prelude::*;
 use crate::resources::ResourceLoader;
 
@@ -33,6 +33,16 @@ impl Program {
 
         unsafe {
             gl::UniformMatrix4fv(*loc.unwrap(), 1, gl::FALSE, mat4.as_ptr());
+        }
+    }
+
+    pub fn set_uniform_vec3(&self, name: &str, vec3: &Vector3<f32>) {
+        let loc = self.uniform_map.get(name);
+
+        debug_assert!(loc.is_some(), format!("Uniform name not found: {}", name));
+
+        unsafe {
+            gl::Uniform3fv(*loc.unwrap(), 1, vec3.as_ptr());
         }
     }
 }
@@ -87,7 +97,7 @@ impl<'a> ProgramBuilder<'a> {
             gl::GetShaderiv(tmp, gl::COMPILE_STATUS, &mut success);
             if success != gl::TRUE as gl::types::GLint {
                 gl::GetShaderInfoLog(tmp, 512, ptr::null_mut(), self.log.as_mut_ptr() as *mut gl::types::GLchar);
-                let error_msg = format!("ERROR::SHADER::COMPILATION_FAILED\n{}", std::str::from_utf8(&self.log).unwrap());
+                let error_msg = format!("ERROR::SHADER::COMPILATION_FAILED\n{}", String::from_utf8_lossy(&self.log));
                 return Err(ProgramBuilderError::ShaderCompileError{
                     reason: error_msg,
                 })
@@ -111,7 +121,7 @@ impl<'a> ProgramBuilder<'a> {
             gl::GetShaderiv(tmp, gl::COMPILE_STATUS, &mut success);
             if success != gl::TRUE as gl::types::GLint {
                 gl::GetShaderInfoLog(tmp, 512, ptr::null_mut(), self.log.as_mut_ptr() as *mut gl::types::GLchar);
-                let error_msg = format!("ERROR::SHADER::COMPILATION_FAILED\n{}", std::str::from_utf8(&self.log).unwrap());
+                let error_msg = format!("ERROR::SHADER::COMPILATION_FAILED\n{}", String::from_utf8_lossy(&self.log));
                 return Err(ProgramBuilderError::ShaderCompileError{
                     reason: error_msg,
                 })
@@ -154,7 +164,7 @@ impl<'a> ProgramBuilder<'a> {
             gl::GetProgramiv(tmp, gl::LINK_STATUS, &mut success);
             if success != gl::TRUE as gl::types::GLint {
                 gl::GetProgramInfoLog(tmp, 512, ptr::null_mut(), self.log.as_mut_ptr() as *mut gl::types::GLchar);
-                let error_msg = format!("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}", std::str::from_utf8(&self.log).unwrap());
+                let error_msg = format!("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}", String::from_utf8_lossy(&self.log));
                 return Err(ProgramBuilderError::ShaderCompileError{
                     reason: error_msg,
                 });

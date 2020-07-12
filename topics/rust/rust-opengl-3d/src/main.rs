@@ -1,14 +1,17 @@
 mod resources;
 mod camera;
 mod shader;
+mod vertex_constants;
 
 use glfw::{Action,Context,Key};
 use std::path::Path;
 use std::ptr;
 use std::sync::mpsc::Receiver;
+use std::os::raw::c_void;
 use cgmath::prelude::*;
 use cgmath::{Matrix4,Deg,vec3,perspective,Point3};
 
+use crate::vertex_constants::*;
 use crate::resources::ResourceLoader;
 use crate::camera::*;
 use crate::shader::*;
@@ -43,60 +46,28 @@ fn main() {
     window.set_scroll_polling(true);
     window.set_cursor_pos_polling(true);
 
-    let triangle_vertices: [f32; 180] = [
-        // positions       // texture coords
-        -0.5, -0.5, -0.5,  0.0, 0.0,
-         0.5, -0.5, -0.5,  1.0, 0.0,
-         0.5,  0.5, -0.5,  1.0, 1.0,
-         0.5,  0.5, -0.5,  1.0, 1.0,
-        -0.5,  0.5, -0.5,  0.0, 1.0,
-        -0.5, -0.5, -0.5,  0.0, 0.0,
-
-        -0.5, -0.5,  0.5,  0.0, 0.0,
-         0.5, -0.5,  0.5,  1.0, 0.0,
-         0.5,  0.5,  0.5,  1.0, 1.0,
-         0.5,  0.5,  0.5,  1.0, 1.0,
-        -0.5,  0.5,  0.5,  0.0, 1.0,
-        -0.5, -0.5,  0.5,  0.0, 0.0,
-
-        -0.5,  0.5,  0.5,  1.0, 0.0,
-        -0.5,  0.5, -0.5,  1.0, 1.0,
-        -0.5, -0.5, -0.5,  0.0, 1.0,
-        -0.5, -0.5, -0.5,  0.0, 1.0,
-        -0.5, -0.5,  0.5,  0.0, 0.0,
-        -0.5,  0.5,  0.5,  1.0, 0.0,
-
-         0.5,  0.5,  0.5,  1.0, 0.0,
-         0.5,  0.5, -0.5,  1.0, 1.0,
-         0.5, -0.5, -0.5,  0.0, 1.0,
-         0.5, -0.5, -0.5,  0.0, 1.0,
-         0.5, -0.5,  0.5,  0.0, 0.0,
-         0.5,  0.5,  0.5,  1.0, 0.0,
-
-        -0.5, -0.5, -0.5,  0.0, 1.0,
-         0.5, -0.5, -0.5,  1.0, 1.0,
-         0.5, -0.5,  0.5,  1.0, 0.0,
-         0.5, -0.5,  0.5,  1.0, 0.0,
-        -0.5, -0.5,  0.5,  0.0, 0.0,
-        -0.5, -0.5, -0.5,  0.0, 1.0,
-
-        -0.5,  0.5, -0.5,  0.0, 1.0,
-         0.5,  0.5, -0.5,  1.0, 1.0,
-         0.5,  0.5,  0.5,  1.0, 0.0,
-         0.5,  0.5,  0.5,  1.0, 0.0,
-        -0.5,  0.5,  0.5,  0.0, 0.0,
-        -0.5,  0.5, -0.5,  0.0, 1.0
-    ];
-
     let resource_loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
 
-    let shader_program = ProgramBuilder::new(&resource_loader)
+    let lamp_shader = ProgramBuilder::new(&resource_loader)
         .with_vertex_shader("shaders/camera.vert").unwrap()
-        .with_fragment_shader("shaders/texture.frag").unwrap()
         .with_uniform(&String::from("model")).unwrap()
         .with_uniform(&String::from("view")).unwrap()
         .with_uniform(&String::from("projection")).unwrap()
+        .with_fragment_shader("shaders/lamp.frag").unwrap()
         .build().unwrap();
+    let lit_shader = ProgramBuilder::new(&resource_loader)
+        .with_vertex_shader("shaders/camera_with_normal.vert").unwrap()
+        .with_uniform(&String::from("model")).unwrap()
+        .with_uniform(&String::from("view")).unwrap()
+        .with_uniform(&String::from("projection")).unwrap()
+        .with_fragment_shader("shaders/light.frag").unwrap()
+        .with_uniform(&String::from("objectColor")).unwrap()
+        .with_uniform(&String::from("lightColor")).unwrap()
+        .with_uniform(&String::from("lightPos")).unwrap()
+        .with_uniform(&String::from("viewPos")).unwrap()
+        .build().unwrap();
+
+    let vertices = CUBE_VERTICES_WITH_NORMAL;
 
     let mut vbo: gl::types::GLuint = 0;
     let mut vao: gl::types::GLuint = 0;
@@ -109,12 +80,12 @@ fn main() {
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BufferData(
             gl::ARRAY_BUFFER, 
-            (triangle_vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
-            triangle_vertices.as_ptr() as *const gl::types::GLvoid,
+            (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+            vertices.as_ptr() as *const gl::types::GLvoid,
             gl::STATIC_DRAW,
         );
 
-        let stride = (5 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
+        let stride = (6 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
         
         // Position attrib
         gl::VertexAttribPointer(
@@ -127,49 +98,38 @@ fn main() {
         );
         gl::EnableVertexAttribArray(0);
 
-        // Texture attrib
+        // Normal attrib
         gl::VertexAttribPointer(
-            1,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+            1, 
+            3, 
+            gl::FLOAT, 
+            gl::FALSE, 
+            stride, 
+            (3 * std::mem::size_of::<f32>()) as *const c_void,
         );
         gl::EnableVertexAttribArray(1);
     }
 
-    let texture = unsafe {
-        let img = image::open(&Path::new("assets/textures/container.jpg")).expect("Failed to load texture");
-        let img_buffer = img.into_rgb();
-        let (width, height) = (img_buffer.width(), img_buffer.height());
-        let raw_data = img_buffer.into_raw();
+    let cube_vertices = CUBE_VERTICES;
+    let mut lamp_vbo: gl::types::GLuint = 0;
+    let mut lamp_vao: gl::types::GLuint = 0;
+    unsafe {
+        gl::GenVertexArrays(1, &mut lamp_vao);
+        gl::GenBuffers(1, &mut lamp_vbo);
 
-        let mut tmp = 0;
-        gl::GenTextures(1, &mut tmp);
-        gl::BindTexture(gl::TEXTURE_2D, tmp);
-
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-
-        gl::TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGB as i32,
-            width as i32,
-            height as i32,
-            0,
-            gl::RGB,
-            gl::UNSIGNED_BYTE,
-            raw_data.as_ptr() as *const gl::types::GLvoid,
+        gl::BindVertexArray(lamp_vao);
+        
+        gl::BindBuffer(gl::ARRAY_BUFFER, lamp_vbo);
+        gl::BufferData(
+            gl::ARRAY_BUFFER, 
+            (cube_vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+            cube_vertices.as_ptr() as *const gl::types::GLvoid,
+            gl::STATIC_DRAW,
         );
-        gl::GenerateMipmap(gl::TEXTURE_2D);
 
-        tmp
-    };
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * std::mem::size_of::<f32>()) as i32, ptr::null());
+        gl::EnableVertexAttribArray(0);
+    }
 
     let cube_positions = [
         vec3(0.0, 0.0, 0.0),
@@ -183,6 +143,8 @@ fn main() {
         vec3(1.5, 0.2, -1.5),
         vec3(-1.3, 1.0, -1.5)
     ];
+
+    let lamp_position = vec3(2.0, 0.0, 1.0);
 
     let mut last_frame_time: f32 = 0.0;
     let mut delta_time: f32;
@@ -206,19 +168,33 @@ fn main() {
         process_input(&mut window, delta_time, &mut camera);
 
         unsafe {
-            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
+            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-            gl::BindTexture(gl::TEXTURE_2D, texture);
-            
-            shader_program.use_program();
-
             let view: Matrix4<f32> = camera.get_view_matrix();
-
             let projection: Matrix4<f32> = perspective(Deg(camera.zoom), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
 
-            shader_program.set_uniform_matrix4("view", &view);
-            shader_program.set_uniform_matrix4("projection", &projection);
+            {   // Block to isolate lamp_shader usage
+                lamp_shader.use_program();
+                lamp_shader.set_uniform_matrix4("projection", &projection);
+                lamp_shader.set_uniform_matrix4("view", &view);
+                let model = Matrix4::from_translation(lamp_position) * Matrix4::from_scale(0.2);
+                lamp_shader.set_uniform_matrix4("model", &model);
+
+                gl::BindVertexArray(lamp_vao);
+    
+                gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            }
+            
+            lit_shader.use_program();
+
+            lit_shader.set_uniform_vec3("objectColor", &vec3(1.0, 0.5, 0.31));
+            lit_shader.set_uniform_vec3("lightColor", &vec3(1.0, 1.0, 1.0));
+            lit_shader.set_uniform_vec3("lightPos", &lamp_position);
+            lit_shader.set_uniform_vec3("viewPos", &camera.position.to_vec());
+
+            lit_shader.set_uniform_matrix4("projection", &projection);
+            lit_shader.set_uniform_matrix4("view", &view);
 
             gl::BindVertexArray(vao);
             for (i, position) in cube_positions.iter().enumerate() {
@@ -226,7 +202,7 @@ fn main() {
                 let angle = 2.0*i as f32;
                 model = model * Matrix4::from_axis_angle(vec3(1.0, 0.3, 0.5).normalize(), Deg(angle));
 
-                shader_program.set_uniform_matrix4("model", &model);
+                lit_shader.set_uniform_matrix4("model", &model);
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
         }
