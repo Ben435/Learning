@@ -5,7 +5,7 @@ use std::path::Path;
 use std::ptr;
 use std::sync::mpsc::Receiver;
 use cgmath::prelude::*;
-use cgmath::{Matrix4,Deg,Rad,vec3,perspective};
+use cgmath::{Matrix4,Deg,vec3,perspective};
 use std::ffi::CString;
 
 use crate::resources::ResourceLoader;
@@ -39,38 +39,49 @@ fn main() {
         info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
     }
 
-    let triangle_vertices: [f32; 40] = [
+    let triangle_vertices: [f32; 180] = [
         // positions       // texture coords
-         0.5,  0.5, -0.5,   1.0, 1.0,   // back top right
-         0.5, -0.5, -0.5,   1.0, 0.0,   // back bottom right
-        -0.5, -0.5, -0.5,   0.0, 0.0,   // back bottom left
-        -0.5,  0.5, -0.5,   0.0, 1.0,   // back top left 
+        -0.5, -0.5, -0.5,  0.0, 0.0,
+         0.5, -0.5, -0.5,  1.0, 0.0,
+         0.5,  0.5, -0.5,  1.0, 1.0,
+         0.5,  0.5, -0.5,  1.0, 1.0,
+        -0.5,  0.5, -0.5,  0.0, 1.0,
+        -0.5, -0.5, -0.5,  0.0, 0.0,
 
-         0.5,  0.5,  0.5,   1.0, 1.0,   // front top right
-         0.5, -0.5,  0.5,   1.0, 0.0,   // front bottom right
-        -0.5, -0.5,  0.5,   0.0, 0.0,   // front bottom left
-        -0.5,  0.5,  0.5,   0.0, 1.0    // front top left 
-    ];
+        -0.5, -0.5,  0.5,  0.0, 0.0,
+         0.5, -0.5,  0.5,  1.0, 0.0,
+         0.5,  0.5,  0.5,  1.0, 1.0,
+         0.5,  0.5,  0.5,  1.0, 1.0,
+        -0.5,  0.5,  0.5,  0.0, 1.0,
+        -0.5, -0.5,  0.5,  0.0, 0.0,
 
-    let indices = [
-        // Back face
-        0, 1, 3,
-        1, 2, 3,
-        // Top Face
-        0, 3, 4,
-        3, 4, 7,
-        // Bottom Face
-        1, 2, 5,
-        2, 5, 6,
-        // Left Face
-        2, 3, 6,
-        3, 6, 7,
-        // Right face
-        0, 1, 4,
-        1, 4, 5,
-        // Front Face
-        4, 5, 7,
-        5, 6, 7,
+        -0.5,  0.5,  0.5,  1.0, 0.0,
+        -0.5,  0.5, -0.5,  1.0, 1.0,
+        -0.5, -0.5, -0.5,  0.0, 1.0,
+        -0.5, -0.5, -0.5,  0.0, 1.0,
+        -0.5, -0.5,  0.5,  0.0, 0.0,
+        -0.5,  0.5,  0.5,  1.0, 0.0,
+
+         0.5,  0.5,  0.5,  1.0, 0.0,
+         0.5,  0.5, -0.5,  1.0, 1.0,
+         0.5, -0.5, -0.5,  0.0, 1.0,
+         0.5, -0.5, -0.5,  0.0, 1.0,
+         0.5, -0.5,  0.5,  0.0, 0.0,
+         0.5,  0.5,  0.5,  1.0, 0.0,
+
+        -0.5, -0.5, -0.5,  0.0, 1.0,
+         0.5, -0.5, -0.5,  1.0, 1.0,
+         0.5, -0.5,  0.5,  1.0, 0.0,
+         0.5, -0.5,  0.5,  1.0, 0.0,
+        -0.5, -0.5,  0.5,  0.0, 0.0,
+        -0.5, -0.5, -0.5,  0.0, 1.0,
+
+        -0.5,  0.5, -0.5,  0.0, 1.0,
+         0.5,  0.5, -0.5,  1.0, 1.0,
+         0.5,  0.5,  0.5,  1.0, 0.0,
+         0.5,  0.5,  0.5,  1.0, 0.0,
+        -0.5,  0.5,  0.5,  0.0, 0.0,
+        -0.5,  0.5, -0.5,  0.0, 1.0
     ];
 
     let resource_loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
@@ -130,12 +141,10 @@ fn main() {
 
 
     let mut vbo: gl::types::GLuint = 0;
-    let mut ebo: gl::types::GLuint = 0;
     let mut vao: gl::types::GLuint = 0;
     unsafe {
         gl::GenVertexArrays(1, &mut vao);
         gl::GenBuffers(1, &mut vbo);
-        gl::GenBuffers(1, &mut ebo);
 
         gl::BindVertexArray(vao);
 
@@ -144,14 +153,6 @@ fn main() {
             gl::ARRAY_BUFFER, 
             (triangle_vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
             triangle_vertices.as_ptr() as *const gl::types::GLvoid,
-            gl::STATIC_DRAW,
-        );
-
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER, 
-            (indices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
-            indices.as_ptr() as *const gl::types::GLvoid,
             gl::STATIC_DRAW,
         );
 
@@ -211,6 +212,19 @@ fn main() {
 
         tmp
     };
+
+    let cube_positions = [
+        vec3(0.0, 0.0, 0.0),
+        vec3(2.0, 5.0, -15.0),
+        vec3(-1.5, -2.2, -2.5),
+        vec3(-3.8, -2.0, -12.3),
+        vec3(2.4, -0.4, -3.5),
+        vec3(-1.7, 3.0, -7.5),
+        vec3(1.3, -2.0, -2.5),
+        vec3(1.5, 2.0, -2.5),
+        vec3(1.5, 0.2, -1.5),
+        vec3(-1.3, 1.0, -1.5)
+    ];
     
 
     while !window.should_close() {
@@ -224,7 +238,6 @@ fn main() {
             
             gl::UseProgram(shader_program);
 
-            let model: Matrix4<f32> = Matrix4::from_axis_angle(vec3(0.5, 1.0, 0.0).normalize(), Rad(glfw.get_time() as f32));
             let view: Matrix4<f32> = Matrix4::from_translation(vec3(0.0, 0.0, -3.0));
             let projection: Matrix4<f32> = perspective(Deg(45.0), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
 
@@ -232,12 +245,18 @@ fn main() {
             let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
             let projection_loc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
 
-            gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
             gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, view.as_ptr());
             gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, projection.as_ptr());
 
             gl::BindVertexArray(vao);
-            gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, ptr::null());
+            for (i, position) in cube_positions.iter().enumerate() {
+                let mut model: Matrix4<f32> = Matrix4::from_translation(*position);
+                let angle = 2.0*i as f32;
+                model = model * Matrix4::from_axis_angle(vec3(1.0, 0.3, 0.5).normalize(), Deg(angle));
+
+                gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
+                gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            }
         }
 
         window.swap_buffers();
