@@ -66,8 +66,8 @@ fn main() {
         2, 3, 6,
         3, 6, 7,
         // Right face
-        0, 1, 5,
-        0, 5, 6,
+        0, 1, 4,
+        1, 4, 5,
         // Front Face
         4, 5, 7,
         5, 6, 7,
@@ -224,7 +224,7 @@ fn main() {
             
             gl::UseProgram(shader_program);
 
-            let model: Matrix4<f32> = Matrix4::from_axis_angle(vec3(0.5, 1.0, 0.0).normalize(), Rad(-55.0 as f32));
+            let model: Matrix4<f32> = Matrix4::from_axis_angle(vec3(0.5, 1.0, 0.0).normalize(), Rad(glfw.get_time() as f32));
             let view: Matrix4<f32> = Matrix4::from_translation(vec3(0.0, 0.0, -3.0));
             let projection: Matrix4<f32> = perspective(Deg(45.0), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
 
