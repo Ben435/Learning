@@ -4,6 +4,9 @@ use glfw::{Action,Context,Key};
 use std::path::Path;
 use std::ptr;
 use std::sync::mpsc::Receiver;
+use cgmath::prelude::*;
+use cgmath::{Matrix4,Deg,Rad,vec3,perspective};
+use std::ffi::CString;
 
 use crate::resources::ResourceLoader;
 
@@ -22,6 +25,9 @@ fn main() {
         .expect("Failed to init glfw window");
 
     gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
+    unsafe {
+        gl::Enable(gl::DEPTH_TEST);
+    }
     
     // Make the window's context current
     window.make_current();
@@ -33,17 +39,38 @@ fn main() {
         info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
     }
 
-    let triangle_vertices: [f32; 32] = [
-        // positions       // colors        // texture coords
-         0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   // top right
-         0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   // bottom right
-        -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   // bottom left
-        -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    // top left 
+    let triangle_vertices: [f32; 40] = [
+        // positions       // texture coords
+         0.5,  0.5, -0.5,   1.0, 1.0,   // back top right
+         0.5, -0.5, -0.5,   1.0, 0.0,   // back bottom right
+        -0.5, -0.5, -0.5,   0.0, 0.0,   // back bottom left
+        -0.5,  0.5, -0.5,   0.0, 1.0,   // back top left 
+
+         0.5,  0.5,  0.5,   1.0, 1.0,   // front top right
+         0.5, -0.5,  0.5,   1.0, 0.0,   // front bottom right
+        -0.5, -0.5,  0.5,   0.0, 0.0,   // front bottom left
+        -0.5,  0.5,  0.5,   0.0, 1.0    // front top left 
     ];
 
     let indices = [
-        0, 1, 3,  // first Triangle
-        1, 2, 3   // second Triangle
+        // Back face
+        0, 1, 3,
+        1, 2, 3,
+        // Top Face
+        0, 3, 4,
+        3, 4, 7,
+        // Bottom Face
+        1, 2, 5,
+        2, 5, 6,
+        // Left Face
+        2, 3, 6,
+        3, 6, 7,
+        // Right face
+        0, 1, 5,
+        0, 5, 6,
+        // Front Face
+        4, 5, 7,
+        5, 6, 7,
     ];
 
     let resource_loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
@@ -128,7 +155,7 @@ fn main() {
             gl::STATIC_DRAW,
         );
 
-        let stride = (8 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
+        let stride = (5 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
         
         // Position attrib
         gl::VertexAttribPointer(
@@ -141,27 +168,16 @@ fn main() {
         );
         gl::EnableVertexAttribArray(0);
 
-        // Color attrib
-        gl::VertexAttribPointer(
-            1, 
-            3, 
-            gl::FLOAT, 
-            gl::FALSE, 
-            stride, 
-            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
-        );
-        gl::EnableVertexAttribArray(1);
-
         // Texture attrib
         gl::VertexAttribPointer(
-            2,
+            1,
             2,
             gl::FLOAT,
             gl::FALSE,
             stride,
-            (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
         );
-        gl::EnableVertexAttribArray(2);
+        gl::EnableVertexAttribArray(1);
     }
 
     let texture = unsafe {
@@ -202,13 +218,26 @@ fn main() {
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             gl::BindTexture(gl::TEXTURE_2D, texture);
             
             gl::UseProgram(shader_program);
+
+            let model: Matrix4<f32> = Matrix4::from_axis_angle(vec3(0.5, 1.0, 0.0).normalize(), Rad(-55.0 as f32));
+            let view: Matrix4<f32> = Matrix4::from_translation(vec3(0.0, 0.0, -3.0));
+            let projection: Matrix4<f32> = perspective(Deg(45.0), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
+
+            let model_loc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
+            let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
+            let projection_loc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
+
+            gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
+            gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, view.as_ptr());
+            gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, projection.as_ptr());
+
             gl::BindVertexArray(vao);
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
+            gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, ptr::null());
         }
 
         window.swap_buffers();
