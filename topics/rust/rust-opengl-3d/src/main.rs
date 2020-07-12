@@ -1,5 +1,6 @@
 mod resources;
 mod camera;
+mod shader;
 
 use glfw::{Action,Context,Key};
 use std::path::Path;
@@ -7,10 +8,10 @@ use std::ptr;
 use std::sync::mpsc::Receiver;
 use cgmath::prelude::*;
 use cgmath::{Matrix4,Deg,vec3,perspective,Point3};
-use std::ffi::CString;
 
 use crate::resources::ResourceLoader;
 use crate::camera::*;
+use crate::shader::*;
 
 // settings
 const SCR_WIDTH: u32 = 800;
@@ -41,11 +42,6 @@ fn main() {
     window.set_framebuffer_size_polling(true);
     window.set_scroll_polling(true);
     window.set_cursor_pos_polling(true);
-
-    let mut info_log = Vec::with_capacity(512);
-    unsafe {
-        info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
-    }
 
     let triangle_vertices: [f32; 180] = [
         // positions       // texture coords
@@ -94,59 +90,13 @@ fn main() {
 
     let resource_loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
 
-    let vertex_shader_source = resource_loader.load_cstring("shaders/triangle.vert").unwrap();
-    let vertex_shader = unsafe {
-        let tmp = gl::CreateShader(gl::VERTEX_SHADER);
-        gl::ShaderSource(tmp, 1, &vertex_shader_source.as_ptr(), std::ptr::null());
-        gl::CompileShader(tmp);
-
-        let mut success = gl::FALSE as gl::types::GLint;
-        gl::GetShaderiv(tmp, gl::COMPILE_STATUS, &mut success);
-        if success != gl::TRUE as gl::types::GLint {
-            gl::GetShaderInfoLog(tmp, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut gl::types::GLchar);
-            println!("ERROR::SHADER::COMPILATION_FAILED\n{}", std::str::from_utf8(&info_log).unwrap());
-        }
-
-        tmp
-    };
-
-    let fragment_shader_source = resource_loader.load_cstring("shaders/triangle.frag").unwrap();
-    let fragment_shader = unsafe {
-        let tmp = gl::CreateShader(gl::FRAGMENT_SHADER);
-        gl::ShaderSource(tmp, 1, &fragment_shader_source.as_ptr(), std::ptr::null());
-        gl::CompileShader(tmp);
-
-        let mut success = gl::FALSE as gl::types::GLint;
-        gl::GetShaderiv(tmp, gl::COMPILE_STATUS, &mut success);
-        if success != gl::TRUE as gl::types::GLint {
-            gl::GetShaderInfoLog(tmp, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut gl::types::GLchar);
-            println!("ERROR::SHADER::COMPILATION_FAILED\n{}", std::str::from_utf8(&info_log).unwrap());
-        }
-
-        tmp
-    };
-
-    let shader_program = unsafe {
-        let tmp = gl::CreateProgram();
-        gl::AttachShader(tmp, fragment_shader);
-        gl::AttachShader(tmp, vertex_shader);
-
-        gl::LinkProgram(tmp);
-
-        let mut success = gl::FALSE as gl::types::GLint;
-        gl::GetProgramiv(tmp, gl::LINK_STATUS, &mut success);
-        if success != gl::TRUE as gl::types::GLint {
-            gl::GetProgramInfoLog(tmp, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut gl::types::GLchar);
-            println!("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}", std::str::from_utf8(&info_log).unwrap());
-        }
-
-        // Cleanup shaders
-        gl::DeleteShader(vertex_shader);
-        gl::DeleteShader(fragment_shader);
-
-        tmp
-    };
-
+    let shader_program = ProgramBuilder::new(&resource_loader)
+        .with_vertex_shader("shaders/camera.vert").unwrap()
+        .with_fragment_shader("shaders/texture.frag").unwrap()
+        .with_uniform(&String::from("model")).unwrap()
+        .with_uniform(&String::from("view")).unwrap()
+        .with_uniform(&String::from("projection")).unwrap()
+        .build().unwrap();
 
     let mut vbo: gl::types::GLuint = 0;
     let mut vao: gl::types::GLuint = 0;
@@ -261,18 +211,14 @@ fn main() {
 
             gl::BindTexture(gl::TEXTURE_2D, texture);
             
-            gl::UseProgram(shader_program);
+            shader_program.use_program();
 
             let view: Matrix4<f32> = camera.get_view_matrix();
 
             let projection: Matrix4<f32> = perspective(Deg(camera.zoom), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
 
-            let model_loc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
-            let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
-            let projection_loc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
-
-            gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, view.as_ptr());
-            gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, projection.as_ptr());
+            shader_program.set_uniform_matrix4("view", &view);
+            shader_program.set_uniform_matrix4("projection", &projection);
 
             gl::BindVertexArray(vao);
             for (i, position) in cube_positions.iter().enumerate() {
@@ -280,17 +226,13 @@ fn main() {
                 let angle = 2.0*i as f32;
                 model = model * Matrix4::from_axis_angle(vec3(1.0, 0.3, 0.5).normalize(), Deg(angle));
 
-                gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
+                shader_program.set_uniform_matrix4("model", &model);
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
         }
 
         window.swap_buffers();
         glfw.poll_events();
-    }
-
-    unsafe {
-        gl::DeleteProgram(shader_program);
     }
 }
 
