@@ -17,14 +17,13 @@ class ScriptHandler {
 
 class BodyHandler {
   element(element) {
-    element.prepend(`<div style="position: absolute; background-color: white; width: 100%; height: 50px; z-index: 9999;">${baseHTML()}</div>`, {html: true})
+    element.prepend(
+      `<div style="position: absolute; background-color: white; width: 100%; height: 50px; z-index: 9999;">${baseHTML()}</div>`, 
+      {html: true},
+    )
   }
 }
 
-/**
- * Respond with hello worker text
- * @param {Request} request
- */
 async function handleRequest(request) {
   if (request.method === "GET") {
     const queryStringLoc = request.url.lastIndexOf("?")
