@@ -1,19 +1,20 @@
 mod resources;
+mod camera;
 
 use glfw::{Action,Context,Key};
 use std::path::Path;
 use std::ptr;
 use std::sync::mpsc::Receiver;
 use cgmath::prelude::*;
-use cgmath::{Matrix4,Deg,vec3,perspective};
+use cgmath::{Matrix4,Deg,vec3,perspective,Point3};
 use std::ffi::CString;
 
 use crate::resources::ResourceLoader;
+use crate::camera::*;
 
 // settings
 const SCR_WIDTH: u32 = 800;
 const SCR_HEIGHT: u32 = 600;
-
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
@@ -31,8 +32,15 @@ fn main() {
     
     // Make the window's context current
     window.make_current();
+
+    // Capture mouse
+    window.set_cursor_mode(glfw::CursorMode::Disabled);
+
+    // Set polling for events
     window.set_key_polling(true);
     window.set_framebuffer_size_polling(true);
+    window.set_scroll_polling(true);
+    window.set_cursor_pos_polling(true);
 
     let mut info_log = Vec::with_capacity(512);
     unsafe {
@@ -225,10 +233,27 @@ fn main() {
         vec3(1.5, 0.2, -1.5),
         vec3(-1.3, 1.0, -1.5)
     ];
-    
+
+    let mut last_frame_time: f32 = 0.0;
+    let mut delta_time: f32;
+
+    let mut camera = Camera {
+        position: Point3::new(0.0, 0.0, 3.0),
+        ..Camera::default()
+    };
+
+    let mut first_mouse = true;
+    let mut last_x: f32 = SCR_WIDTH as f32 / 2.0;
+    let mut last_y: f32 = SCR_HEIGHT as f32 / 2.0;
 
     while !window.should_close() {
-        process_events(&mut window, &events);
+        let current_frame_time = glfw.get_time() as f32;
+        delta_time = current_frame_time - last_frame_time;
+        last_frame_time = current_frame_time;
+
+        process_events(&events, &mut first_mouse, &mut last_x, &mut last_y, &mut camera);
+
+        process_input(&mut window, delta_time, &mut camera);
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
@@ -238,8 +263,9 @@ fn main() {
             
             gl::UseProgram(shader_program);
 
-            let view: Matrix4<f32> = Matrix4::from_translation(vec3(0.0, 0.0, -3.0));
-            let projection: Matrix4<f32> = perspective(Deg(45.0), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
+            let view: Matrix4<f32> = camera.get_view_matrix();
+
+            let projection: Matrix4<f32> = perspective(Deg(camera.zoom), SCR_WIDTH as f32 / SCR_HEIGHT as f32, 0.1, 100.0);
 
             let model_loc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
             let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
@@ -268,7 +294,13 @@ fn main() {
     }
 }
 
-fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::WindowEvent)>) {
+fn process_events(
+    events: &Receiver<(f64, glfw::WindowEvent)>,
+    first_mouse: &mut bool,
+    last_x: &mut f32,
+    last_y: &mut f32,
+    camera: &mut Camera,
+) {
     for (_, event) in glfw::flush_messages(&events) {
         match event {
             glfw::WindowEvent::FramebufferSize(width, height) => {
@@ -276,10 +308,45 @@ fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::Windo
                 // height will be significantly larger than specified on retina displays.
                 unsafe { gl::Viewport(0, 0, width, height) }
             }
-            glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                window.set_should_close(true)
-            },
+            glfw::WindowEvent::Scroll(_xoffset, yoffset) => {
+                camera.process_mouse_scroll(yoffset as f32);
+            }
+            glfw::WindowEvent::CursorPos(xpos, ypos) => {
+                let (xpos, ypos) = (xpos as f32, ypos as f32);
+                if *first_mouse {
+                    *last_x = xpos;
+                    *last_x = ypos;
+                    *first_mouse = false;
+                }
+
+                let xoffset = xpos - *last_x;
+                let yoffset = *last_y - ypos;
+
+                *last_x = xpos;
+                *last_y = ypos;
+
+                camera.process_mouse_movements(xoffset, yoffset, true);
+            }
             _ => {},
         }
+    }
+}
+
+fn process_input(window: &mut glfw::Window, delta_time: f32, camera: &mut Camera) {
+    if window.get_key(Key::Escape) == Action::Press {
+        window.set_should_close(true);
+    }
+
+    if window.get_key(Key::W) == Action::Press {
+        camera.process_keyboard(CameraMovement::FORWARD, delta_time);
+    }
+    if window.get_key(Key::S) == Action::Press {
+        camera.process_keyboard(CameraMovement::BACKWARD, delta_time);
+    }
+    if window.get_key(Key::A) == Action::Press {
+        camera.process_keyboard(CameraMovement::LEFT, delta_time);
+    }
+    if window.get_key(Key::D) == Action::Press {
+        camera.process_keyboard(CameraMovement::RIGHT, delta_time);
     }
 }
