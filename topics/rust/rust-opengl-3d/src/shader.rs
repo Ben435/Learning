@@ -18,7 +18,7 @@ pub enum ProgramBuilderError {
 
 pub struct Program {
     program: gl::types::GLuint,
-    uniform_map: HashMap<String, CString>,
+    uniform_map: HashMap<String, gl::types::GLint>,
 }
 
 impl Program {
@@ -27,11 +27,12 @@ impl Program {
     }
 
     pub fn set_uniform_matrix4(&self, name: &str, mat4: &Matrix4<f32>) {
-        let cstr_name = self.uniform_map.get(name).unwrap();
+        let loc = self.uniform_map.get(name);
+
+        debug_assert!(loc.is_some(), format!("Uniform name not found: {}", name));
 
         unsafe {
-            let loc = gl::GetUniformLocation(self.program, cstr_name.as_ptr());
-            gl::UniformMatrix4fv(loc, 1, gl::FALSE, mat4.as_ptr());
+            gl::UniformMatrix4fv(*loc.unwrap(), 1, gl::FALSE, mat4.as_ptr());
         }
     }
 }
@@ -162,11 +163,15 @@ impl<'a> ProgramBuilder<'a> {
             tmp
         };
 
-        let uniform_map: HashMap<String, CString> = self.known_uniforms
+        let uniform_map: HashMap<String, gl::types::GLint> = self.known_uniforms
             .iter()
-            .map(|uniform_name| (uniform_name.to_string(), CString::new(uniform_name.to_string()).unwrap()))
-            .fold(HashMap::new(), |mut map, (uniform_name, uniform_cstr)| {
-                map.insert(uniform_name, uniform_cstr);
+            .fold(HashMap::new(), |mut map, uniform_name| {
+                let cstr_name = CString::new(uniform_name.to_string()).unwrap();
+                let loc = unsafe {
+                    gl::GetUniformLocation(program, cstr_name.as_ptr())
+                };
+
+                map.insert(uniform_name.to_string(), loc);
 
                 map
             });
