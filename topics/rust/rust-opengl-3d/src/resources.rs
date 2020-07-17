@@ -44,6 +44,10 @@ impl ResourceLoader {
 
         Ok(unsafe { ffi::CString::from_vec_unchecked(buffer) })
     }
+
+    pub fn resolve_path(&self, resource_name: &str) -> Result<PathBuf, Error> {
+        Ok(resource_name_to_path(&self.root_path, resource_name))
+    }
 }
 
 fn resource_name_to_path(root_dir: &Path, location: &str) -> PathBuf {

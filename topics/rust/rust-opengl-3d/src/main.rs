@@ -2,6 +2,7 @@ mod resources;
 mod camera;
 mod shader;
 mod vertex_constants;
+mod images;
 
 use glfw::{Action,Context,Key};
 use std::path::Path;
@@ -15,6 +16,7 @@ use crate::vertex_constants::*;
 use crate::resources::ResourceLoader;
 use crate::camera::*;
 use crate::shader::*;
+use crate::images::*;
 
 // settings
 const SCR_WIDTH: u32 = 800;
@@ -55,27 +57,31 @@ fn main() {
         .with_uniform(&String::from("projection")).unwrap()
         .with_fragment_shader("shaders/lamp.frag").unwrap()
         .build().unwrap();
-    let lit_shader = ProgramBuilder::new(&resource_loader)
-        .with_vertex_shader("shaders/camera_with_normal.vert").unwrap()
+    let lighting_shader = ProgramBuilder::new(&resource_loader)
+        .with_vertex_shader("shaders/light_map.vert").unwrap()
         .with_uniform(&String::from("model")).unwrap()
         .with_uniform(&String::from("view")).unwrap()
         .with_uniform(&String::from("projection")).unwrap()
-        .with_fragment_shader("shaders/light.frag").unwrap()
-        .with_uniform(&String::from("objectColor")).unwrap()
-        .with_uniform(&String::from("lightColor")).unwrap()
-        .with_uniform(&String::from("lightPos")).unwrap()
+        .with_fragment_shader("shaders/light_map.frag").unwrap()
         .with_uniform(&String::from("viewPos")).unwrap()
+        .with_uniform(&String::from("material.diffuse")).unwrap()
+        .with_uniform(&String::from("material.specular")).unwrap()
+        .with_uniform(&String::from("material.shininess")).unwrap()
+        .with_uniform(&String::from("light.position")).unwrap()
+        .with_uniform(&String::from("light.ambient")).unwrap()
+        .with_uniform(&String::from("light.diffuse")).unwrap()
+        .with_uniform(&String::from("light.specular")).unwrap()
         .build().unwrap();
+    
+    println!("Loaded shaders!");
 
-    let vertices = CUBE_VERTICES_WITH_NORMAL;
+    let vertices = CUBE_VERTICES_WITH_NORM_AND_TEX;
 
     let mut vbo: gl::types::GLuint = 0;
     let mut vao: gl::types::GLuint = 0;
     unsafe {
         gl::GenVertexArrays(1, &mut vao);
         gl::GenBuffers(1, &mut vbo);
-
-        gl::BindVertexArray(vao);
 
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BufferData(
@@ -85,7 +91,8 @@ fn main() {
             gl::STATIC_DRAW,
         );
 
-        let stride = (6 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
+        gl::BindVertexArray(vao);
+        let stride = (8 * std::mem::size_of::<f32>()) as gl::types::GLsizei;
         
         // Position attrib
         gl::VertexAttribPointer(
@@ -108,7 +115,20 @@ fn main() {
             (3 * std::mem::size_of::<f32>()) as *const c_void,
         );
         gl::EnableVertexAttribArray(1);
+
+        // Tex attrib
+        gl::VertexAttribPointer(
+            2, 
+            2, 
+            gl::FLOAT, 
+            gl::FALSE, 
+            stride, 
+            (6 * std::mem::size_of::<f32>()) as *const c_void,
+        );
+        gl::EnableVertexAttribArray(2);
     }
+
+    println!("Fancy cube loaded!");
 
     let cube_vertices = CUBE_VERTICES;
     let mut lamp_vbo: gl::types::GLuint = 0;
@@ -127,9 +147,28 @@ fn main() {
             gl::STATIC_DRAW,
         );
 
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * std::mem::size_of::<f32>()) as i32, ptr::null());
+        gl::VertexAttribPointer(
+            0, 
+            3, 
+            gl::FLOAT, 
+            gl::FALSE, 
+            (3 * std::mem::size_of::<f32>()) as i32, 
+            ptr::null(),
+        );
         gl::EnableVertexAttribArray(0);
     }
+
+    println!("Loaded lamp!");
+
+    let diffuse_map = unsafe {
+        load_texture(&resource_loader.resolve_path("textures/container2.png").unwrap())
+    };
+
+    let specular_map = unsafe {
+        load_texture(&resource_loader.resolve_path("textures/container2_specular.png").unwrap())
+    };
+
+    println!("Loaded diffuse map!");
 
     let cube_positions = [
         vec3(0.0, 0.0, 0.0),
@@ -157,6 +196,8 @@ fn main() {
     let mut first_mouse = true;
     let mut last_x: f32 = SCR_WIDTH as f32 / 2.0;
     let mut last_y: f32 = SCR_HEIGHT as f32 / 2.0;
+
+    println!("Initialized!");
 
     while !window.should_close() {
         let current_frame_time = glfw.get_time() as f32;
@@ -186,15 +227,27 @@ fn main() {
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
             
-            lit_shader.use_program();
+            lighting_shader.use_program();
 
-            lit_shader.set_uniform_vec3("objectColor", &vec3(1.0, 0.5, 0.31));
-            lit_shader.set_uniform_vec3("lightColor", &vec3(1.0, 1.0, 1.0));
-            lit_shader.set_uniform_vec3("lightPos", &lamp_position);
-            lit_shader.set_uniform_vec3("viewPos", &camera.position.to_vec());
+            lighting_shader.set_uniform_vec3("viewPos", &camera.position.to_vec());
 
-            lit_shader.set_uniform_matrix4("projection", &projection);
-            lit_shader.set_uniform_matrix4("view", &view);
+            lighting_shader.set_uniform_vec3("light.position", &lamp_position);
+            lighting_shader.set_uniform_vec3("light.ambient", &vec3(0.2, 0.2, 0.2));
+            lighting_shader.set_uniform_vec3("light.diffuse", &vec3(0.5, 0.5, 0.5));
+            lighting_shader.set_uniform_vec3("light.specular", &vec3(1.0, 1.0, 1.0));
+
+            lighting_shader.set_uniform_int("material.diffuse", 0);
+            lighting_shader.set_uniform_int("material.specular", 1);
+            lighting_shader.set_uniform_float("material.shininess", 64.0);
+
+            lighting_shader.set_uniform_matrix4("projection", &projection);
+            lighting_shader.set_uniform_matrix4("view", &view);
+
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, diffuse_map);
+
+            gl::ActiveTexture(gl::TEXTURE1);
+            gl::BindTexture(gl::TEXTURE_2D, specular_map);
 
             gl::BindVertexArray(vao);
             for (i, position) in cube_positions.iter().enumerate() {
@@ -202,7 +255,7 @@ fn main() {
                 let angle = 2.0*i as f32;
                 model = model * Matrix4::from_axis_angle(vec3(1.0, 0.3, 0.5).normalize(), Deg(angle));
 
-                lit_shader.set_uniform_matrix4("model", &model);
+                lighting_shader.set_uniform_matrix4("model", &model);
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
         }

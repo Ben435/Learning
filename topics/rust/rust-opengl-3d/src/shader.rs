@@ -45,6 +45,26 @@ impl Program {
             gl::Uniform3fv(*loc.unwrap(), 1, vec3.as_ptr());
         }
     }
+
+    pub fn set_uniform_float(&self, name: &str, float: f32) {
+        let loc = self.uniform_map.get(name);
+
+        debug_assert!(loc.is_some(), format!("Uniform name not found: {}", name));
+
+        unsafe {
+            gl::Uniform1f(*loc.unwrap(), float);
+        }
+    }
+
+    pub fn set_uniform_int(&self, name: &str, int: i32) {
+        let loc = self.uniform_map.get(name);
+
+        debug_assert!(loc.is_some(), format!("Uniform name not found: {}", name));
+
+        unsafe {
+            gl::Uniform1i(*loc.unwrap(), int);
+        }
+    }
 }
 
 impl Drop for Program {
