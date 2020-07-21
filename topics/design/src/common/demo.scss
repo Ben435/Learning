@@ -1,0 +1,90 @@
+@import './pallette.scss';
+@import './fonts.scss';
+
+$colors-all: (
+    $colors-primary,
+    $colors-grey,
+    $colors-accent,
+);
+
+.demo {
+    font-family: 'Lato-Regular', Calibri, sans-serif;
+    max-width: 100%;
+
+    .reference {
+        .baseline {
+            color: whitesmoke;
+            background-color: $color-primary-5;
+            
+            font-size: 20px;
+            font-weight: 600;
+    
+            padding: 6px 20px;
+            margin: 8px;
+    
+            min-width: 72px;
+            min-height: 36px;
+            border-radius: 8px;
+    
+            border: none;
+            box-shadow: 2px 2px 6px 2px $color-grey-7;
+        }
+
+        .alert {
+            background-color: $color-primary-9;
+            margin: 8px 0;
+            border-radius: 8px;
+            box-shadow: 0px 0px 1px 2px $color-primary-5;
+            h4, p {
+                color: $color-primary-1;
+                margin: 0;
+                padding: 4px 16px;
+                &:first-child{
+                    padding-top: 16px;
+                }
+                &:last-child{
+                    padding-bottom: 16px;
+                }
+            }
+        }
+    }
+
+    .pallette {
+        display: flex;
+        flex-direction: column;
+
+        &:not(:last-child) {
+            margin-bottom: 16px;
+        }
+
+        .color-range {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            .sample {
+                &:not(:last-child) {
+                    margin-right: 8px;
+                }
+    
+                text-align: center;
+                align-items: center;
+    
+                .color {
+                    border-radius: 10px;
+                    min-height: 36px;
+                    min-width: 96px;
+    
+                    @each $colormap in $colors-all {
+                        @each $colorname, $color in $colormap {
+                            &.#{$colorname} {
+                                background-color: $color;
+                                border: 1px grey solid;
+                                box-shadow: 3px 3px 6px 2px rgb(225, 225, 225);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,68 @@
+// Primary
+$color-primary-1: hsla(280, 20%, 20%, 1);
+$color-primary-2: hsla(280, 100%, 35%, 1);
+$color-primary-3: hsla(280, 100%, 50%, 1);
+$color-primary-4: hsla(280, 100%, 50%, 1);
+$color-primary-5: hsla(280, 100%, 65%, 1);
+$color-primary-6: hsla(280, 100%, 80%, 1);
+$color-primary-7: hsla(280, 80%, 85%, 1);
+$color-primary-8: hsla(280, 75%, 93%, 1);
+$color-primary-9: hsla(280, 50%, 99%, 1);
+
+$colors-primary: (
+    primary-1: $color-primary-1,
+    primary-2: $color-primary-2,
+    primary-3: $color-primary-3,
+    primary-4: $color-primary-4,
+    primary-5: $color-primary-5,
+    primary-6: $color-primary-6,
+    primary-7: $color-primary-7,
+    primary-8: $color-primary-8,
+    primary-9: $color-primary-9,
+);
+
+// Greys
+$color-grey-1: hsla(360, 0%, 10%, 1);
+$color-grey-2: hsla(360, 0%, 100%, 1);
+$color-grey-3: hsla(360, 0%, 100%, 1);
+$color-grey-4: hsla(360, 0%, 100%, 1);
+$color-grey-5: hsla(360, 0%, 70%, 1);
+$color-grey-6: hsla(360, 0%, 100%, 1);
+$color-grey-7: hsla(360, 0%, 100%, 1);
+$color-grey-8: hsla(360, 0%, 100%, 1);
+$color-grey-9: hsla(360, 10%, 95, 1);
+
+$colors-grey: (
+    grey-1: $color-grey-1,
+    grey-2: $color-grey-2,
+    grey-3: $color-grey-3,
+    grey-4: $color-grey-4,
+    grey-5: $color-grey-5,
+    grey-6: $color-grey-6,
+    grey-7: $color-grey-7,
+    grey-8: $color-grey-8,
+    grey-9: $color-grey-9,
+);
+
+// Accent
+$color-accent-1: hsla(360, 0%, 100%, 1);
+$color-accent-2: hsla(360, 0%, 100%, 1);
+$color-accent-3: hsla(360, 0%, 100%, 1);
+$color-accent-4: hsla(360, 0%, 100%, 1);
+$color-accent-5: hsla(360, 0%, 100%, 1);
+$color-accent-6: hsla(360, 0%, 100%, 1);
+$color-accent-7: hsla(360, 0%, 100%, 1);
+$color-accent-8: hsla(360, 0%, 100%, 1);
+$color-accent-9: hsla(360, 0%, 100%, 1);
+
+$colors-accent: (
+    accent-1: $color-accent-1,
+    accent-2: $color-accent-2,
+    accent-3: $color-accent-3,
+    accent-4: $color-accent-4,
+    accent-5: $color-accent-5,
+    accent-6: $color-accent-6,
+    accent-7: $color-accent-7,
+    accent-8: $color-accent-8,
+    accent-9: $color-accent-9,
+);
