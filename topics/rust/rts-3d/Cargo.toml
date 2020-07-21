@@ -1,0 +1,12 @@
+[package]
+name = "rts-3d"
+version = "0.1.0"
+authors = ["Ben Clare <ben.clare2@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gl = "0.14.0"
+glfw = "0.39.0"
+cgmath = "0.17.0"
