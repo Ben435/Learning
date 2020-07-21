@@ -1,17 +1,20 @@
 mod lib;
 mod window;
-mod log;
 mod render;
 
 use window::Window;
+use log::{info,debug,LevelFilter};
+use env_logger::{Builder};
 
 const SCR_HEIGHT: u32 = 600;
 const SCR_WIDTH: u32 = 800;
 
 fn main() {
-    let mut logger = log::Logger::new_with_level("main", log::LogLevel::INFO);
-
-    logger.info("Logger initialized");
+    Builder::new()
+        .filter(None, LevelFilter::Info)
+        .init();
+    
+    info!("Logger initialized");
 
     let mut win = Window::new(
         "Hello world!",
@@ -19,9 +22,9 @@ fn main() {
         SCR_HEIGHT,
     ).unwrap();
 
-    logger.info("Window initialized");
+    info!("Window initialized");
 
-    logger.debug("Beginning main loop");
+    debug!("Beginning main loop");
     while !win.should_close() {
         // Process events
         for (_, event) in win.flush_events() {
@@ -29,10 +32,10 @@ fn main() {
                 glfw::WindowEvent::FramebufferSize(width, height) => {
                     // make sure the viewport matches the new window dimensions; note that width and
                     // height will be significantly larger than specified on retina displays.
-                    logger.debug(&format!("Resize to {}, {}", width, height));
+                    debug!("Resize to {}, {}", width, height);
                     unsafe { gl::Viewport(0, 0, width, height) }
                 },
-                e => logger.debug(&format!("Unrecognized event: {:?}", e)),
+                e => debug!("Unrecognized event: {:?}", e),
             }
         };
 
@@ -44,5 +47,5 @@ fn main() {
 
         win.update_screen();
     }
-    logger.debug("Exited main loop");
+    debug!("Exited main loop");
 }

@@ -2,16 +2,14 @@ use glfw;
 use glfw::Context;
 use gl;
 use std::sync::mpsc::{Receiver};
-use crate::log::Logger;
 
-pub struct Window<'a> {
+pub struct Window {
     glfw: glfw::Glfw,
     window: glfw::Window,
     events: Receiver<(f64, glfw::WindowEvent)>,
-    logger: Logger<'a>,
 }
 
-impl <'a> Window<'a> {
+impl Window {
     pub fn new(title: &str, scr_width: u32, scr_height: u32) -> Result<Window, String> {
         let glfw = glfw::init(glfw::FAIL_ON_ERRORS);
         if glfw.is_err() {
@@ -19,8 +17,10 @@ impl <'a> Window<'a> {
         }
         let mut glfw = glfw.unwrap();
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
-        glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+       
+        #[cfg(target_os = "macos")]
+        glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
     
         let window = glfw.create_window(scr_width, scr_height, title, glfw::WindowMode::Windowed);
     
@@ -29,22 +29,34 @@ impl <'a> Window<'a> {
         }
         let (mut window, events) = window.expect("Unexpected failed to load window");
 
-        gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
+        window.make_current();
 
         // Setup polling for events
-        window.set_key_polling(true);
         window.set_framebuffer_size_polling(true);
+        // window.set_key_polling(true);
         // window.set_scroll_polling(true);
         // window.set_cursor_pos_polling(true);
 
-        let logger = Logger::new("window");
-
-        Ok(Window{
+        let mut res = Window{
             glfw,
             window,
             events,
-            logger,
-        })
+        };
+        res.init_gl();
+
+        Ok(res)
+    }
+
+    fn init_gl(&mut self) {
+        gl::load_with(|symbol| self.window.get_proc_address(symbol) as *const _);
+
+        unsafe {
+            gl::Enable(gl::DEPTH_TEST);
+
+            // Clear any existing data.
+            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
     }
 
     pub fn update_screen(&mut self) {

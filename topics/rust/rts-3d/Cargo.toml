@@ -10,3 +10,5 @@ edition = "2018"
 gl = "0.14.0"
 glfw = "0.39.0"
 cgmath = "0.17.0"
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_trace"] }
+env_logger = "0.7.1"
