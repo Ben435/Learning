@@ -13,7 +13,6 @@ fn main() {
     Builder::new()
         .filter(None, LevelFilter::Info)
         .init();
-    
     info!("Logger initialized");
 
     let mut win = Window::new(
@@ -21,7 +20,6 @@ fn main() {
         SCR_WIDTH,
         SCR_HEIGHT,
     ).unwrap();
-
     info!("Window initialized");
 
     debug!("Beginning main loop");
