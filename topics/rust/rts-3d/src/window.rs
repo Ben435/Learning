@@ -2,6 +2,8 @@ use glfw;
 use glfw::Context;
 use gl;
 use std::sync::mpsc::{Receiver};
+use log::{info,Level,log_enabled};
+use std::ffi::CStr;
 
 pub struct Window {
     glfw: glfw::Glfw,
@@ -16,7 +18,7 @@ impl Window {
             return Err(format!("Init glfw error: {}", glfw.err().unwrap()))
         }
         let mut glfw = glfw.unwrap();
-        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
+        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 0));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
        
         #[cfg(target_os = "macos")]
@@ -50,6 +52,12 @@ impl Window {
     fn init_gl(&mut self) {
         gl::load_with(|symbol| self.window.get_proc_address(symbol) as *const _);
 
+        if log_enabled!(Level::Info) {
+            let renderer = get_gl_rstring(gl::RENDERER).unwrap();
+            let glsl_ver = get_gl_rstring(gl::SHADING_LANGUAGE_VERSION).unwrap();
+            info!("{} {}", renderer, glsl_ver);
+        }
+
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
 
@@ -71,4 +79,17 @@ impl Window {
     pub fn should_close(&self) -> bool {
         self.window.should_close()
     }
+}
+
+fn get_gl_rstring(name: gl::types::GLenum) -> Option<String> {
+    let cs = unsafe {
+        let ptr = gl::GetString(name);
+        if ptr.is_null() {
+            return None
+        }
+        
+        Some(CStr::from_ptr(ptr as *const i8))
+    }?;
+    
+    Some(String::from_utf8_lossy(cs.to_bytes()).to_string())
 }

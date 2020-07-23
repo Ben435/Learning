@@ -1,4 +1,5 @@
 mod simple_renderer;
-pub mod plane;
+mod renderable;
+mod gl_buffer;
 
 pub use simple_renderer::SimpleRenderer;
