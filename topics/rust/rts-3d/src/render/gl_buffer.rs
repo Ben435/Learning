@@ -1,57 +1,106 @@
 use gl;
 use std::mem::size_of;
 use std::ffi::c_void;
-use std::marker::PhantomData;
+use log::error;
+use super::renderable::Vertex;
 
-pub struct GlBuffer<T> {
-    phantom: PhantomData<T>,
-    buffer_id: gl::types::GLuint,
+pub struct GlBuffer {
+    pub buffer_id: gl::types::GLuint,
+    pub components: usize,
+    bound: bool,
 }
 
-impl <T> GlBuffer<T> {
-    pub fn new(data: &[T]) -> GlBuffer<T> {
-        let mut res = GlBuffer::<T>{
+impl GlBuffer {
+    pub fn new(data: &[Vertex], components: usize) -> GlBuffer {
+        let mut res = GlBuffer{
             buffer_id: 0,
-            phantom: PhantomData,
+            components,
+            bound: false,
         };
 
-        res.init(data);
-
-        res
-    }
-
-    /// Assumption: this _shouldn't_ modify the data passed, just cpy it to the buffer. 
-    /// So it _should_ be safe, but I may be wrong.
-    fn init(&mut self, data: &[T]) {
         unsafe {
-            gl::GenBuffers(1, &mut self.buffer_id);
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.buffer_id);
+            gl::GenBuffers(1, &mut res.buffer_id);
+            gl::BindBuffer(gl::ARRAY_BUFFER, res.buffer_id);
 
             gl::BufferData(
                 gl::ARRAY_BUFFER, 
-                data.len() as isize * size_of::<T>() as isize, 
+                (data.len() * size_of::<Vertex>()) as isize, 
                 data.as_ptr() as *mut c_void,
                 gl::STATIC_DRAW
             );
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         }
+
+        res
+    }
+
+    pub fn with_capacity(size: usize) -> GlBuffer {
+        let mut res = GlBuffer {
+            buffer_id: 0,
+            components: 0,
+            bound: false,
+        };
+
+        unsafe {
+            gl::GenBuffers(1, &mut res.buffer_id);
+            gl::BindBuffer(gl::ARRAY_BUFFER, res.buffer_id);
+
+            gl::BufferData(
+                gl::ARRAY_BUFFER, 
+                size as isize * size_of::<Vertex>() as isize, 
+                std::ptr::null(),
+                gl::STATIC_DRAW
+            );
+
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+        }
+
+        res
     }
 
     pub fn bind(&mut self) {
-        unsafe {
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.buffer_id);
+        if !self.bound {
+            unsafe {
+                self.bound = true;
+                gl::BindBuffer(gl::ARRAY_BUFFER, self.buffer_id);
+            }
         }
     }
 
     pub fn unbind(&mut self) {
+        if self.bound {
+            unsafe {
+                self.bound = false;
+                gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            }
+        }
+    }
+
+    // TODO: Maybe make a smart pointer wrapper, so can auto-unmap on drop.
+    pub fn map_buffer(&mut self, mode: gl::types::GLenum) -> *mut c_void {
         unsafe {
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            self.bind();
+            let ptr = gl::MapBuffer(self.buffer_id, mode);
+            self.unbind();
+
+            ptr
+        }
+    }
+
+    pub fn unmap_buffer(&mut self) {
+        unsafe {
+            let res = gl::UnmapBuffer(gl::ARRAY_BUFFER);
+
+            if res != gl::TRUE {
+                error!("MapBuffer didn't return GL_TRUE? '{}'", res);
+                panic!("UnMapBuffer returned non-true, TODO: re-init buffer when this happens")
+            }
         }
     }
 }
 
-impl <T> Drop for GlBuffer<T> {
+impl Drop for GlBuffer {
     fn drop(&mut self) {
         unsafe {
             // Silently ignores dropping bound buffers, so don't worry about it

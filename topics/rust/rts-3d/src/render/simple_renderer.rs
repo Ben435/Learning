@@ -1,77 +1,85 @@
 use gl;
-use log::error;
+use log::{info,error};
 use cgmath;
 use std::mem::size_of;
+use std::marker::PhantomData;
+use std::ptr;
+use std::ffi::c_void;
 
-use super::renderable::Renderable;
+use super::gl_buffer::GlBuffer;
+use super::gl_index_buffer::GlIndexBuffer;
+use super::renderable::{Renderable,Vertex,Index};
 
 const MAX_VERTICES: usize = 10_000;
+const MAX_VBO_SIZE: usize = MAX_VERTICES * size_of::<Vertex>();
+const MAX_IBO_SIZE: usize = 20_000;
 
 pub struct SimpleRenderer<'a, T : Renderable> {
-    // gl_buffer: gl::
-    gl_vbo: gl::types::GLuint,
-    mem_vbo: [&'a T; MAX_VERTICES],
-    gl_buffer: *mut T,
+    vbo: GlBuffer,
+    vbo_ptr: &'a mut [Vertex],   // Only available during begin-end window.
+    ibo: GlIndexBuffer,
+    ibo_ptr: &'a mut [Index],
+    phantom: PhantomData<T>,
 }
 
 impl <'a, T: Renderable> SimpleRenderer<'a, T> {
 
-    pub fn new(init: &'a T) -> SimpleRenderer<'a, T> {
-        let mut res = SimpleRenderer::<'a, T>{
-            gl_vbo: 0,
-            mem_vbo: [init; MAX_VERTICES * size_of::<T>()],
-            gl_buffer: std::ptr::null_mut() as *mut T,
-        };
+//     pub fn new() -> SimpleRenderer<'a, T> {
+//         SimpleRenderer::<T>{
+//             vbo: GlBuffer::with_capacity(MAX_VBO_SIZE),
+//             vbo_ptr: &mut [],
+//             ibo: GlIndexBuffer::new(&[0; MAX_IBO_SIZE], 0),
+//             ibo_ptr: &mut [],
+//             phantom: PhantomData,
+//         }
+//     }
 
-        res.init();
+//     pub fn begin(&mut self) {
+//         self.vbo.components = 0;
+//         self.vbo_ptr = unsafe {
+//             std::slice::from_raw_parts_mut(
+//                 self.vbo.map_buffer(gl::WRITE_ONLY) as *mut Vertex,
+//                 MAX_VBO_SIZE
+//             )
+//         };
 
-        res
-    }
+//         self.ibo.components = 0;
+//         self.ibo_ptr = unsafe {
+//             std::slice::from_raw_parts_mut(
+//                 self.ibo.map_buffer(gl::WRITE_ONLY) as *mut Index,
+//                 MAX_IBO_SIZE
+//             )
+//         };
+//     }
+//     pub fn end(&mut self) {
+//         self.vbo.unmap_buffer();
+//     }
 
-    pub fn init(&mut self) {
-        unsafe {
-            gl::GenBuffers(1, &mut self.gl_vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.gl_vbo);
+//     /// Copy to mem_buffer, will send to GPU in `present()` call.
+//     pub fn submit(&mut self, renderable: &T) {
+//         info!("Pre-vertices! {:?} {}", self.vbo_ptr, self.vbo_ptr.len());
+//         renderable.get_vertices().iter().for_each(|vert| {
+//             self.vbo_ptr[self.vbo.components] = *vert;
+//             self.vbo.components += 1;
+//         });
 
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                std::mem::size_of::<cgmath::Vector3<f32>>() as isize,
-                std::ptr::null(),   // Will overwrite.
-                gl::DYNAMIC_DRAW,
-            );
+//         info!("Pre-indices!");
+//         renderable.get_indices().iter().for_each(|index| {
+//             self.ibo_ptr[self.ibo.components] = *index;
+//             self.ibo.components += 1;
+//         });
+//         info!("Submitted")
+//     }
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-        }
-    }
+//     pub fn present(&mut self) {
+//         unsafe {
+//             gl::DrawElements(gl::TRIANGLES, self.ibo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
+//         };
+//     }
+// }
 
-    pub fn begin(&mut self) {
-        self.gl_buffer = unsafe {
-            gl::MapBuffer(gl::ARRAY_BUFFER, gl::WRITE_ONLY) as *mut T
-        };
-    }
+// impl <'a, T: Renderable> Drop for SimpleRenderer<'a, T> {
+//     fn drop(&mut self) {
 
-    pub fn submit(&mut self, renderable: &'a T) {
-
-    }
-
-    pub fn end(&mut self) {
-        let res = unsafe {
-            gl::UnmapBuffer(gl::ARRAY_BUFFER)
-        };
-
-        if res != gl::TRUE {
-            error!("MapBuffer didn't return GL_TRUE? '{}'", res);
-            panic!("UnMapBuffer returned non-true, TODO: re-init buffer when this happens")
-        }
-    }
-
-    pub fn present(&mut self) {
-        
-    }
-}
-
-impl <'a, T: Renderable + Sized> Drop for SimpleRenderer<'a, T> {
-    fn drop(&mut self) {
-
-    }
+//     }
 }

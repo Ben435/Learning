@@ -18,7 +18,7 @@ impl Window {
             return Err(format!("Init glfw error: {}", glfw.err().unwrap()))
         }
         let mut glfw = glfw.unwrap();
-        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 0));
+        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
        
         #[cfg(target_os = "macos")]
