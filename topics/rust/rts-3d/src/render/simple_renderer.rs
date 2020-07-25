@@ -1,10 +1,9 @@
 use gl;
 use std::collections::VecDeque;
-use std::mem::size_of;
 use std::marker::PhantomData;
 use std::ptr;
 
-use super::renderable::{Renderable,Vertex};
+use super::renderable::{Renderable};
 
 // const MAX_VERTICES: usize = 10_000;
 // const MAX_VBO_SIZE: usize = MAX_VERTICES * size_of::<Vertex>();
@@ -46,16 +45,6 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
 
     pub fn present(&mut self) {
         unsafe {
-            gl::BindVertexArray(self.vao);
-            gl::VertexAttribPointer(
-                0, 
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                size_of::<Vertex>() as i32, 
-                std::ptr::null()
-            );
-            gl::EnableVertexAttribArray(0);
             while let Some(r) = self.queue.pop_front() {
                 r.get_vao().bind();
                 let ebo = r.get_ebo();

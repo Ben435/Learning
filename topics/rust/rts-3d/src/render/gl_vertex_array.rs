@@ -1,5 +1,7 @@
 use gl;
+use super::gl_buffer::GlBuffer;
 
+#[derive(Debug)]
 pub struct GlVertexArray {
     gl_vao: gl::types::GLuint
 }
@@ -17,13 +19,26 @@ impl GlVertexArray {
         }
     }
 
-    pub fn bind(&mut self) {
+    pub fn add_buffer(&mut self, buf: GlBuffer, index: gl::types::GLuint) {
+        self.bind();
+        buf.bind();
+
+        unsafe {
+            gl::VertexAttribPointer(index, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+            gl::EnableVertexAttribArray(index);
+        }
+
+        buf.unbind();
+        self.unbind();
+    }
+
+    pub fn bind(&self) {
         unsafe {
             gl::BindVertexArray(self.gl_vao);
         }
     }
 
-    pub fn unbind(&mut self) {
+    pub fn unbind(&self) {
         unsafe {
             gl::BindVertexArray(0);
         }
