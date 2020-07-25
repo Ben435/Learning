@@ -1,17 +1,22 @@
-use cgmath::{vec3};
+use cgmath::{Vector3,vec3};
 use super::renderable::{Renderable};
 use super::gl_buffer::GlBuffer;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
+use super::gl_shader::GlShader;
+use gl::types::GLfloat;
 
 #[derive(Debug)]
-pub struct Sprite {
+pub struct Sprite<'a> {
     vao: GlVertexArray,
     ebo: GlIndexBuffer,
+    shader: &'a GlShader,
+
+    position: Vector3<GLfloat>,
 }
 
-impl Sprite {
-    pub fn square() -> Sprite {
+impl <'a> Sprite<'a> {
+    pub fn square(shader: &'a GlShader, position: Vector3<GLfloat>) -> Sprite<'a> {
         let vbo = GlBuffer::new(&[
             vec3(0.5, 0.5, 0.0),    // Top right
             vec3(0.5, -0.5, 0.0),   // Bottom right
@@ -26,23 +31,27 @@ impl Sprite {
             ebo: GlIndexBuffer::new(&[
                 0, 1, 3,
                 1, 2, 3,
-            ])
+            ]),
+            shader,
+            position,
         }
     }
 }
 
-impl Default for Sprite {
-    fn default() -> Sprite {
-        Sprite::square()
-    }
-}
-
-impl Renderable for Sprite {
+impl <'a> Renderable for Sprite<'a> {
     fn get_vao(&self) -> &GlVertexArray {
         &self.vao
     }
 
     fn get_ebo(&self) -> &GlIndexBuffer {
         &self.ebo
+    }
+
+    fn get_shader(&self) -> &GlShader {
+        &self.shader
+    }
+
+    fn get_position(&self) -> &Vector3<GLfloat> {
+        &self.position
     }
 }

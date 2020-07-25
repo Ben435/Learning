@@ -5,19 +5,19 @@ use super::renderable::Index;
 
 #[derive(Debug)]
 pub struct GlIndexBuffer {
-    pub buffer_id: gl::types::GLuint,
+    gl_ibo: gl::types::GLuint,
     pub components: usize,
 }
 
 impl GlIndexBuffer {
     pub fn new(data: &[Index]) -> GlIndexBuffer {
         let mut res = GlIndexBuffer{
-            buffer_id: 0,
+            gl_ibo: 0,
             components: data.len(),
         };
 
         unsafe {
-            gl::GenBuffers(1, &mut res.buffer_id);
+            gl::GenBuffers(1, &mut res.gl_ibo);
             res.bind();
 
             gl::BufferData(
@@ -35,7 +35,7 @@ impl GlIndexBuffer {
 
     pub fn bind(&self) {
         unsafe {
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.buffer_id);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.gl_ibo);
         }
     }
 
@@ -50,7 +50,7 @@ impl Drop for GlIndexBuffer {
     fn drop(&mut self) {
         unsafe {
             // Silently ignores dropping bound buffers, so don't worry about it
-            gl::DeleteBuffers(1, &mut self.buffer_id);
+            gl::DeleteBuffers(1, &mut self.gl_ibo);
         }
     }
 }

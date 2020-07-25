@@ -2,6 +2,7 @@ use gl;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::ptr;
+use cgmath::{vec3,ortho,Matrix4};
 
 use super::renderable::{Renderable};
 
@@ -11,7 +12,6 @@ use super::renderable::{Renderable};
 
 pub struct SimpleRenderer<'a, T : Renderable> {
     queue: VecDeque<&'a T>,
-    vao: gl::types::GLuint,
     phantom: PhantomData<T>,
 }
 
@@ -19,7 +19,6 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
 
     pub fn new() -> SimpleRenderer<'a, T> {
         let mut res = SimpleRenderer::<T>{
-            vao: 0,
             queue: VecDeque::new(),
             phantom: PhantomData,
         };
@@ -29,11 +28,7 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
         res
     }
 
-    fn init(&mut self) {
-        unsafe {
-            gl::GenVertexArrays(1, &mut self.vao);
-        }
-    }
+    fn init(&mut self) {}
 
     pub fn begin(&mut self) {}
     pub fn end(&mut self) {}
@@ -44,19 +39,19 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
     }
 
     pub fn present(&mut self) {
+        let pr_matrix = ortho(0.0, 16.0, 0.0, 9.0, -1.0, 1.0);
         unsafe {
             while let Some(r) = self.queue.pop_front() {
                 r.get_vao().bind();
                 let ebo = r.get_ebo();
                 ebo.bind();
+                let shader = r.get_shader();
+                shader.enable();
+                shader.set_uniform_mat4("pr_matrix".to_string(), pr_matrix);
+                shader.set_uniform_mat4("ml_matrix".to_string(), Matrix4::from_translation(*r.get_position()));
+
                 gl::DrawElements(gl::TRIANGLES, ebo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
             }
         };
-    }
-}
-
-impl <'a, T: Renderable> Drop for SimpleRenderer<'a, T> {
-    fn drop(&mut self) {
-
     }
 }
