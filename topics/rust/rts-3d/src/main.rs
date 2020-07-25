@@ -10,7 +10,7 @@ use render::sprite::Sprite;
 use render::GlShader;
 use resources::ResourceLoader;
 use std::path::Path;
-use cgmath::vec3;
+use cgmath::{vec3,vec2};
 
 const SCR_HEIGHT: u32 = 600;
 const SCR_WIDTH: u32 = 800;
@@ -35,13 +35,14 @@ fn main() {
         .build();
     info!("Shader initialized");
 
-    let sp = Sprite::square(&shader, vec3(5.0, 5.0, 0.0));
-    info!("Loading sprite: {:?}", &sp);
+    let sprites: Vec<Sprite> = (0..1)
+        .flat_map(|x| (0..2).map(move |y| (x, y)))
+        .map(|(x, y)| Sprite::square(&shader, vec3(x as f32, y as f32, 0.0), vec2(1.0, 1.0)))
+        .collect();
 
     let mut renderer: render::SimpleRenderer<render::sprite::Sprite> = render::SimpleRenderer::new();
 
     debug!("Beginning main loop");
-
     unsafe {
         gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE)
     }
@@ -67,7 +68,9 @@ fn main() {
             
             renderer.begin();
 
-            renderer.submit(&sp);
+            sprites.iter().for_each(|sp| {
+                renderer.submit(sp);
+            });
 
             renderer.end();
 

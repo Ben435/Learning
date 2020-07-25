@@ -12,4 +12,5 @@ pub trait Renderable {
     fn get_ebo(&self) -> &GlIndexBuffer;
     fn get_shader(&self) -> &GlShader;
     fn get_position(&self) -> &Vector3<GLfloat>;
+    fn get_size(&self) -> &Vector3<GLfloat>;
 }

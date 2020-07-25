@@ -48,7 +48,12 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
                 let shader = r.get_shader();
                 shader.enable();
                 shader.set_uniform_mat4("pr_matrix".to_string(), pr_matrix);
-                shader.set_uniform_mat4("ml_matrix".to_string(), Matrix4::from_translation(*r.get_position()));
+                let pos = *r.get_position();
+                // let scale = *r.get_size();
+                shader.set_uniform_mat4(
+                    "ml_matrix".to_string(), 
+                    Matrix4::from_scale(1.0) * Matrix4::from_translation(pos)
+                );
 
                 gl::DrawElements(gl::TRIANGLES, ebo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
             }
