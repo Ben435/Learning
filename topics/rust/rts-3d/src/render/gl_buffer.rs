@@ -4,23 +4,22 @@ use std::ffi::c_void;
 use log::error;
 use super::renderable::Vertex;
 
+#[derive(Debug)]
 pub struct GlBuffer {
     pub buffer_id: gl::types::GLuint,
     pub components: usize,
-    bound: bool,
 }
 
 impl GlBuffer {
-    pub fn new(data: &[Vertex], components: usize) -> GlBuffer {
+    pub fn new(data: &[Vertex]) -> GlBuffer {
         let mut res = GlBuffer{
             buffer_id: 0,
-            components,
-            bound: false,
+            components: data.len(),
         };
 
         unsafe {
             gl::GenBuffers(1, &mut res.buffer_id);
-            gl::BindBuffer(gl::ARRAY_BUFFER, res.buffer_id);
+            res.bind();
 
             gl::BufferData(
                 gl::ARRAY_BUFFER, 
@@ -29,7 +28,7 @@ impl GlBuffer {
                 gl::STATIC_DRAW
             );
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            res.unbind();
         }
 
         res
@@ -39,7 +38,6 @@ impl GlBuffer {
         let mut res = GlBuffer {
             buffer_id: 0,
             components: 0,
-            bound: false,
         };
 
         unsafe {
@@ -59,29 +57,23 @@ impl GlBuffer {
         res
     }
 
-    pub fn bind(&mut self) {
-        if !self.bound {
-            unsafe {
-                self.bound = true;
-                gl::BindBuffer(gl::ARRAY_BUFFER, self.buffer_id);
-            }
+    pub fn bind(&self) {
+        unsafe {
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.buffer_id);
         }
     }
 
-    pub fn unbind(&mut self) {
-        if self.bound {
-            unsafe {
-                self.bound = false;
-                gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-            }
+    pub fn unbind(&self) {
+        unsafe {
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         }
     }
 
     // TODO: Maybe make a smart pointer wrapper, so can auto-unmap on drop.
-    pub fn map_buffer(&mut self, mode: gl::types::GLenum) -> *mut c_void {
+    pub fn map_buffer(&mut self, mode: gl::types::GLenum) -> *mut Vertex {
         unsafe {
             self.bind();
-            let ptr = gl::MapBuffer(self.buffer_id, mode);
+            let ptr = gl::MapBuffer(self.buffer_id, mode) as *mut Vertex;
             self.unbind();
 
             ptr

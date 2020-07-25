@@ -59,7 +59,6 @@ impl Window {
         }
 
         unsafe {
-            gl::Enable(gl::DEPTH_TEST);
 
             // Clear any existing data.
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);

@@ -6,9 +6,7 @@ mod resources;
 use window::Window;
 use log::{info,debug,error,LevelFilter};
 use env_logger::{Builder};
-use render::{Renderable,Vertex};
 use render::sprite::Sprite;
-use std::ffi::CString;
 use resources::ResourceLoader;
 use std::path::Path;
 
@@ -28,30 +26,13 @@ fn main() {
     ).unwrap();
     info!("Window initialized");
 
-    // let mut renderer: render::SimpleRenderer<render::sprite::Sprite> = render::SimpleRenderer::new();
+    let sp = Sprite::square();
+    info!("Loading sprite: {:?}", &sp);
 
-    let sp: Sprite = Sprite::square();
+    let mut renderer: render::SimpleRenderer<render::sprite::Sprite> = render::SimpleRenderer::new();
 
-    let mut vbo = render::GlBuffer::new(sp.get_vertices().as_ref(), sp.get_vertices().len());
-    let mut ibo = render::GlIndexBuffer::new(sp.get_indices().as_ref());
 
-    let vao = unsafe {
-        let mut tmp = 0;
-        gl::GenVertexArrays(1, &mut tmp);
-        gl::BindVertexArray(tmp);
-
-        vbo.bind();
-        ibo.bind();
-
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, std::mem::size_of::<Vertex>() as i32, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
-        
-        gl::BindVertexArray(0);
-
-        tmp
-    };
-
-    let cap = 1024;
+    let cap = 512;
     let mut msg_buffer = Vec::with_capacity(cap);
     unsafe {
         msg_buffer.set_len(cap-1);
@@ -65,18 +46,6 @@ fn main() {
         let tmp = gl::CreateShader(gl::FRAGMENT_SHADER);
         gl::ShaderSource(tmp, 1, &csrc.as_ptr(), std::ptr::null());
         gl::CompileShader(tmp);
-
-        // TODO: From here to bottom, wrap for error handling.
-        let err = gl::GetError();
-        if err != gl::NO_ERROR {
-            match err {
-                gl::INVALID_ENUM => error!("Invalid Enum!"),
-                gl::INVALID_VALUE => error!("Invalid Value!"),
-                gl::INVALID_OPERATION => error!("Invalid Op!"),
-                _ => error!("Unknown error!"),
-            }
-            panic!(format!("Gl error set!: {}", err));
-        }
 
         let mut success = gl::FALSE as gl::types::GLint;
         gl::GetShaderiv(tmp, gl::COMPILE_STATUS, &mut success);
@@ -98,8 +67,7 @@ fn main() {
     };
 
     let vert = unsafe {
-        let src = include_str!("../assets/shaders/shader.vert");
-        let csrc = CString::new(src).unwrap();    // TODO: Better handling
+        let csrc = loader.load_cstring("shaders/shader.vert").unwrap();
 
         let tmp = gl::CreateShader(gl::VERTEX_SHADER);
         gl::ShaderSource(tmp, 1, &csrc.as_ptr(), std::ptr::null());
@@ -127,11 +95,19 @@ fn main() {
             panic!("Failed to link prg");
         }
 
+        gl::DeleteShader(frag);
+        gl::DeleteShader(frag);
+
         tmp
     };
     info!("Program initialized");
 
     debug!("Beginning main loop");
+
+    unsafe {
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE)
+    }
+
     while !win.should_close() {
         // Process events
         for (_, event) in win.flush_events() {
@@ -152,13 +128,30 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
             gl::UseProgram(prg);
+            renderer.begin();
 
-            gl::BindVertexArray(vao);
+            renderer.submit(&sp);
 
-            gl::DrawElements(gl::TRIANGLES, 3, gl::UNSIGNED_SHORT, std::ptr::null());
+            renderer.end();
+            renderer.present();
+
+            check_gl_error();
         }
 
         win.update_screen();
     }
     debug!("Exited main loop");
+}
+
+unsafe fn check_gl_error() {
+    let err = gl::GetError();
+    if err != gl::NO_ERROR {
+        match err {
+            gl::INVALID_ENUM => error!("Invalid Enum!"),
+            gl::INVALID_VALUE => error!("Invalid Value!"),
+            gl::INVALID_OPERATION => error!("Invalid Op!"),
+            _ => error!("Unknown error!"),
+        }
+        panic!(format!("Gl error set!: {}", err));
+    }
 }

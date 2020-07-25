@@ -2,9 +2,9 @@ use gl;
 use std::mem::size_of;
 use std::ffi::c_void;
 use log::error;
-
 use super::renderable::Index;
 
+#[derive(Debug)]
 pub struct GlIndexBuffer {
     pub buffer_id: gl::types::GLuint,
     pub components: usize,
@@ -17,46 +17,63 @@ impl GlIndexBuffer {
             components: data.len(),
         };
 
-        res.init(data);
-
-        res
-    }
-
-    /// Assumption: this _shouldn't_ modify the data passed, just cpy it to the buffer. 
-    /// So it _should_ be safe, but I may be wrong.
-    fn init(&mut self, data: &[Index]) {
         unsafe {
-            gl::GenBuffers(1, &mut self.buffer_id);
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.buffer_id);
+            gl::GenBuffers(1, &mut res.buffer_id);
+            res.bind();
 
             gl::BufferData(
-                gl::ELEMENT_ARRAY_BUFFER,
-                data.len() as isize * size_of::<Index>() as isize, 
+                gl::ELEMENT_ARRAY_BUFFER, 
+                (data.len() * size_of::<Index>()) as isize, 
                 data.as_ptr() as *mut c_void,
                 gl::STATIC_DRAW
             );
 
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+            res.unbind();
         }
+
+        res
     }
 
-    pub fn bind(&mut self) {
+    pub fn with_capacity(size: usize) -> GlIndexBuffer {
+        let mut res = GlIndexBuffer {
+            buffer_id: 0,
+            components: 0,
+        };
+
+        unsafe {
+            gl::GenBuffers(1, &mut res.buffer_id);
+            res.bind();
+
+            gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER, 
+                size as isize * size_of::<Index>() as isize, 
+                std::ptr::null(),
+                gl::STATIC_DRAW
+            );
+
+            res.unbind();
+        }
+
+        res
+    }
+
+    pub fn bind(&self) {
         unsafe {
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.buffer_id);
         }
     }
 
-    pub fn unbind(&mut self) {
+    pub fn unbind(&self) {
         unsafe {
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
         }
     }
 
     // TODO: Maybe make a smart pointer wrapper, so can auto-unmap on drop.
-    pub fn map_buffer(&mut self, mode: gl::types::GLenum) -> *mut c_void {
+    pub fn map_buffer(&mut self, mode: gl::types::GLenum) -> *mut Index {
         unsafe {
             self.bind();
-            let ptr = gl::MapBuffer(self.buffer_id, mode);
+            let ptr = gl::MapBuffer(self.buffer_id, mode) as *mut Index;
             self.unbind();
 
             ptr
