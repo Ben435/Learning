@@ -7,7 +7,7 @@ use std::ffi::CStr;
 
 pub struct Window {
     glfw: glfw::Glfw,
-    window: glfw::Window,
+    pub window: glfw::Window,
     events: Receiver<(f64, glfw::WindowEvent)>,
 }
 
@@ -35,9 +35,7 @@ impl Window {
 
         // Setup polling for events
         window.set_framebuffer_size_polling(true);
-        // window.set_key_polling(true);
         // window.set_scroll_polling(true);
-        // window.set_cursor_pos_polling(true);
 
         let mut res = Window{
             glfw,
@@ -77,6 +75,10 @@ impl Window {
 
     pub fn should_close(&self) -> bool {
         self.window.should_close()
+    }
+
+    pub fn set_should_close(&mut self, v: bool) {
+        self.window.set_should_close(v);
     }
 }
 

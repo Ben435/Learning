@@ -2,7 +2,7 @@ use gl;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::ptr;
-use cgmath::{vec3,ortho,Matrix4};
+use cgmath::{vec2,Vector2,ortho,Matrix4};
 
 use super::renderable::{Renderable};
 
@@ -13,6 +13,7 @@ use super::renderable::{Renderable};
 pub struct SimpleRenderer<'a, T : Renderable> {
     queue: VecDeque<&'a T>,
     phantom: PhantomData<T>,
+    pub light_pos: Vector2<f32>,
 }
 
 impl <'a, T: Renderable> SimpleRenderer<'a, T> {
@@ -21,6 +22,7 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
         let mut res = SimpleRenderer::<T>{
             queue: VecDeque::new(),
             phantom: PhantomData,
+            light_pos: vec2(0.0, 0.0),
         };
 
         res.init();
@@ -51,9 +53,11 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
                 let pos = *r.get_position();
                 // let scale = *r.get_size();
                 shader.set_uniform_mat4(
-                    "ml_matrix".to_string(), 
-                    Matrix4::from_scale(1.0) * Matrix4::from_translation(pos)
+                    "ml_matrix".to_string(),
+                    Matrix4::from_translation(pos) * Matrix4::from_scale(0.9)
                 );
+
+                shader.set_uniform_2f("light_pos".to_string(), self.light_pos);
 
                 gl::DrawElements(gl::TRIANGLES, ebo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
             }

@@ -1,8 +1,8 @@
 use gl;
-use gl::types::{GLuint,GLint};
+use gl::types::{GLuint,GLint,GLfloat};
 use std::ffi::CString;
 use log::error;
-use cgmath::{Matrix4};
+use cgmath::{Matrix4,Vector2};
 use cgmath::prelude::*;
 
 const MAX_LOG: usize = 1024;
@@ -23,7 +23,14 @@ impl GlShader {
         GlShaderBuilder::new()
     }
 
-    pub fn set_uniform_mat4(&self, name: String, val: Matrix4<f32>) {
+    pub fn set_uniform_2f(&self, name: String, val: Vector2<GLfloat>) {
+        unsafe {
+            let loc = self.get_uniform_location(name);
+            gl::Uniform2f(loc, val.x, val.y);
+        }
+    }
+
+    pub fn set_uniform_mat4(&self, name: String, val: Matrix4<GLfloat>) {
         unsafe {
             let loc = self.get_uniform_location(name);
             gl::UniformMatrix4fv(loc, 1, gl::FALSE, val.as_ptr());
