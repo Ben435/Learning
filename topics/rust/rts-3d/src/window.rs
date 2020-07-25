@@ -35,7 +35,7 @@ impl Window {
 
         // Setup polling for events
         window.set_framebuffer_size_polling(true);
-        // window.set_scroll_polling(true);
+        window.set_scroll_polling(true);
 
         let mut res = Window{
             glfw,
@@ -79,6 +79,10 @@ impl Window {
 
     pub fn set_should_close(&mut self, v: bool) {
         self.window.set_should_close(v);
+    }
+
+    pub fn get_time(&self) -> f64 {
+        self.glfw.get_time()
     }
 }
 

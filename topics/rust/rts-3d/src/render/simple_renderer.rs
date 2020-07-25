@@ -2,9 +2,10 @@ use gl;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::ptr;
-use cgmath::{vec2,Vector2,ortho,Matrix4};
+use cgmath::{vec2,Vector2,perspective,Matrix4,Deg};
 
 use super::renderable::{Renderable};
+use crate::camera::Camera;
 
 // const MAX_VERTICES: usize = 10_000;
 // const MAX_VBO_SIZE: usize = MAX_VERTICES * size_of::<Vertex>();
@@ -40,8 +41,9 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
         self.queue.push_back(renderable);
     }
 
-    pub fn present(&mut self) {
-        let pr_matrix = ortho(0.0, 16.0, 0.0, 9.0, -1.0, 1.0);
+    pub fn present(&mut self, camera: &Camera, scr_width: u32, scr_height: u32) {
+        let vw_matrix = camera.get_view_matrix();
+        let pr_matrix = perspective(Deg(camera.zoom), scr_width as f32 / scr_height as f32, 0.1, 100.0);
         unsafe {
             while let Some(r) = self.queue.pop_front() {
                 r.get_vao().bind();
@@ -49,6 +51,7 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
                 ebo.bind();
                 let shader = r.get_shader();
                 shader.enable();
+                shader.set_uniform_mat4("vw_matrix".to_string(), vw_matrix);
                 shader.set_uniform_mat4("pr_matrix".to_string(), pr_matrix);
                 let pos = *r.get_position();
                 // let scale = *r.get_size();
