@@ -45,6 +45,13 @@ impl ResourceLoader {
         Ok(unsafe { ffi::CString::from_vec_unchecked(buffer) })
     }
 
+    pub fn load_string(&self, resource_name: &str) -> Result<String, Error> {
+        match fs::read_to_string(resource_name_to_path(&self.root_path, resource_name)) {
+            Ok(s) => Ok(s),
+            Err(e) => Err(Error::Io(e))
+        }
+    }
+
     pub fn resolve_path(&self, resource_name: &str) -> Result<PathBuf, Error> {
         Ok(resource_name_to_path(&self.root_path, resource_name))
     }

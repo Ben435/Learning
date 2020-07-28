@@ -15,6 +15,7 @@ use std::path::Path;
 use cgmath::{vec3,vec2,Matrix4};
 use std::collections::HashMap;
 use camera::Camera;
+use wavefront_obj::obj::parse;
 
 const SCR_HEIGHT: u32 = 600;
 const SCR_WIDTH: u32 = 800;
@@ -48,6 +49,15 @@ fn main() {
         .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
         .build();
     info!("Shader initialized");
+
+    let mesh = parse(
+        loader.load_string("models/terrain.obj").unwrap()
+    ).unwrap();
+
+    // Janky, but works?
+    let obj = mesh.objects.get(0).unwrap();
+    let verts = obj.vertices.iter().map(|v| vec3(v.x as f32, v.y as f32, v.z as f32)).collect();
+    let model = Sprite::from_vertices(verts, &shader, vec3(0.0, 0.0, -12.0), 1.0);
 
     let sprites: Vec<Sprite> = (0..16)
         .flat_map(|x| (0..9).map(move |y| (x, y)))
@@ -124,6 +134,7 @@ fn main() {
             sprites.iter().for_each(|sp| {
                 renderer.submit(sp);
             });
+            renderer.submit(&model);
 
             renderer.end();
 
