@@ -23,14 +23,14 @@ impl GlShader {
         GlShaderBuilder::new()
     }
 
-    pub fn set_uniform_2f(&self, name: String, val: Vector2<GLfloat>) {
+    pub fn set_uniform_2f(&self, name: String, val: &Vector2<GLfloat>) {
         unsafe {
             let loc = self.get_uniform_location(name);
             gl::Uniform2f(loc, val.x, val.y);
         }
     }
 
-    pub fn set_uniform_mat4(&self, name: String, val: Matrix4<GLfloat>) {
+    pub fn set_uniform_mat4(&self, name: String, val: &Matrix4<GLfloat>) {
         unsafe {
             let loc = self.get_uniform_location(name);
             gl::UniformMatrix4fv(loc, 1, gl::FALSE, val.as_ptr());

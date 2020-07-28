@@ -1,14 +1,5 @@
-use cgmath::{Vector3,Point3,vec3,Zero,Matrix4,Matrix3};
+use cgmath::{Vector3,Point3,vec3,Zero,Matrix4};
 use cgmath::prelude::*;
-
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-#[derive(PartialEq, Clone, Copy)]
-pub enum CameraMovement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
-}
 
 // Default camera values
 const YAW: f32 = -90.0;

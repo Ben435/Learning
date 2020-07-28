@@ -1,4 +1,4 @@
-use cgmath::{Vector3,vec3,Vector2};
+use cgmath::{Vector3,vec3,Matrix4};
 use super::renderable::{Renderable};
 use super::gl_buffer::GlBuffer;
 use super::gl_vertex_array::GlVertexArray;
@@ -13,11 +13,11 @@ pub struct Sprite<'a> {
     shader: &'a GlShader,
 
     position: Vector3<GLfloat>,
-    size: Vector3<GLfloat>,
+    scale: GLfloat,
 }
 
 impl <'a> Sprite<'a> {
-    pub fn square(shader: &'a GlShader, position: Vector3<GLfloat>, size: Vector2<GLfloat>) -> Sprite<'a> {
+    pub fn square(shader: &'a GlShader, position: Vector3<GLfloat>, scale: GLfloat) -> Sprite<'a> {
         let vbo = GlBuffer::new(&[
             vec3(1.0, 1.0, 0.0),    // Top right
             vec3(1.0, 0.0, 0.0),    // Bottom right
@@ -35,7 +35,7 @@ impl <'a> Sprite<'a> {
             ]),
             shader,
             position,
-            size: Vector3::new(size.x, size.y, 1.0),
+            scale,
         }
     }
 }
@@ -53,11 +53,7 @@ impl <'a> Renderable for Sprite<'a> {
         &self.shader
     }
 
-    fn get_position(&self) -> &Vector3<GLfloat> {
-        &self.position
-    }
-
-    fn get_size(&self) -> &Vector3<GLfloat> {
-        &self.size
+    fn get_transform(&self) -> Matrix4<GLfloat> {
+        Matrix4::from_translation(self.position) * Matrix4::from_scale(0.9)
     }
 }

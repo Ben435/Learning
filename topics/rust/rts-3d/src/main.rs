@@ -3,6 +3,7 @@ mod window;
 mod render;
 mod resources;
 mod camera;
+mod timer;
 
 use window::Window;
 use log::{info,debug,error,LevelFilter};
@@ -50,7 +51,7 @@ fn main() {
 
     let sprites: Vec<Sprite> = (0..16)
         .flat_map(|x| (0..9).map(move |y| (x, y)))
-        .map(|(x, y)| Sprite::square(&shader, vec3(x as f32, y as f32, -10.0), vec2(1.0, 1.0)))
+        .map(|(x, y)| Sprite::square(&shader, vec3(x as f32, y as f32, -10.0), 0.9))
         .collect();
 
     let mut camera = Camera::default();
@@ -67,8 +68,25 @@ fn main() {
         wireframe_mode: false,
     };
 
+    let start_time = win.get_time();;
+    let mut frame_timer = timer::Timer::new(start_time);
+    let mut fps_timer = timer::Timer::new(start_time);
+    let mut frame_count = 0;
     debug!("Beginning main loop");
     while !win.should_close() {
+        let cur_time = win.get_time();
+        let time_progressed = frame_timer.elapsed(cur_time);
+        frame_timer.reset(cur_time);
+
+        // Calculate fps
+        frame_count += 1;
+        let elapsed = fps_timer.elapsed(cur_time);
+        if elapsed > 1.0 {
+            info!("{}fps", frame_count);
+            fps_timer.reset(cur_time);
+            frame_count = 0;
+        }
+
         // Process events
         for (_, event) in win.flush_events() {
             match event {
@@ -82,7 +100,7 @@ fn main() {
                 e => debug!("Unrecognized event: {:?}", e),
             }
         };
-        process_keys(&mut win, &mut key_state, &mut gamestate, &mut camera);
+        process_keys(time_progressed, &mut win, &mut key_state, &mut gamestate, &mut camera);
         
         let (cursor_x, cursor_y) = win.window.get_cursor_pos();
         renderer.light_pos = vec2(
@@ -132,7 +150,7 @@ unsafe fn check_gl_error() {
     }
 }
 
-fn process_keys(win: &mut Window, key_states: &mut HashMap<glfw::Key, bool>, gamestate: &mut GameState, camera: &mut Camera) {
+fn process_keys(elapsed_time: f64, win: &mut Window, key_states: &mut HashMap<glfw::Key, bool>, gamestate: &mut GameState, camera: &mut Camera) {
     match win.window.get_key(glfw::Key::GraveAccent) {
         glfw::Action::Press => {
             let prev_pressed = key_states.insert(glfw::Key::GraveAccent, true).unwrap_or(false);
@@ -155,16 +173,18 @@ fn process_keys(win: &mut Window, key_states: &mut HashMap<glfw::Key, bool>, gam
     };
 
     // Primitive user input for panning.
+    let player_speed = 10.0;
+    let effective_speed = player_speed * elapsed_time as f32;
     if win.window.get_key(glfw::Key::Right) == glfw::Action::Press {
-        camera.transform(Matrix4::from_translation(vec3(1.0, 0.0, 0.0)));
+        camera.transform(Matrix4::from_translation(vec3(effective_speed, 0.0, 0.0)));
     }
     if win.window.get_key(glfw::Key::Left) == glfw::Action::Press {
-        camera.transform(Matrix4::from_translation(vec3(-1.0, 0.0, 0.0)));
+        camera.transform(Matrix4::from_translation(vec3(-effective_speed, 0.0, 0.0)));
     }
     if win.window.get_key(glfw::Key::Up) == glfw::Action::Press {
-        camera.transform(Matrix4::from_translation(vec3(0.0, 1.0, 0.0)));
+        camera.transform(Matrix4::from_translation(vec3(0.0, effective_speed, 0.0)));
     }
     if win.window.get_key(glfw::Key::Down) == glfw::Action::Press {
-        camera.transform(Matrix4::from_translation(vec3(0.0, -1.0, 0.0)));
+        camera.transform(Matrix4::from_translation(vec3(0.0, -effective_speed, 0.0)));
     }
 }

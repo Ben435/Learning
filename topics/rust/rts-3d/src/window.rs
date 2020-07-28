@@ -49,6 +49,7 @@ impl Window {
 
     fn init_gl(&mut self) {
         gl::load_with(|symbol| self.window.get_proc_address(symbol) as *const _);
+        self.glfw.set_swap_interval(glfw::SwapInterval::None);
 
         if log_enabled!(Level::Info) {
             let renderer = get_gl_rstring(gl::RENDERER).unwrap();

@@ -1,4 +1,4 @@
-use cgmath::Vector3;
+use cgmath::Matrix4;
 use gl::types::GLfloat;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
@@ -11,6 +11,5 @@ pub trait Renderable {
     fn get_vao(&self) -> &GlVertexArray;
     fn get_ebo(&self) -> &GlIndexBuffer;
     fn get_shader(&self) -> &GlShader;
-    fn get_position(&self) -> &Vector3<GLfloat>;
-    fn get_size(&self) -> &Vector3<GLfloat>;
+    fn get_transform(&self) -> Matrix4<GLfloat>;
 }
