@@ -10,12 +10,13 @@ use log::{info,debug,error,LevelFilter};
 use env_logger::{Builder};
 use render::sprite::Sprite;
 use render::GlShader;
+use render::{Renderable,Index,Vertex};
 use resources::ResourceLoader;
 use std::path::Path;
 use cgmath::{vec3,vec2,Matrix4};
 use std::collections::HashMap;
 use camera::Camera;
-use wavefront_obj::obj::parse;
+use wavefront_obj::obj::{parse,Primitive};
 
 const SCR_HEIGHT: u32 = 600;
 const SCR_WIDTH: u32 = 800;
@@ -56,8 +57,25 @@ fn main() {
 
     // Janky, but works?
     let obj = mesh.objects.get(0).unwrap();
-    let verts = obj.vertices.iter().map(|v| vec3(v.x as f32, v.y as f32, v.z as f32)).collect();
-    let model = Sprite::from_vertices(verts, &shader, vec3(0.0, 0.0, -12.0), 1.0);
+    let indices: Vec<Index> = obj.geometry
+        .iter()
+        .flat_map(|g| g.shapes.iter())
+        .map(|shape| shape.primitive)
+        .fold(Vec::new(), |mut v, primitive| {
+            let to_append = match primitive {
+                Primitive::Point(v) => [v.0, v.0, v.0],
+                Primitive::Line(v1, v2) => [v1.0, v2.0, v2.0],
+                Primitive::Triangle(v1, v2, v3) => [v1.0, v2.0, v3.0],
+            };
+
+            v.push(to_append[0] as Index);
+            v.push(to_append[1] as Index);
+            v.push(to_append[2] as Index);
+
+            v
+        });
+    let verts: Vec<Vertex> = obj.vertices.iter().map(|v| vec3(v.x as f32, v.y as f32, v.z as f32)).collect();
+    let model = Sprite::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), 1.0);
 
     let sprites: Vec<Sprite> = (0..16)
         .flat_map(|x| (0..9).map(move |y| (x, y)))
@@ -78,7 +96,7 @@ fn main() {
         wireframe_mode: false,
     };
 
-    let start_time = win.get_time();;
+    let start_time = win.get_time();
     let mut frame_timer = timer::Timer::new(start_time);
     let mut fps_timer = timer::Timer::new(start_time);
     let mut frame_count = 0;
