@@ -61,6 +61,6 @@ impl <'a> Renderable for Sprite<'a> {
     }
 
     fn get_transform(&self) -> Matrix4<GLfloat> {
-        Matrix4::from_translation(self.position) * Matrix4::from_scale(0.9)
+        Matrix4::from_translation(self.position) * Matrix4::from_scale(self.scale)
     }
 }

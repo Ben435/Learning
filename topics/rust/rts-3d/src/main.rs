@@ -13,7 +13,8 @@ use render::GlShader;
 use render::{Renderable,Index,Vertex};
 use resources::ResourceLoader;
 use std::path::Path;
-use cgmath::{vec3,vec2,Matrix4};
+use cgmath::{vec3,vec2,Vector3,Point3,Matrix4};
+use cgmath::prelude::*;
 use std::collections::HashMap;
 use camera::Camera;
 use wavefront_obj::obj::{parse,Primitive};
@@ -23,11 +24,12 @@ const SCR_WIDTH: u32 = 800;
 
 struct GameState {
     pub wireframe_mode: bool,
+    pub cam_rotate_mode: bool,
 }
 
 struct MouseState {
-    pub prev_x: f32,
-    pub prev_y: f32,
+    pub prev_x: f64,
+    pub prev_y: f64,
     pub first_mouse: bool,
 }
 
@@ -94,6 +96,7 @@ fn main() {
     };
     let mut gamestate = GameState{
         wireframe_mode: false,
+        cam_rotate_mode: false,
     };
 
     let start_time = win.get_time();
@@ -103,13 +106,12 @@ fn main() {
     debug!("Beginning main loop");
     while !win.should_close() {
         let cur_time = win.get_time();
-        let time_progressed = frame_timer.elapsed(cur_time);
+        let elapsed = frame_timer.elapsed(cur_time);
         frame_timer.reset(cur_time);
 
         // Calculate fps
         frame_count += 1;
-        let elapsed = fps_timer.elapsed(cur_time);
-        if elapsed > 1.0 {
+        if fps_timer.elapsed(cur_time) > 1.0 {
             info!("{}fps", frame_count);
             fps_timer.reset(cur_time);
             frame_count = 0;
@@ -128,12 +130,18 @@ fn main() {
                 e => debug!("Unrecognized event: {:?}", e),
             }
         };
-        process_keys(time_progressed, &mut win, &mut key_state, &mut gamestate, &mut camera);
-        
-        let (cursor_x, cursor_y) = win.window.get_cursor_pos();
-        renderer.light_pos = vec2(
-            (cursor_x as f32 / (SCR_WIDTH/2) as f32) - 1.0,
-            (-cursor_y as f32 / (SCR_HEIGHT/2) as f32) + 1.0,
+
+        process_keys(elapsed, &mut win, &mut key_state, &mut gamestate, &mut camera);
+        process_mouse(elapsed, &mut win, &mut mouse_state, &mut gamestate, &mut camera);
+        let cursor_x = mouse_state.prev_x as f32;
+        let cursor_y = mouse_state.prev_y as f32;
+        let light_x = camera.position.x + (cursor_x / SCR_WIDTH as f32);
+        let light_y = camera.position.y - (cursor_y / SCR_HEIGHT as f32);
+        let light_pos = Point3{ x: light_x, y: light_y, z: 0.0 } + camera.front.normalize_to(-8.0);
+        renderer.light_pos = vec3(
+            light_pos.x,
+            light_pos.y,
+            light_pos.z,
         );
         
         // Render
@@ -177,6 +185,43 @@ unsafe fn check_gl_error() {
         }
         panic!(format!("Gl error set!: {}", err));
     }
+}
+
+fn process_mouse(elapsed_time: f64, win: &mut Window, mouse_state: &mut MouseState, gamestate: &mut GameState, camera: &mut Camera) {
+    match win.window.get_mouse_button(glfw::MouseButton::Button2) {
+        glfw::Action::Press => {
+            if !gamestate.cam_rotate_mode {
+                gamestate.cam_rotate_mode = true;
+            }
+        },
+        glfw::Action::Release => {
+            gamestate.cam_rotate_mode = false;
+        },
+        _ => {},
+    };
+
+    let (cur_x, cur_y) = win.window.get_cursor_pos();
+    let min_move = 0.01;
+    let rotate_speed = 10.0;
+    if gamestate.cam_rotate_mode {
+        let x_mov = mouse_state.prev_x - cur_x;
+        let y_mov = mouse_state.prev_y - cur_y;
+
+        if x_mov.abs() > min_move {
+            let x_delta = x_mov * elapsed_time * rotate_speed;
+            camera.yaw += x_delta as f32;
+        }
+
+        if y_mov.abs() > min_move {
+            let y_delta = y_mov * elapsed_time * rotate_speed;
+            camera.pitch = (camera.pitch + y_delta as f32).min(89.0).max(-89.0);
+        }
+
+        camera.update_camera_vectors();
+    }
+
+    mouse_state.prev_x = cur_x;
+    mouse_state.prev_y = cur_y;
 }
 
 fn process_keys(elapsed_time: f64, win: &mut Window, key_states: &mut HashMap<glfw::Key, bool>, gamestate: &mut GameState, camera: &mut Camera) {

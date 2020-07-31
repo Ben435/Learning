@@ -2,7 +2,7 @@ use gl;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::ptr;
-use cgmath::{vec2,Vector2,perspective,Matrix4,Deg};
+use cgmath::{vec3,Vector3,perspective,Matrix4,Deg};
 
 use super::renderable::{Renderable};
 use crate::camera::Camera;
@@ -14,7 +14,7 @@ use crate::camera::Camera;
 pub struct SimpleRenderer<'a, T : Renderable> {
     queue: VecDeque<&'a T>,
     phantom: PhantomData<T>,
-    pub light_pos: Vector2<f32>,
+    pub light_pos: Vector3<f32>,
 }
 
 impl <'a, T: Renderable> SimpleRenderer<'a, T> {
@@ -23,7 +23,7 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
         let mut res = SimpleRenderer::<T>{
             queue: VecDeque::new(),
             phantom: PhantomData,
-            light_pos: vec2(0.0, 0.0),
+            light_pos: vec3(0.0, 0.0, 0.0),
         };
 
         res.init();
@@ -53,12 +53,9 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
                 shader.enable();
                 shader.set_uniform_mat4("vw_matrix".to_string(), &vw_matrix);
                 shader.set_uniform_mat4("pr_matrix".to_string(), &pr_matrix);
-                shader.set_uniform_mat4(
-                    "ml_matrix".to_string(),
-                    &r.get_transform(),
-                );
+                shader.set_uniform_mat4("ml_matrix".to_string(), &r.get_transform());
 
-                shader.set_uniform_2f("light_pos".to_string(), &self.light_pos);
+                shader.set_uniform_3f("light_pos".to_string(), &self.light_pos);
 
                 gl::DrawElements(gl::TRIANGLES, ebo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
             }

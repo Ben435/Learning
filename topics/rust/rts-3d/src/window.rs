@@ -36,6 +36,7 @@ impl Window {
         // Setup polling for events
         window.set_framebuffer_size_polling(true);
         window.set_scroll_polling(true);
+        window.set_cursor_mode(glfw::CursorMode::Disabled);
 
         let mut res = Window{
             glfw,
@@ -58,7 +59,6 @@ impl Window {
         }
 
         unsafe {
-
             // Clear any existing data.
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);

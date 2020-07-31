@@ -2,7 +2,7 @@ use gl;
 use gl::types::{GLuint,GLint,GLfloat};
 use std::ffi::CString;
 use log::error;
-use cgmath::{Matrix4,Vector2};
+use cgmath::{Matrix4,Vector2,Vector3};
 use cgmath::prelude::*;
 
 const MAX_LOG: usize = 1024;
@@ -27,6 +27,13 @@ impl GlShader {
         unsafe {
             let loc = self.get_uniform_location(name);
             gl::Uniform2f(loc, val.x, val.y);
+        }
+    }
+
+    pub fn set_uniform_3f(&self, name: String, val: &Vector3<GLfloat>) {
+        unsafe {
+            let loc = self.get_uniform_location(name);
+            gl::Uniform3f(loc, val.x, val.y, val.z);
         }
     }
 
