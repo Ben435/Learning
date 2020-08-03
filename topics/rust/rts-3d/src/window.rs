@@ -36,7 +36,10 @@ impl Window {
         // Setup polling for events
         window.set_framebuffer_size_polling(true);
         window.set_scroll_polling(true);
-        window.set_cursor_mode(glfw::CursorMode::Disabled);
+        // window.set_cursor_mode(glfw::CursorMode::Disabled);
+        let pixels = [0xff000000; 100*100].to_vec();
+        let cursor = glfw::Cursor::create_from_pixels(glfw::PixelImage{ height: 10, width: 10, pixels }, 0, 0);
+        window.set_cursor(Some(cursor));
 
         let mut res = Window{
             glfw,

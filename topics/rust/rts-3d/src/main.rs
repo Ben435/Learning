@@ -19,8 +19,8 @@ use std::collections::HashMap;
 use camera::Camera;
 use wavefront_obj::obj::{parse,Primitive};
 
-const SCR_HEIGHT: u32 = 600;
-const SCR_WIDTH: u32 = 800;
+pub const SCR_HEIGHT: u32 = 600;
+pub const SCR_WIDTH: u32 = 800;
 
 struct GameState {
     pub wireframe_mode: bool,
@@ -57,7 +57,7 @@ fn main() {
         loader.load_string("models/terrain.obj").unwrap()
     ).unwrap();
 
-    // Janky, but works?
+    // Janky, but proves it works?
     let obj = mesh.objects.get(0).unwrap();
     let indices: Vec<Index> = obj.geometry
         .iter()
@@ -83,6 +83,8 @@ fn main() {
         .flat_map(|x| (0..9).map(move |y| (x, y)))
         .map(|(x, y)| Sprite::square(&shader, vec3(x as f32, y as f32, -10.0), 0.9))
         .collect();
+
+    let cube = Sprite::cube(&shader, vec3(-5.0, 5.0, -12.0), 1.0);
 
     let mut camera = Camera::default();
 
@@ -133,11 +135,14 @@ fn main() {
 
         process_keys(elapsed, &mut win, &mut key_state, &mut gamestate, &mut camera);
         process_mouse(elapsed, &mut win, &mut mouse_state, &mut gamestate, &mut camera);
-        let cursor_x = mouse_state.prev_x as f32;
-        let cursor_y = mouse_state.prev_y as f32;
-        let light_x = camera.position.x + (cursor_x / SCR_WIDTH as f32);
-        let light_y = camera.position.y - (cursor_y / SCR_HEIGHT as f32);
+        // Center by subtracting half, will be negative for left/down, positive for right/up
+        let cursor_x = mouse_state.prev_x as f32 - (camera.viewport_width as f32 / 2.0);
+        let cursor_y = mouse_state.prev_y as f32 - (camera.viewport_height as f32 / 2.0);
+        info!("cx={}, cxd={}, cy={}, cyd={}", cursor_x, cursor_x / camera.viewport_width as f32, cursor_y, cursor_y / camera.viewport_height as f32);
+        let light_x = camera.position.x + (cursor_x / camera.viewport_width as f32);
+        let light_y = camera.position.y - (cursor_y / camera.viewport_height as f32);
         let light_pos = Point3{ x: light_x, y: light_y, z: 0.0 } + camera.front.normalize_to(-8.0);
+        info!("Light pos: {:?}", light_pos);
         renderer.light_pos = vec3(
             light_pos.x,
             light_pos.y,
@@ -161,10 +166,11 @@ fn main() {
                 renderer.submit(sp);
             });
             renderer.submit(&model);
+            renderer.submit(&cube);
 
             renderer.end();
 
-            renderer.present(&camera, SCR_WIDTH, SCR_HEIGHT);
+            renderer.present(&camera);
 
             check_gl_error();
         }

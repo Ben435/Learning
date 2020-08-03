@@ -1,4 +1,4 @@
-use cgmath::{Vector3,Point3,vec3,Zero,Matrix4};
+use cgmath::{Vector3,Point3,vec3,Zero,Matrix4,Deg,perspective};
 use cgmath::prelude::*;
 
 // Default camera values
@@ -15,6 +15,8 @@ pub struct Camera {
     pub up: Vector3<f32>,
     pub right: Vector3<f32>,
     pub world_up: Vector3<f32>,
+    pub viewport_height: u32,
+    pub viewport_width: u32,
     // Euler Angles
     pub yaw: f32,
     pub pitch: f32,
@@ -37,6 +39,8 @@ impl Default for Camera {
             movement_speed: SPEED,
             mouse_sensitivity: SENSITIVTY,
             zoom: ZOOM,
+            viewport_height: 600,
+            viewport_width: 800,
         };
         camera.update_camera_vectors();
 
@@ -47,6 +51,10 @@ impl Default for Camera {
 impl Camera {
     pub fn get_view_matrix(&self) -> Matrix4<f32> {
         Matrix4::look_at(self.position, self.position + self.front, self.up)
+    }
+
+    pub fn get_projection_matrix(&self) -> Matrix4<f32> {
+        perspective(Deg(self.zoom), self.viewport_width as f32 / self.viewport_height as f32, 0.1, 100.0)
     }
 
     pub fn transform(&mut self, transform: Matrix4<f32>) {

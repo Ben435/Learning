@@ -41,9 +41,9 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
         self.queue.push_back(renderable);
     }
 
-    pub fn present(&mut self, camera: &Camera, scr_width: u32, scr_height: u32) {
+    pub fn present(&mut self, camera: &Camera) {
         let vw_matrix = camera.get_view_matrix();
-        let pr_matrix = perspective(Deg(camera.zoom), scr_width as f32 / scr_height as f32, 0.1, 100.0);
+        let pr_matrix = camera.get_projection_matrix();
         unsafe {
             while let Some(r) = self.queue.pop_front() {
                 r.get_vao().bind();
