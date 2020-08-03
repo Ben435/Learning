@@ -5,7 +5,7 @@ mod gl_index_buffer;
 mod gl_vertex_array;
 mod gl_shader;
 
-pub mod sprite;
+pub mod mesh;
 
 pub use simple_renderer::SimpleRenderer;
 pub use renderable::{Renderable,Vertex,Index};

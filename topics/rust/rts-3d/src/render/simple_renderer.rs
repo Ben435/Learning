@@ -11,18 +11,23 @@ use crate::camera::Camera;
 // const MAX_VBO_SIZE: usize = MAX_VERTICES * size_of::<Vertex>();
 // const MAX_IBO_SIZE: usize = 20_000;
 
-pub struct SimpleRenderer<'a, T : Renderable> {
-    queue: VecDeque<&'a T>,
+/// Simple Renderer. 
+/// Use `SimpleRenderer::begin()` to open a context, submit renderables to the context, then present.
+/// This "manager" + "context" pattern helps guide the borrow checker, while still persisting the parent manager.
+pub struct SimpleRenderer<T : Renderable> {
     phantom: PhantomData<T>,
     pub light_diffuse_dir: Vector3<f32>,
     pub light_diffuse: Vector3<f32>,
 }
 
-impl <'a, T: Renderable> SimpleRenderer<'a, T> {
+pub struct SimpleRenderContext<'a, T : Renderable> {
+    queue: VecDeque<&'a T>,
+    renderer: &'a SimpleRenderer<T>,
+}
 
-    pub fn new() -> SimpleRenderer<'a, T> {
+impl <'a, T: Renderable> SimpleRenderer<T> {
+    pub fn new() -> SimpleRenderer<T> {
         let mut res = SimpleRenderer::<T>{
-            queue: VecDeque::new(),
             phantom: PhantomData,
             light_diffuse_dir: vec3(-0.2, -1.0, -0.3),
             light_diffuse: vec3(0.5, 0.5, 0.5),
@@ -35,10 +40,15 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
 
     fn init(&mut self) {}
 
-    pub fn begin(&mut self) {}
-    pub fn end(&mut self) {}
+    pub fn begin(&'a self) -> SimpleRenderContext<'a, T> {
+        SimpleRenderContext{
+            queue: VecDeque::new(),
+            renderer: self,
+        }
+    }
+}
 
-    /// Copy to mem_buffer, will send to GPU in `present()` call.
+impl <'a, T : Renderable> SimpleRenderContext<'a, T> {
     pub fn submit(&mut self, renderable: &'a T) {
         self.queue.push_back(renderable);
     }
@@ -57,8 +67,8 @@ impl <'a, T: Renderable> SimpleRenderer<'a, T> {
                 shader.set_uniform_mat4("pr_matrix".to_string(), &pr_matrix);
                 shader.set_uniform_mat4("ml_matrix".to_string(), &r.get_transform());
 
-                shader.set_uniform_3f("light_dir".to_string(), &self.light_diffuse_dir);
-                shader.set_uniform_3f("light_diffuse".to_string(), &self.light_diffuse);
+                shader.set_uniform_3f("light_dir".to_string(), &self.renderer.light_diffuse_dir);
+                shader.set_uniform_3f("light_diffuse".to_string(), &self.renderer.light_diffuse);
 
                 gl::DrawElements(gl::TRIANGLES, ebo.components as i32, gl::UNSIGNED_SHORT, ptr::null());
             }

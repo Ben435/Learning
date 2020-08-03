@@ -8,12 +8,12 @@ mod timer;
 use window::Window;
 use log::{info,debug,error,LevelFilter};
 use env_logger::{Builder};
-use render::sprite::Sprite;
+use render::mesh::Mesh;
 use render::GlShader;
-use render::{Renderable,Index,Vertex};
+use render::{Index,Vertex};
 use resources::ResourceLoader;
 use std::path::Path;
-use cgmath::{vec3,vec2,Vector3,Point3,Matrix4};
+use cgmath::{vec3,Matrix3,Quaternion,Matrix4,Deg,Rad};
 use cgmath::prelude::*;
 use std::collections::HashMap;
 use camera::Camera;
@@ -81,20 +81,22 @@ fn main() {
         .zip(&obj.normals)
         .map(|(v, n)| Vertex::from_coords(
             v.x as f32, v.y as f32, v.z as f32, 
-            n.x as f32, n.y as f32, n.z as f32
+            n.x as f32, n.y as f32, n.z as f32,
         )).collect();
-    let model = Sprite::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), 1.0);
+    let model = Mesh::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
-    let sprites: Vec<Sprite> = (0..16)
+    let sprites: Vec<Mesh> = (0..16)
         .flat_map(|x| (0..9).map(move |y| (x, y)))
-        .map(|(x, y)| Sprite::square(&shader, vec3(x as f32, y as f32, -10.0), 0.9))
+        .map(|(x, y)| Mesh::square(&shader, vec3(x as f32, y as f32, -10.0), Quaternion::from(Matrix3::from_value(0.0)), 0.9))
         .collect();
 
-    let cube = Sprite::cube(&shader, vec3(-5.0, 5.0, -12.0), 1.0);
+    let demo_card = Mesh::square(&shader, vec3(-1.0 as f32, 4.0 as f32, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
+
+    let mut cube = Mesh::cube(&shader, vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
     let mut camera = Camera::default();
 
-    let mut renderer: render::SimpleRenderer<Sprite> = render::SimpleRenderer::new();
+    let renderer: render::SimpleRenderer<Mesh> = render::SimpleRenderer::new();
 
     let mut key_state = HashMap::new();
     let mut mouse_state = MouseState{
@@ -141,6 +143,9 @@ fn main() {
 
         process_keys(elapsed, &mut win, &mut key_state, &mut gamestate, &mut camera);
         process_mouse(elapsed, &mut win, &mut mouse_state, &mut gamestate, &mut camera);
+
+        // Rotate based on current time, just to show lighting
+        cube.rotation = Quaternion::from(Matrix3::from_angle_x(Rad::<f32>((win.get_time() as f32).sin() * 2.0)));
         
         // Render
         unsafe {
@@ -153,17 +158,16 @@ fn main() {
                 gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
             }
             
-            renderer.begin();
+            let mut context = renderer.begin();
 
             sprites.iter().for_each(|sp| {
-                renderer.submit(sp);
+                context.submit(sp);
             });
-            renderer.submit(&model);
-            renderer.submit(&cube);
+            context.submit(&model);
+            context.submit(&cube);
+            context.submit(&demo_card);
 
-            renderer.end();
-
-            renderer.present(&camera);
+            context.present(&camera);
 
             check_gl_error();
         }
