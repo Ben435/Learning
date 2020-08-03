@@ -40,6 +40,9 @@ impl <'a, T: Renderable> SimpleRenderer<T> {
 
     fn init(&mut self) {}
 
+    /// Begin new render context
+    /// Encapsulates lifetime around render queue
+    /// TODO: Optimization available by carrying buffer from VecDeque between frames.
     pub fn begin(&'a self) -> SimpleRenderContext<'a, T> {
         SimpleRenderContext{
             queue: VecDeque::new(),
