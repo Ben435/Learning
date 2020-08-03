@@ -76,7 +76,13 @@ fn main() {
 
             v
         });
-    let verts: Vec<Vertex> = obj.vertices.iter().map(|v| vec3(v.x as f32, v.y as f32, v.z as f32)).collect();
+    let verts: Vec<Vertex> = obj.vertices
+        .iter()
+        .zip(&obj.normals)
+        .map(|(v, n)| Vertex::from_coords(
+            v.x as f32, v.y as f32, v.z as f32, 
+            n.x as f32, n.y as f32, n.z as f32
+        )).collect();
     let model = Sprite::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), 1.0);
 
     let sprites: Vec<Sprite> = (0..16)
@@ -135,24 +141,11 @@ fn main() {
 
         process_keys(elapsed, &mut win, &mut key_state, &mut gamestate, &mut camera);
         process_mouse(elapsed, &mut win, &mut mouse_state, &mut gamestate, &mut camera);
-        // Center by subtracting half, will be negative for left/down, positive for right/up
-        let cursor_x = mouse_state.prev_x as f32 - (camera.viewport_width as f32 / 2.0);
-        let cursor_y = mouse_state.prev_y as f32 - (camera.viewport_height as f32 / 2.0);
-        info!("cx={}, cxd={}, cy={}, cyd={}", cursor_x, cursor_x / camera.viewport_width as f32, cursor_y, cursor_y / camera.viewport_height as f32);
-        let light_x = camera.position.x + (cursor_x / camera.viewport_width as f32);
-        let light_y = camera.position.y - (cursor_y / camera.viewport_height as f32);
-        let light_pos = Point3{ x: light_x, y: light_y, z: 0.0 } + camera.front.normalize_to(-8.0);
-        info!("Light pos: {:?}", light_pos);
-        renderer.light_pos = vec3(
-            light_pos.x,
-            light_pos.y,
-            light_pos.z,
-        );
         
         // Render
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             if gamestate.wireframe_mode {
                 gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);

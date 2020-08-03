@@ -32,6 +32,24 @@ impl GlVertexArray {
         self.unbind();
     }
 
+    /// Assume interleaved vec3's of GLfloats (yeap, a big assumption)
+    pub fn add_interleaved_buffer(&mut self, buf: GlBuffer) {
+        self.bind();
+        buf.bind();
+        
+        let stride: i32 = 6 * std::mem::size_of::<gl::types::GLfloat>() as i32;
+
+        unsafe {
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, stride, (3 * std::mem::size_of::<gl::types::GLfloat>()) as *mut gl::types::GLvoid);
+            gl::EnableVertexAttribArray(1);
+        }
+
+        buf.unbind();
+        self.unbind();
+    }
+
     pub fn bind(&self) {
         unsafe {
             gl::BindVertexArray(self.gl_vao);

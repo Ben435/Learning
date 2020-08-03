@@ -123,11 +123,11 @@ impl GlShaderBuilder {
 
             if log_len > 0 {
                 gl::GetShaderInfoLog(shader_id, log_len.min(MAX_LOG as i32), std::ptr::null_mut(), self.log_buffer.as_mut_ptr() as *mut gl::types::GLchar);
-                error!("Failed to compile frag: {}", String::from_utf8_lossy(&self.log_buffer));
+                error!("Failed to compile shader: {}", String::from_utf8_lossy(&self.log_buffer));
             } else {
                 error!("Failed to compile with no log?");
             }
-            panic!("Failed to compile frag");
+            panic!("Failed to compile shader");
         }
     }
 

@@ -1,13 +1,23 @@
 #version 330 core
-in vec4 position;
+in vec3 FragPos;
+in vec3 Normal;
 
-uniform vec3 light_pos = vec3(1.0);
+uniform vec3 light_dir = vec3(1.0);
+uniform vec3 light_diffuse = vec3(0.5);
 
 out vec4 FragColor;
 
 void main()
 {
-    vec4 color = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-    float intensity = 1.0 / length(position.xyz - light_pos);
-    FragColor = color * intensity;
+    vec3 color = vec3(1.0, 0.5, 0.2);
+
+    vec3 ambient = 0.1 * color;
+    
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(-light_dir);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = light_diffuse * diff * color;
+
+    vec3 result = ambient + diffuse;
+    FragColor = vec4(result, 1.0);
 } 
