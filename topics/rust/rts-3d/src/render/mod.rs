@@ -6,6 +6,7 @@ mod gl_vertex_array;
 mod gl_shader;
 
 pub mod mesh;
+pub mod model;
 
 pub use simple_renderer::SimpleRenderer;
 pub use renderable::{Renderable,Vertex,Index};

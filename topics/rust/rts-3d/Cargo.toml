@@ -1,5 +1,5 @@
 [package]
-name = "rts-3d"
+name = "rts_3d"
 version = "0.1.0"
 authors = ["Ben Clare <ben.clare2@gmail.com>"]
 edition = "2018"
@@ -10,9 +10,9 @@ edition = "2018"
 walkdir = "2.3"
 
 [dependencies]
-gl = "0.14.0"
-glfw = "0.39.0"
-cgmath = "0.17.0"
+gl = "0.14"
+glfw = "0.39"
+cgmath = "0.17"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_trace"] }
-env_logger = "0.7.1"
-wavefront_obj = "8.0.0"
+env_logger = "0.7"
+wavefront_obj = "8.0"
