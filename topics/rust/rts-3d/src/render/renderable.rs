@@ -32,6 +32,5 @@ impl Vertex {
 pub trait Renderable {
     fn get_vao(&self) -> &GlVertexArray;
     fn get_ebo(&self) -> &GlIndexBuffer;
-    fn get_shader(&self) -> &GlShader;
     fn get_transform(&self) -> Matrix4<GLfloat>;
 }

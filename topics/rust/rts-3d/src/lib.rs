@@ -3,26 +3,137 @@ pub mod render;
 pub mod resources;
 pub mod camera;
 pub mod timer;
+mod render_system;
+mod components;
 
-use crate::window::Window;
 use log::{info,debug,error};
-use crate::render::mesh::Mesh;
-use crate::render::{GlShader,Index,Vertex};
-use crate::resources::ResourceLoader;
 use std::path::Path;
 use cgmath::{vec3,Matrix3,Quaternion,Matrix4,Deg,Rad};
 use cgmath::prelude::*;
 use std::collections::HashMap;
-use crate::camera::Camera;
-use crate::timer::Timer;
 use wavefront_obj::obj::{parse,Primitive};
+use specs::prelude::*;
+
+use camera::Camera;
+use timer::Timer;
+use render::mesh::Mesh;
+use render::{GlShader,Index,Vertex,SimpleRenderer};
+use resources::ResourceLoader;
+use render_system::RenderSystem;
+use components::*;
+use window::Window;
 
 pub const SCR_HEIGHT: u32 = 600;
 pub const SCR_WIDTH: u32 = 800;
 
 struct GameState {
+    pub ecs: World,
+    pub window: Window,
     pub wireframe_mode: bool,
     pub cam_rotate_mode: bool,
+    pub frame: u32,
+}
+
+impl GameState {
+    pub fn new(window: Window, config: Config) -> GameState {
+        let mut gs = GameState {
+            ecs: World::new(),
+            window,
+            wireframe_mode: false,
+            cam_rotate_mode: false,
+            frame: 0,
+        };
+
+        gs.init(config);
+
+        gs
+    }
+
+    fn init(&mut self, config: Config) {
+        let init_time = self.window.get_time();
+        let frame_timer = Timer::new(init_time);
+        let loader = ResourceLoader::from_relative_exe_path(Path::new(&config.asset_base_path)).unwrap();
+        let renderer = SimpleRenderer::<Mesh>::new();
+
+        self.ecs.insert(frame_timer);
+        self.ecs.insert(Camera::default());
+        self.ecs.insert(loader);
+        self.ecs.insert(renderer);
+
+        register(&mut self.ecs);
+
+        let shader = {
+            let loader = self.ecs.fetch::<ResourceLoader>();
+            GlShader::builder()
+                .with_frag_shader(loader.load_cstring("shaders/shader.frag").unwrap())
+                .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
+                .build()
+        };
+
+        let cube = Mesh::cube(vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+        
+        self.ecs.create_entity()
+            .with(Pos{ x: -5.0, y: 5.0, z: -12.0 })
+            .with(Renderable3D{ mesh: cube, shader })
+            .build();
+    }
+
+    pub fn should_close(&self) -> bool {
+        self.window.should_close()
+    }
+
+    pub fn tick(&mut self) {
+        // Process events
+        for (_, event) in self.window.flush_events() {
+            match event {
+                glfw::WindowEvent::FramebufferSize(width, height) => {
+                    // make sure the viewport matches the new window dimensions; note that width and
+                    // height will be significantly larger than specified on retina displays.
+                    debug!("Resize to {}, {}", width, height);
+                    unsafe { gl::Viewport(0, 0, width, height) }
+                },
+                glfw::WindowEvent::Scroll(_x, y) => {
+                    let mut camera = self.ecs.write_resource::<Camera>();
+                    camera.update_scroll(y as f32);
+                },
+                e => debug!("Unrecognized event: {:?}", e),
+            }
+        };
+
+        let cur_time = self.window.get_time();
+        let delta_time = {
+            let t = self.ecs.fetch::<Timer>();
+            t.elapsed(cur_time)
+        };
+
+        self.process_keys(delta_time);
+        self.process_mouse(delta_time);
+
+        // Rotate based on current time, just to show lighting
+        // cube.rotation = Quaternion::from(Matrix3::from_angle_x(Rad::<f32>((win.get_time() as f32).sin() * 2.0)));
+ 
+        self.run_systems();
+        unsafe {
+            check_gl_error();
+        }
+
+        self.window.update_screen();
+    }
+
+    fn process_keys(&self, delta_time: f64) {
+
+    }
+
+    fn process_mouse(&self, delta_time: f64) {
+
+    }
+
+    fn run_systems(&mut self) {
+        let mut render_sys = RenderSystem{};
+        render_sys.run_now(&self.ecs);
+
+        self.ecs.maintain();
+    }
 }
 
 struct MouseState {
@@ -31,141 +142,81 @@ struct MouseState {
     pub first_mouse: bool,
 }
 
+struct Config {
+    asset_base_path: String,
+}
+
 pub fn run() {
-    let mut win = Window::new(
+    let win = Window::new(
         "Hello world!",
         SCR_WIDTH,
         SCR_HEIGHT,
     ).unwrap();
     info!("Window initialized");
 
-    let loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
-    let shader = GlShader::builder()
-        .with_frag_shader(loader.load_cstring("shaders/shader.frag").unwrap())
-        .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
-        .build();
-    info!("Shader initialized");
+    // let loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
+    // let shader = GlShader::builder()
+    //     .with_frag_shader(loader.load_cstring("shaders/shader.frag").unwrap())
+    //     .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
+    //     .build();
+    // info!("Shader initialized");
 
-    let mesh = parse(
-        loader.load_string("models/terrain.obj").unwrap()
-    ).unwrap();
+    // let mesh = parse(
+    //     loader.load_string("models/terrain.obj").unwrap()
+    // ).unwrap();
 
-    // Janky, but proves it works?
-    let obj = mesh.objects.get(0).unwrap();
-    let indices: Vec<Index> = obj.geometry
-        .iter()
-        .flat_map(|g| g.shapes.iter())
-        .map(|shape| shape.primitive)
-        .fold(Vec::new(), |mut v, primitive| {
-            let to_append = match primitive {
-                Primitive::Point(v) => [v.0, v.0, v.0],
-                Primitive::Line(v1, v2) => [v1.0, v2.0, v2.0],
-                Primitive::Triangle(v1, v2, v3) => [v1.0, v2.0, v3.0],
-            };
+    // // Janky, but proves it works?
+    // let obj = mesh.objects.get(0).unwrap();
+    // let indices: Vec<Index> = obj.geometry
+    //     .iter()
+    //     .flat_map(|g| g.shapes.iter())
+    //     .map(|shape| shape.primitive)
+    //     .fold(Vec::new(), |mut v, primitive| {
+    //         let to_append = match primitive {
+    //             Primitive::Point(v) => [v.0, v.0, v.0],
+    //             Primitive::Line(v1, v2) => [v1.0, v2.0, v2.0],
+    //             Primitive::Triangle(v1, v2, v3) => [v1.0, v2.0, v3.0],
+    //         };
 
-            v.push(to_append[0] as Index);
-            v.push(to_append[1] as Index);
-            v.push(to_append[2] as Index);
+    //         v.push(to_append[0] as Index);
+    //         v.push(to_append[1] as Index);
+    //         v.push(to_append[2] as Index);
 
-            v
-        });
-    let verts: Vec<Vertex> = obj.vertices
-        .iter()
-        .zip(&obj.normals)
-        .map(|(v, n)| Vertex::from_coords(
-            v.x as f32, v.y as f32, v.z as f32, 
-            n.x as f32, n.y as f32, n.z as f32,
-        )).collect();
-    let model = Mesh::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+    //         v
+    //     });
+    // let verts: Vec<Vertex> = obj.vertices
+    //     .iter()
+    //     .zip(&obj.normals)
+    //     .map(|(v, n)| Vertex::from_coords(
+    //         v.x as f32, v.y as f32, v.z as f32, 
+    //         n.x as f32, n.y as f32, n.z as f32,
+    //     )).collect();
+    // let model = Mesh::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
-    let sprites: Vec<Mesh> = (0..16)
-        .flat_map(|x| (0..9).map(move |y| (x, y)))
-        .map(|(x, y)| Mesh::square(&shader, vec3(x as f32, y as f32, -10.0), Quaternion::from(Matrix3::from_value(0.0)), 0.9))
-        .collect();
+    // let sprites: Vec<Mesh> = (0..16)
+    //     .flat_map(|x| (0..9).map(move |y| (x, y)))
+    //     .map(|(x, y)| Mesh::square(&shader, vec3(x as f32, y as f32, -10.0), Quaternion::from(Matrix3::from_value(0.0)), 0.9))
+    //     .collect();
 
-    let demo_card = Mesh::square(&shader, vec3(-1.0 as f32, 4.0 as f32, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
+    // let demo_card = Mesh::square(&shader, vec3(-1.0 as f32, 4.0 as f32, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
 
-    let mut cube = Mesh::cube(&shader, vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+    // let mut cube = Mesh::cube(&shader, vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
-    let mut camera = Camera::default();
-
-    let renderer: render::SimpleRenderer<Mesh> = render::SimpleRenderer::new();
-
-    let mut key_state = HashMap::new();
+    // let mut key_state = HashMap::new();
     let mut mouse_state = MouseState{
         prev_x: 0.0,
         prev_y: 0.0,
         first_mouse: true,
     };
-    let mut gamestate = GameState{
-        wireframe_mode: false,
-        cam_rotate_mode: false,
+
+    let config = Config{
+        asset_base_path: String::from("assets"),
     };
+    let mut gamestate = GameState::new(win, config);
 
-    let start_time = win.get_time();
-    let mut frame_timer = Timer::new(start_time);
-    let mut fps_timer = Timer::new(start_time);
-    let mut frame_count = 0;
     debug!("Beginning main loop");
-    while !win.should_close() {
-        let cur_time = win.get_time();
-        let elapsed = frame_timer.elapsed(cur_time);
-        frame_timer.reset(cur_time);
-
-        // Calculate fps
-        frame_count += 1;
-        if fps_timer.elapsed(cur_time) > 1.0 {
-            info!("{}fps", frame_count);
-            fps_timer.reset(cur_time);
-            frame_count = 0;
-        }
-
-        // Process events
-        for (_, event) in win.flush_events() {
-            match event {
-                glfw::WindowEvent::FramebufferSize(width, height) => {
-                    // make sure the viewport matches the new window dimensions; note that width and
-                    // height will be significantly larger than specified on retina displays.
-                    debug!("Resize to {}, {}", width, height);
-                    unsafe { gl::Viewport(0, 0, width, height) }
-                },
-                glfw::WindowEvent::Scroll(_x, y) => camera.update_scroll(y as f32),
-                e => debug!("Unrecognized event: {:?}", e),
-            }
-        };
-
-        process_keys(elapsed, &mut win, &mut key_state, &mut gamestate, &mut camera);
-        process_mouse(elapsed, &mut win, &mut mouse_state, &mut gamestate, &mut camera);
-
-        // Rotate based on current time, just to show lighting
-        cube.rotation = Quaternion::from(Matrix3::from_angle_x(Rad::<f32>((win.get_time() as f32).sin() * 2.0)));
-        
-        // Render
-        unsafe {
-            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
-            if gamestate.wireframe_mode {
-                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-            } else {
-                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-            }
-            
-            let mut context = renderer.begin();
-
-            sprites.iter().for_each(|sp| {
-                context.submit(sp);
-            });
-            context.submit(&model);
-            context.submit(&cube);
-            context.submit(&demo_card);
-
-            context.present(&camera);
-
-            check_gl_error();
-        }
-
-        win.update_screen();
+    while !gamestate.should_close() {
+        gamestate.tick();
     }
     debug!("Exited main loop");
 }

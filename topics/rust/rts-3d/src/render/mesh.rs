@@ -3,23 +3,21 @@ use super::renderable::{Renderable,Index,Vertex};
 use super::gl_buffer::GlBuffer;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
-use super::gl_shader::GlShader;
 use gl::types::GLfloat;
 
 #[derive(Debug)]
-pub struct Mesh<'a> {
+pub struct Mesh {
     vao: GlVertexArray,
     ebo: GlIndexBuffer,
-    shader: &'a GlShader,
 
     pub position: Vector3<GLfloat>,
     pub rotation: Quaternion<GLfloat>,
     pub scale: GLfloat,
 }
 
-impl <'a> Mesh<'a> {
+impl Mesh {
     /// 2D card, with front normals only (2D shape problems, as front+back vertices causes depth fighting).
-    pub fn square(shader: &'a GlShader, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh<'a> {
+    pub fn square(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, 1.0),    // Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, 1.0),    // Bottom right
@@ -31,10 +29,10 @@ impl <'a> Mesh<'a> {
             1, 2, 3,
         );
         
-        Mesh::from_vertices(vertices, indices, shader, position, rotation, scale)
+        Mesh::from_vertices(vertices, indices, position, rotation, scale)
     }
 
-    pub fn cube(shader: &'a GlShader, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh<'a> {
+    pub fn cube(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, -1.0),    // Back Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, -1.0),    // Back Bottom right
@@ -80,10 +78,10 @@ impl <'a> Mesh<'a> {
             20, 21, 23,    // Front
             21, 22, 23,
         );
-        Mesh::from_vertices(vertices, indices, shader, position, rotation, scale)
+        Mesh::from_vertices(vertices, indices, position, rotation, scale)
     }
 
-    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>, shader: &'a GlShader, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh<'a> {
+    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
         let vbo = GlBuffer::new(&vertices);
         let mut vao = GlVertexArray::new();
         vao.add_interleaved_buffer(vbo);
@@ -91,7 +89,6 @@ impl <'a> Mesh<'a> {
         Mesh{
             vao,
             ebo: GlIndexBuffer::new(&indices),
-            shader,
             position,
             rotation,
             scale,
@@ -99,17 +96,13 @@ impl <'a> Mesh<'a> {
     }
 }
 
-impl <'a> Renderable for Mesh<'a> {
+impl <'a> Renderable for Mesh {
     fn get_vao(&self) -> &GlVertexArray {
         &self.vao
     }
 
     fn get_ebo(&self) -> &GlIndexBuffer {
         &self.ebo
-    }
-
-    fn get_shader(&self) -> &GlShader {
-        &self.shader
     }
 
     fn get_transform(&self) -> Matrix4<GLfloat> {

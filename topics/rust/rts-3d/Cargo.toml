@@ -16,3 +16,4 @@ cgmath = "0.17"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_trace"] }
 env_logger = "0.7"
 wavefront_obj = "8.0"
+specs = { version = "0.16", features = ["specs-derive"] }
