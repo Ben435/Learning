@@ -1,5 +1,5 @@
 pub mod window;
-pub mod render;
+mod render;
 pub mod resources;
 pub mod camera;
 pub mod timer;
@@ -16,8 +16,7 @@ use specs::prelude::*;
 
 use camera::Camera;
 use timer::Timer;
-use render::mesh::Mesh;
-use render::{GlShader,Index,Vertex,SimpleRenderer};
+use render::{GlShader,GlMesh,SimpleRenderer};
 use resources::ResourceLoader;
 use render_system::RenderSystem;
 use components::*;
@@ -53,7 +52,7 @@ impl GameState {
         let init_time = self.window.get_time();
         let frame_timer = Timer::new(init_time);
         let loader = ResourceLoader::from_relative_exe_path(Path::new(&config.asset_base_path)).unwrap();
-        let renderer = SimpleRenderer::<Mesh>::new();
+        let renderer = SimpleRenderer::<GlMesh>::new();
 
         self.ecs.insert(frame_timer);
         self.ecs.insert(Camera::default());
@@ -70,8 +69,8 @@ impl GameState {
                 .build()
         };
 
-        let mesh = Mesh::cube(vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
-        let demo_card = Mesh::square(vec3(-1.0, -1.0, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
+        let mesh = GlMesh::cube(vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+        let demo_card = GlMesh::square(vec3(-1.0, -1.0, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
 
         
         self.ecs.create_entity()

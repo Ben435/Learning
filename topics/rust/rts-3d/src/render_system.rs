@@ -1,12 +1,13 @@
 use specs::prelude::*;
-use crate::{SimpleRenderer,Mesh,Camera};
+use crate::render::{SimpleRenderer,GlMesh};
+use crate::camera::Camera;
 use crate::components::*;
 
 pub struct RenderSystem {}
 
 impl <'a> System<'a> for RenderSystem {
     type SystemData = (
-        ReadExpect<'a, SimpleRenderer<Mesh>>,
+        ReadExpect<'a, SimpleRenderer<GlMesh>>,
         ReadExpect<'a, Camera>,
         ReadStorage<'a, Pos>, 
         ReadStorage<'a, Renderable3D>,

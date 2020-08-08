@@ -6,7 +6,7 @@ use super::gl_index_buffer::GlIndexBuffer;
 use gl::types::GLfloat;
 
 #[derive(Debug)]
-pub struct Mesh {
+pub struct GlMesh {
     vao: GlVertexArray,
     ebo: GlIndexBuffer,
 
@@ -15,9 +15,9 @@ pub struct Mesh {
     pub scale: GLfloat,
 }
 
-impl Mesh {
+impl GlMesh {
     /// 2D card, with front normals only (as front+back vertices causes depth fighting if "proper" 2D).
-    pub fn square(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
+    pub fn square(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, 1.0),    // Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, 1.0),    // Bottom right
@@ -29,10 +29,10 @@ impl Mesh {
             1, 2, 3,
         );
         
-        Mesh::from_vertices(vertices, indices, position, rotation, scale)
+        GlMesh::from_vertices(vertices, indices, position, rotation, scale)
     }
 
-    pub fn cube(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
+    pub fn cube(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, -1.0),    // Back Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, -1.0),    // Back Bottom right
@@ -78,15 +78,15 @@ impl Mesh {
             20, 21, 23,    // Front
             21, 22, 23,
         );
-        Mesh::from_vertices(vertices, indices, position, rotation, scale)
+        GlMesh::from_vertices(vertices, indices, position, rotation, scale)
     }
 
-    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
+    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
         let vbo = GlBuffer::new(&vertices);
         let mut vao = GlVertexArray::new();
         vao.add_interleaved_buffer(vbo);
 
-        Mesh{
+        GlMesh{
             vao,
             ebo: GlIndexBuffer::new(&indices),
             position,
@@ -96,7 +96,7 @@ impl Mesh {
     }
 }
 
-impl <'a> Renderable for Mesh {
+impl <'a> Renderable for GlMesh {
     fn get_vao(&self) -> &GlVertexArray {
         &self.vao
     }
