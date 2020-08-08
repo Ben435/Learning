@@ -2,7 +2,6 @@ use cgmath::{Matrix4,Vector3,vec3};
 use gl::types::GLfloat;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
-use super::gl_shader::GlShader;
 
 pub type Index = u16;
 

@@ -16,12 +16,9 @@ impl <'a> System<'a> for RenderSystem {
         let (renderer, camera, positions, renderables) = data;
 
         let mut ctx = renderer.begin();
-        println!("Begin");
         for (_pos, rend) in (&positions, &renderables).join() {
-            println!("Submit");
             ctx.submit(&rend.mesh, &rend.shader);
         }
-        println!("End, render");
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);

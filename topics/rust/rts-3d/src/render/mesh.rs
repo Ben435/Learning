@@ -16,7 +16,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    /// 2D card, with front normals only (2D shape problems, as front+back vertices causes depth fighting).
+    /// 2D card, with front normals only (as front+back vertices causes depth fighting if "proper" 2D).
     pub fn square(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> Mesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, 1.0),    // Top right

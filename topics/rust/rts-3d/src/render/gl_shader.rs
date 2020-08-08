@@ -7,7 +7,7 @@ use cgmath::prelude::*;
 
 const MAX_LOG: usize = 1024;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GlShader {
     program: GLuint,
 }

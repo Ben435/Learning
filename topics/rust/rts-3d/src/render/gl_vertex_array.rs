@@ -62,3 +62,11 @@ impl GlVertexArray {
         }
     }
 }
+
+impl Drop for GlVertexArray {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &mut self.gl_vao);
+        }
+    }
+}

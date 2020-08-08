@@ -70,11 +70,18 @@ impl GameState {
                 .build()
         };
 
-        let cube = Mesh::cube(vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+        let mesh = Mesh::cube(vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+        let demo_card = Mesh::square(vec3(-1.0, -1.0, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
+
         
         self.ecs.create_entity()
+            .with(Pos{ x: 0.0, y: 0.0, z: -12.0 })
+            .with(Renderable3D{ mesh, shader })
+            .build();
+
+        self.ecs.create_entity()
             .with(Pos{ x: -5.0, y: 5.0, z: -12.0 })
-            .with(Renderable3D{ mesh: cube, shader })
+            .with(Renderable3D{ mesh: demo_card, shader })
             .build();
     }
 
@@ -191,7 +198,7 @@ pub fn run() {
     //         v.x as f32, v.y as f32, v.z as f32, 
     //         n.x as f32, n.y as f32, n.z as f32,
     //     )).collect();
-    // let model = Mesh::from_vertices(verts, indices, &shader, vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
+    // let model = Mesh::from_vertices(verts, indices, vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
     // let sprites: Vec<Mesh> = (0..16)
     //     .flat_map(|x| (0..9).map(move |y| (x, y)))
@@ -199,8 +206,6 @@ pub fn run() {
     //     .collect();
 
     // let demo_card = Mesh::square(&shader, vec3(-1.0 as f32, 4.0 as f32, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
-
-    // let mut cube = Mesh::cube(&shader, vec3(-5.0, 5.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
 
     // let mut key_state = HashMap::new();
     let mut mouse_state = MouseState{
@@ -214,7 +219,7 @@ pub fn run() {
     };
     let mut gamestate = GameState::new(win, config);
 
-    debug!("Beginning main loop");
+    debug!("Entering main loop");
     while !gamestate.should_close() {
         gamestate.tick();
     }
