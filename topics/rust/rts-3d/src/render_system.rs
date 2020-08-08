@@ -18,7 +18,7 @@ impl <'a> System<'a> for RenderSystem {
 
         let mut ctx = renderer.begin();
         for (_pos, rend) in (&positions, &renderables).join() {
-            ctx.submit(&rend.mesh, &rend.shader);
+            rend.model.meshes.iter().for_each(|mesh| ctx.submit(&mesh, &rend.shader));
         }
 
         unsafe {

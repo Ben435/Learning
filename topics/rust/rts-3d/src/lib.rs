@@ -16,7 +16,7 @@ use specs::prelude::*;
 
 use camera::Camera;
 use timer::Timer;
-use render::{GlShader,GlMesh,SimpleRenderer};
+use render::{GlShader,GlMesh,SimpleRenderer,GlModel};
 use resources::ResourceLoader;
 use render_system::RenderSystem;
 use components::*;
@@ -54,34 +54,44 @@ impl GameState {
         let loader = ResourceLoader::from_relative_exe_path(Path::new(&config.asset_base_path)).unwrap();
         let renderer = SimpleRenderer::<GlMesh>::new();
 
-        self.ecs.insert(frame_timer);
-        self.ecs.insert(Camera::default());
-        self.ecs.insert(loader);
-        self.ecs.insert(renderer);
-
         register(&mut self.ecs);
 
-        let shader = {
-            let loader = self.ecs.fetch::<ResourceLoader>();
-            GlShader::builder()
+        let shader = GlShader::builder()
                 .with_frag_shader(loader.load_cstring("shaders/shader.frag").unwrap())
                 .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
-                .build()
-        };
+                .build();
 
-        let mesh = GlMesh::cube(vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0);
-        let demo_card = GlMesh::square(vec3(-1.0, -1.0, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9);
+        let demo_box = GlModel::builder()
+            .with_mesh(GlMesh::cube(vec3(0.0, 0.0, -12.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0))
+            .build();
+        let demo_card = GlModel::builder()
+            .with_mesh(GlMesh::square(vec3(-1.0, -1.0, -5.0), Quaternion::from(Matrix3::from_angle_x(Deg(90.0))), 0.9))
+            .build();
+        let terrain = GlModel::builder()
+            .with_obj_file(loader.load_string("models/terrain.obj").unwrap())
+            .build();
 
         
         self.ecs.create_entity()
             .with(Pos{ x: 0.0, y: 0.0, z: -12.0 })
-            .with(Renderable3D{ mesh, shader })
+            .with(Renderable3D{ model: demo_box, shader })
             .build();
 
         self.ecs.create_entity()
             .with(Pos{ x: -5.0, y: 5.0, z: -12.0 })
-            .with(Renderable3D{ mesh: demo_card, shader })
+            .with(Renderable3D{ model: demo_card, shader })
             .build();
+
+        self.ecs.create_entity()
+            .with(Pos{ x: -5.0, y: 5.0, z: -12.0 })
+            .with(Renderable3D{ model: terrain, shader })
+            .build();
+        
+
+        self.ecs.insert(frame_timer);
+        self.ecs.insert(Camera::default());
+        self.ecs.insert(loader);
+        self.ecs.insert(renderer);
     }
 
     pub fn should_close(&self) -> bool {
@@ -160,16 +170,16 @@ pub fn run() {
     ).unwrap();
     info!("Window initialized");
 
-    // let loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
+    let loader = ResourceLoader::from_relative_exe_path(Path::new("assets")).unwrap();
     // let shader = GlShader::builder()
     //     .with_frag_shader(loader.load_cstring("shaders/shader.frag").unwrap())
     //     .with_vert_shader(loader.load_cstring("shaders/shader.vert").unwrap())
     //     .build();
     // info!("Shader initialized");
 
-    // let mesh = parse(
-    //     loader.load_string("models/terrain.obj").unwrap()
-    // ).unwrap();
+    let mesh = parse(
+        loader.load_string("models/terrain.obj").unwrap()
+    ).unwrap();
 
     // // Janky, but proves it works?
     // let obj = mesh.objects.get(0).unwrap();

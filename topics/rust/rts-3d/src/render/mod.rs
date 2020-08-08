@@ -14,4 +14,4 @@ pub use gl_index_buffer::GlIndexBuffer;
 pub use gl_vertex_array::GlVertexArray;
 pub use gl_shader::GlShader;
 pub use gl_mesh::GlMesh;
-pub use gl_model::GlModel;
+pub use gl_model::{GlModel,GlModelBuilder};

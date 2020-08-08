@@ -1,4 +1,4 @@
-use crate::render::{GlShader,GlMesh};
+use crate::render::{GlShader,GlModel};
 use specs::{prelude::*, Component};
 
 #[derive(Component, Debug)]
@@ -12,7 +12,7 @@ pub struct Pos {
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct Renderable3D {
-    pub mesh: GlMesh,
+    pub model: GlModel,
     pub shader: GlShader,
 }
 
