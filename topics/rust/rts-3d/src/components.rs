@@ -1,4 +1,5 @@
 use crate::render::{GlShader,GlModel};
+use cgmath::Quaternion;
 use specs::{prelude::*, Component};
 
 #[derive(Component, Debug)]
@@ -11,6 +12,12 @@ pub struct Pos {
 
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
+pub struct Rot {
+    pub quaternion: Quaternion<f32>,
+}
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
 pub struct Renderable3D {
     pub model: GlModel,
     pub shader: GlShader,
@@ -18,5 +25,6 @@ pub struct Renderable3D {
 
 pub fn register(ecs: &mut World) {
     ecs.register::<Pos>();
+    ecs.register::<Rot>();
     ecs.register::<Renderable3D>();
 }

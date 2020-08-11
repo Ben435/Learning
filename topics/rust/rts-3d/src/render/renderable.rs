@@ -1,4 +1,4 @@
-use cgmath::{Matrix4,Vector3,vec3};
+use cgmath::{Vector3,vec3};
 use gl::types::GLfloat;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
@@ -31,5 +31,4 @@ impl Vertex {
 pub trait Renderable {
     fn get_vao(&self) -> &GlVertexArray;
     fn get_ebo(&self) -> &GlIndexBuffer;
-    fn get_transform(&self) -> Matrix4<GLfloat>;
 }

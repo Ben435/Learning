@@ -2,7 +2,7 @@ use gl;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::ptr;
-use cgmath::{vec3,Vector3};
+use cgmath::{vec3,Vector3,Matrix4};
 
 use super::renderable::{Renderable};
 use crate::camera::Camera;
@@ -22,7 +22,7 @@ pub struct SimpleRenderer<T : Renderable> {
 }
 
 pub struct SimpleRenderContext<'a, T : Renderable> {
-    queue: VecDeque<(&'a T, &'a GlShader)>,
+    queue: VecDeque<(&'a T, Matrix4<f32>, &'a GlShader)>,
     renderer: &'a SimpleRenderer<T>,
 }
 
@@ -53,22 +53,22 @@ impl <'a, T: Renderable> SimpleRenderer<T> {
 }
 
 impl <'a, T : Renderable> SimpleRenderContext<'a, T> {
-    pub fn submit(&mut self, renderable: &'a T, shader: &'a GlShader) {
-        self.queue.push_back((renderable, shader));
+    pub fn submit(&mut self, renderable: &'a T, transform: Matrix4<f32>, shader: &'a GlShader) {
+        self.queue.push_back((renderable, transform, shader));
     }
 
     pub fn present(&mut self, camera: &Camera) {
         let vw_matrix = camera.get_view_matrix();
         let pr_matrix = camera.get_projection_matrix();
         unsafe {
-            while let Some((r, shader)) = self.queue.pop_front() {
+            while let Some((r, transform, shader)) = self.queue.pop_front() {
                 r.get_vao().bind();
                 let ebo = r.get_ebo();
                 ebo.bind();
                 shader.enable();
                 shader.set_uniform_mat4("vw_matrix".to_string(), &vw_matrix);
                 shader.set_uniform_mat4("pr_matrix".to_string(), &pr_matrix);
-                shader.set_uniform_mat4("ml_matrix".to_string(), &r.get_transform());
+                shader.set_uniform_mat4("ml_matrix".to_string(), &transform);
 
                 shader.set_uniform_3f("light_dir".to_string(), &self.renderer.light_diffuse_dir);
                 shader.set_uniform_3f("light_diffuse".to_string(), &self.renderer.light_diffuse);

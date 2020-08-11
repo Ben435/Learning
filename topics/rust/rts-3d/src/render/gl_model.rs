@@ -1,6 +1,5 @@
 use super::gl_mesh::GlMesh;
 use super::renderable::{Vertex,Index};
-use cgmath::{prelude::*,Quaternion,vec3,Matrix3};
 use wavefront_obj::obj::{parse,Primitive,ObjSet};
 
 #[derive(Debug)]
@@ -67,13 +66,13 @@ impl GlModelBuilder {
                         n.x as f32, n.y as f32, n.z as f32,
                     )).collect();
 
-                GlMesh::from_vertices(verts, indices, vec3(0.0, 0.0, 0.0), Quaternion::from(Matrix3::from_value(0.0)), 1.0)
+                GlMesh::from_vertices(verts, indices)
             }));
 
         self
     }
 
-    pub fn build(mut self) -> GlModel {
+    pub fn build(self) -> GlModel {
         GlModel {
             meshes: self.meshes,
         }

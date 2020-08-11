@@ -1,23 +1,17 @@
-use cgmath::{Vector3,Quaternion,Matrix4};
 use super::renderable::{Renderable,Index,Vertex};
 use super::gl_buffer::GlBuffer;
 use super::gl_vertex_array::GlVertexArray;
 use super::gl_index_buffer::GlIndexBuffer;
-use gl::types::GLfloat;
 
 #[derive(Debug)]
 pub struct GlMesh {
     vao: GlVertexArray,
     ebo: GlIndexBuffer,
-
-    pub position: Vector3<GLfloat>,
-    pub rotation: Quaternion<GLfloat>,
-    pub scale: GLfloat,
 }
 
 impl GlMesh {
     /// 2D card, with front normals only (as front+back vertices causes depth fighting if "proper" 2D).
-    pub fn square(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
+    pub fn square() -> GlMesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, 1.0),    // Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, 1.0),    // Bottom right
@@ -29,10 +23,10 @@ impl GlMesh {
             1, 2, 3,
         );
         
-        GlMesh::from_vertices(vertices, indices, position, rotation, scale)
+        GlMesh::from_vertices(vertices, indices)
     }
 
-    pub fn cube(position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
+    pub fn cube() -> GlMesh {
         let vertices = vec!(
             Vertex::from_coords(1.0, 1.0, 0.0, 0.0, 0.0, -1.0),    // Back Top right
             Vertex::from_coords(1.0, 0.0, 0.0, 0.0, 0.0, -1.0),    // Back Bottom right
@@ -78,10 +72,10 @@ impl GlMesh {
             20, 21, 23,    // Front
             21, 22, 23,
         );
-        GlMesh::from_vertices(vertices, indices, position, rotation, scale)
+        GlMesh::from_vertices(vertices, indices)
     }
 
-    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>, position: Vector3<GLfloat>, rotation: Quaternion<GLfloat>, scale: GLfloat) -> GlMesh {
+    pub fn from_vertices(vertices: Vec<Vertex>, indices: Vec<Index>) -> GlMesh {
         let vbo = GlBuffer::new(&vertices);
         let mut vao = GlVertexArray::new();
         vao.add_interleaved_buffer(vbo);
@@ -89,9 +83,6 @@ impl GlMesh {
         GlMesh{
             vao,
             ebo: GlIndexBuffer::new(&indices),
-            position,
-            rotation,
-            scale,
         }
     }
 }
@@ -103,9 +94,5 @@ impl <'a> Renderable for GlMesh {
 
     fn get_ebo(&self) -> &GlIndexBuffer {
         &self.ebo
-    }
-
-    fn get_transform(&self) -> Matrix4<GLfloat> {
-        Matrix4::from_translation(self.position) * Matrix4::from(self.rotation) * Matrix4::from_scale(self.scale)
     }
 }
