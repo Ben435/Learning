@@ -82,7 +82,7 @@ impl GameState {
             .build();
 
         self.ecs.create_entity()
-            .with(Pos{ x: -5.0, y: 5.0, z: -12.0 })
+            .with(Pos{ x: 0.0, y: 0.0, z: -12.0 })
             .with(Rot{ quaternion: Quaternion::from(Matrix3::from_angle_x(Deg::<f32>(90.0))) })
             .with(Renderable3D{ model: terrain, shader })
             .build();
