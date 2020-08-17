@@ -32,7 +32,7 @@ fn main() {
     let mut timer_subsystem = sdl.timer().unwrap();
 
     let window = video_subsystem
-        .window("Pong!", 512, 512)
+        .window("Triangle", 512, 512)
         .opengl()
         .resizable()
         .build()
