@@ -8,7 +8,7 @@ mod components;
 
 use log::{info,debug,error};
 use std::path::Path;
-use cgmath::{vec3,Matrix3,Quaternion,Matrix4,Deg};
+use cgmath::{vec3,vec4,SquareMatrix,Matrix3,Quaternion,Matrix4,Deg,InnerSpace};
 use std::collections::HashMap;
 use specs::prelude::*;
 
@@ -26,7 +26,7 @@ pub const SCR_WIDTH: u32 = 800;
 struct GameState {
     pub ecs: World,
     pub window: Window,
-    pub key_state: HashMap<glfw::Key, bool>,
+    pub key_state: KeyboardState,
     pub mouse_state: MouseState,
 
     pub wireframe_mode: bool,
@@ -40,11 +40,14 @@ impl GameState {
         let mut gs = GameState {
             ecs: World::new(),
             window,
-            key_state: HashMap::new(),
+            key_state: KeyboardState{
+                button_states: HashMap::new(),
+            },
             mouse_state: MouseState{
                 prev_x: 0.0,
                 prev_y: 0.0,
                 first_mouse: true,
+                button_states: HashMap::new(),
             },
             wireframe_mode: false,
             cam_rotate_mode: false,
@@ -139,17 +142,16 @@ impl GameState {
     }
 
     fn process_keys(&mut self, delta_time: f64) {
-        // let (elapsed_time: f64, win: &mut Window, key_states: &mut HashMap<glfw::Key, bool>, gamestate: &mut GameState, camera: &mut Camera);
         match self.window.window.get_key(glfw::Key::GraveAccent) {
             glfw::Action::Press => {
-                let prev_pressed = self.key_state.insert(glfw::Key::GraveAccent, true).unwrap_or(false);
+                let prev_pressed = self.key_state.button_states.insert(glfw::Key::GraveAccent, true).unwrap_or(false);
                 if !prev_pressed {
                     info!("Toggling wireframe mode");
                     self.wireframe_mode = !self.wireframe_mode;
                 }
             }
             glfw::Action::Release => {
-                self.key_state.insert(glfw::Key::GraveAccent, false);
+                self.key_state.button_states.insert(glfw::Key::GraveAccent, false);
             },
             _ => {},
         };
@@ -180,8 +182,32 @@ impl GameState {
         }
     }
 
-    fn process_mouse(&self, delta_time: f64) {
+    fn process_mouse(&mut self, _delta_time: f64) {
+        let (x, y) = self.window.window.get_cursor_pos();
+        match self.window.window.get_mouse_button(glfw::MouseButton::Button1) {
+            glfw::Action::Press => {
+                self.mouse_state.button_states.insert(glfw::MouseButton::Button1, true);
+            },
+            glfw::Action::Release => {
+                self.mouse_state.button_states.insert(glfw::MouseButton::Button1, false);
+            },
+            _ => {},
+        }
 
+        let norm_x = (2.0 * x) / SCR_WIDTH as f64 - 1.0;
+        let norm_y = 1.0 - (2.0 * y) / SCR_HEIGHT as f64;
+
+        let ray_clip = vec4::<f32>(norm_x as f32, norm_y as f32, -1.0, 1.0);
+
+        let camera = self.ecs.fetch::<Camera>();
+        let projection_matrix = camera.get_projection_matrix();
+        let view_matrix = camera.get_view_matrix();
+
+        let ray_eye = projection_matrix.invert().unwrap() * ray_clip;
+        let ray_eye_vec = vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
+        
+        let ray_world = view_matrix.invert().unwrap() * ray_eye_vec;
+        let ray_world_norm = vec3(ray_world.x, ray_world.y, ray_world.z).normalize();
     }
 
     fn run_systems(&mut self) {
@@ -192,10 +218,15 @@ impl GameState {
     }
 }
 
+struct KeyboardState {
+    pub button_states: HashMap<glfw::Key, bool>,
+}
+
 struct MouseState {
     pub prev_x: f64,
     pub prev_y: f64,
     pub first_mouse: bool,
+    pub button_states: HashMap<glfw::MouseButton, bool>,
 }
 
 struct Config {
