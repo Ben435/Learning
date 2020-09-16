@@ -1,7 +1,5 @@
 # Todo App
 
-2 folders.
+Learning Sapper, and wanted to play with some server rendering stuff.
 
-* `/backend` <- NodeJS Express app + db
-* `/frontend` <- Svelte frontend app
-
+Built on the [Sapper template](https://github.com/sveltejs/sapper-template)

@@ -1,6 +1,6 @@
 <script>
     import TodoItem from './TodoItem.svelte';
-    import { todos } from './stores';
+    import { todos } from '../stores';
 
     let todoItems = [];
     todos.subscribe(newVals => {

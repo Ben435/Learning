@@ -1,15 +1,19 @@
 <script>
-    import Actions from './Actions.svelte';
-    import TodoItemContainer from './TodoItemContainer.svelte';
-    import { todos } from './stores';
+    import Actions from '../../components/Actions.svelte';
+    import TodoItemContainer from '../../components/TodoItemContainer.svelte';
+    import { todos } from '../../stores';
 
     const dummyItems = [
-        { content: 'hello world!' },
+        { title: 'test', content: 'hello world!' },
         { content: 'bye bye!' },
     ];
 
     todos.set(dummyItems);
 </script>
+
+<svelte:head>
+	<title>Todos</title>
+</svelte:head>
 
 <main>
     <TodoItemContainer/>
