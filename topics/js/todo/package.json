@@ -9,6 +9,8 @@
     "start": "node __sapper__/build"
   },
   "dependencies": {
+    "axios": "^0.20.0",
+    "body-parser": "^1.19.0",
     "compression": "^1.7.1",
     "polka": "next",
     "sirv": "^1.0.0"

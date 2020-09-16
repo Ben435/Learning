@@ -1,14 +1,15 @@
 <script>
+	import { fetchTodos } from './_todo-api';
     import Actions from '../components/Actions.svelte';
     import TodoItemContainer from '../components/TodoItemContainer.svelte';
-    import { todos } from '../stores';
-
-    const dummyItems = [
-        { title: 'test', content: 'hello world!' },
-        { content: 'bye bye!' },
-    ];
-
-    todos.set(dummyItems);
+	import { todos } from '../stores';
+	
+	fetchTodos()
+		.then(resp => resp.data)
+		.then(todoItems => {
+			console.log('Setting todos!', todoItems);
+			todos.set(todoItems);
+		});
 </script>
 
 <svelte:head>
