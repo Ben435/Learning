@@ -7,7 +7,9 @@
         todoItems = newVals;
     })
 </script>
-
+<div>
+    Dummy
+</div>
 <div class="todo-container">
     {#each todoItems as item }
     <TodoItem item={item}/>
