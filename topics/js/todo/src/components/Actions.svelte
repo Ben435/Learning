@@ -32,7 +32,7 @@
 </div>
 
 <style lang='less'>
-    @import '../variables.less';
+    @import '../mixins.less';
 
     .actions {
         position: fixed;
@@ -59,11 +59,7 @@
             border: 0;
             border-radius: 90px;
 
-            background-color: @button-background;
-            transition: background-image 1s;
-            &:hover {
-                background-color: @button-background--hover;
-            }
+            .button-mixin();
         }
     }
 </style>

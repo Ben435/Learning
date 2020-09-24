@@ -25,6 +25,7 @@
 </div>
 
 <style lang="less">
+    @import '../mixins.less';
     .todo-item {
         flex: 0 1;
         padding: 0.5em 1em;
@@ -62,6 +63,8 @@
             & > button {
                 transition: transform 100ms ease-in-out;
                 transform: translateY(-50px);
+
+                .button-mixin();
 
                 margin: 0;
                 padding: 0.5em;
