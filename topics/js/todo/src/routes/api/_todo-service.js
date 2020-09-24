@@ -10,10 +10,17 @@ let i = 3;
 
 todos.push(...dummyItems);
 
-
 export const addTodo = async(todo) => {
     const { title, content } = todo;
-    todos = [...todos, { id: '' + i++, title, content }];
+    const newTodo = { 
+        id: '' + i++,
+        title,
+        content,
+    };
+
+    todos = [...todos, newTodo];
+
+    return newTodo;
 };
 
 export const editTodo = async(id, newTodo) => {

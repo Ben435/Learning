@@ -2,14 +2,30 @@
 	import { fetchTodos } from './_todo-api';
     import Actions from '../components/Actions.svelte';
     import TodoItemContainer from '../components/TodoItemContainer.svelte';
-	import { todos } from '../stores';
+    import { LoadingStates, todos } from '../stores';
 
-	fetchTodos()
-		.then(resp => resp.data)
-		.then(todoItems => {
-			console.log('Setting todos!', todoItems);
-			todos.set(todoItems);
-		});
+    let todoItems = [];
+    todos.subscribe(newTodos => {
+        todoItems = newTodos.items;
+
+        if (newTodos.loadingState === LoadingStates.NEVER_LOADED) {
+            todos.set({
+                loadingState: LoadingStates.IS_LOADING,
+                items: newTodos.items,
+            })
+            fetchTodos()
+                .then(resp => resp.data)
+                .then(todoItems => {
+                    console.log('Setting todos!', todoItems);
+                    todos.set({
+                        loadingState: LoadingStates.LOADED,
+                        items: todoItems,
+                    });
+                });
+        }
+    });
+
+	
 </script>
 
 <svelte:head>
@@ -17,7 +33,7 @@
 </svelte:head>
 
 <main>
-    <TodoItemContainer/>
+    <TodoItemContainer items={todoItems}/>
     <Actions/>
 </main>
 

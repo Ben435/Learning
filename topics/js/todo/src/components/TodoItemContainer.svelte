@@ -1,15 +1,11 @@
 <script>
     import TodoItem from './TodoItem.svelte';
-    import { todos } from '../stores';
 
-    let todoItems = [];
-    todos.subscribe(newVals => {
-        todoItems = newVals;
-    })
+    export let items = [];
 </script>
 
 <div class="todo-container">
-    {#each todoItems as item }
+    {#each items as item }
     <TodoItem item={item}/>
     {/each}
 </div>

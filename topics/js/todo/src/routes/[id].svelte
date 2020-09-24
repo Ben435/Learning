@@ -7,6 +7,7 @@
 </script>
 
 <script>
+    import { todos } from '../stores';
     import { fetchTodo, editTodo } from "./_todo-api";
     import { goto } from '@sapper/app';
 
@@ -28,11 +29,18 @@
         goto('/');
     };
     const onSubmit = async() => {
-        await editTodo(original.id, {
+        const newItem = {
             id: original.id,
             title,
             content,
-        });
+        };
+
+        await editTodo(original.id, newItem);
+
+        todos.update(val => ({
+            loadingState: val.loadingState,
+            items: val.items.map(item => item.id === original.id ? newItem : item),
+        }));
 
         goto('/');
     }

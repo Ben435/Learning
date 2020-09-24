@@ -1,12 +1,18 @@
 <script>
     import { createNewTodo } from './_todo-api';
+    import { todos } from '../stores';
     import * as sapper from '@sapper/app';
 
     let content = '';
 
-    const onSubmit = () => {
-        createNewTodo(content)
-            .then(() => sapper.goto('/'));
+    const onSubmit = async() => {
+        const newTodo = await createNewTodo(content).then(resp => resp.data)
+
+        todos.update(val => ({
+            loadingState: val.loadingState,
+            items: val.items.concat([newTodo]),
+        }));
+        sapper.goto('/');
     }
 
 </script>

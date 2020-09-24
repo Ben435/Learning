@@ -29,7 +29,7 @@
 <style lang="less">
     .todo-item {
         flex: 0 1;
-        padding: 1em;
+        padding: 0.5em 1em;
         margin: 0.7em;
         box-shadow: 2px 2px 0.5em 0.5em #ddd;
         max-width: 10em;
@@ -62,7 +62,7 @@
             justify-content: flex-end;
 
             & > button {
-                transition: transform 300ms ease-in-out;
+                transition: transform 100ms ease-in-out;
                 transform: translateY(-50px);
 
                 margin: 0;
