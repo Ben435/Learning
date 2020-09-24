@@ -1,5 +1,6 @@
 <script>
-	import { fetchTodos } from './_todo-api';
+    import { goto } from '@sapper/app';
+	import { fetchTodos, deleteTodo } from './_todo-api';
     import Actions from '../components/Actions.svelte';
     import TodoItemContainer from '../components/TodoItemContainer.svelte';
     import { LoadingStates, todos } from '../stores';
@@ -24,7 +25,18 @@
                 });
         }
     });
+    
+    const onEditCallback = item => {
+        goto(`/${item.id}`);
+    };
+    const onDeleteCallback = async(item) => {
+        await deleteTodo(item.id);
 
+        todos.update(prev => ({
+            loadingState: prev.loadingState,
+            items: prev.items.filter(prevItem => prevItem.id !== item.id),
+        }));
+    };
 	
 </script>
 
@@ -33,7 +45,11 @@
 </svelte:head>
 
 <main>
-    <TodoItemContainer items={todoItems}/>
+    <TodoItemContainer 
+        items={todoItems}
+        onEditCallback={onEditCallback}
+        onDeleteCallback={onDeleteCallback}
+    />
     <Actions/>
 </main>
 

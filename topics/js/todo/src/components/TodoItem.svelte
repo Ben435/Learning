@@ -1,13 +1,11 @@
 <script>
     import { goto } from '@sapper/app';
+    import { deleteTodo } from '../routes/_todo-api';
+    import { todos } from '../stores';
     export let item;
 
-    const onEdit = () => {
-        goto(`/${item.id}`);
-    }
-    const onDelete = () => {
-        console.warn('TODO!');
-    }
+    export let onEdit = () => {};
+    export let onDelete = () => {};
 </script>
 
 <div class="todo-item">

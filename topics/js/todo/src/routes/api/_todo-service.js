@@ -50,3 +50,7 @@ export const getTodo = async(id) => {
     }
     return null;
 }
+
+export const deleteTodo = async(id) => {
+    todos = todos.filter(todo => todo.id === id);
+}

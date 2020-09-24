@@ -1,4 +1,4 @@
-import { getTodo, editTodo } from "../_todo-service";
+import { getTodo, editTodo, deleteTodo } from "../_todo-service";
 
 export async function get(req, res, next) {
     const { id } = req.params;
@@ -19,4 +19,13 @@ export async function post(req, res, _next) {
     const newTodo = await editTodo(id, { content, title });
 
     return res.end(JSON.stringify(newTodo));
+}
+
+export async function del(req, res, _next) {
+    const { id } = req.params;
+
+    await deleteTodo(id);
+
+    res.statusCode = 204;
+    return res.end();
 }

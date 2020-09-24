@@ -7,3 +7,5 @@ export const editTodo = async(id, newTodo) => axios.post(`api/todo/${id}`, newTo
 export const fetchTodos = async() => axios.get('api/todo');
 
 export const fetchTodo = async(id) => axios.get(`api/todo/${id}`);
+
+export const deleteTodo = async(id) => axios.delete(`api/todo/${id}`);
