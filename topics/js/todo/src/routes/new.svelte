@@ -2,20 +2,20 @@
     import { createNewTodo } from './_todo-api';
     import * as sapper from '@sapper/app';
 
-let content = '';
+    let content = '';
 
-const onSubmit = () => {
-    createNewTodo(content)
-        .then(() => sapper.goto('/'));
-}
+    const onSubmit = () => {
+        createNewTodo(content)
+            .then(() => sapper.goto('/'));
+    }
 
 </script>
 
 <main class="new-todo">
-    <div class="new-todo--actions">
+    <div class="new-todo--title">
         <h1>New</h1>
     </div>
-    <div>
+    <div class="new-todo--form">
         <textarea contenteditable="true" bind:value={content}></textarea>
     </div>
     <div class="new-todo--actions">

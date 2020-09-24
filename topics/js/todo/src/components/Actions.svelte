@@ -1,26 +1,39 @@
 <script>
+    import { goto, prefetch } from '@sapper/app';
 
     let open = false;
 
     const onToggleActions = () => open = !open;
 
     const onAdd = () => {
-        
+        goto('/new');
     };
 
-    const onViewArchive = () => {
+    const onHoverAdd = () => {
+        prefetch('/new');
+    }
 
+    const onArchive = () => {
+        goto('/archive')
     };
+
+    const onHoverArchive = () => {
+        prefetch('/archive');
+    }
 </script>
 <div class="actions">
     <div class={`actions--container ${open ? 'open' : ''}`}>
-        <a class="actions--action" href='new'>Add</a>
-        <a class="actions--action" href='archive'>Archive</a>
+        <button class="actions--action" on:mouseover={onHoverAdd} on:click={onAdd}>Add</button>
+        <button class="actions--action" on:mouseover={onHoverArchive} on:click={onArchive}>Archive</button>
     </div>
-    <button class="actions--open" on:click={onToggleActions}>Open</button>
+    <div class="actions--opener">
+        <button class="actions--action" on:click={onToggleActions}>Open</button>
+    </div>
 </div>
 
 <style lang='less'>
+    @import '../variables.less';
+
     .actions {
         position: fixed;
         bottom: 2em;
@@ -34,28 +47,23 @@
             }
         }
         &--action {
-            width: 3em;
+            min-width: 4em;
+            min-height: 4em;
             overflow: hidden;
             flex: 1;
             align-items: center;
+            justify-content: center;
             margin: 1em 0 0 0;
-            padding: 1.2em;
+            padding: 0;
             box-shadow: 0.1em 0.1em 0.1em 0.3em #eee;
             border: 0;
             border-radius: 90px;
 
-            background-image: linear-gradient(-45deg, #eee, #fff);
+            background-color: @button-background;
             transition: background-image 1s;
             &:hover {
-                background-image: linear-gradient(-45deg, #fff, #fff);
+                background-color: @button-background--hover;
             }
-        }
-        &--open {
-            margin: 1em 0 0 0;
-            padding: 1.2em;
-            box-shadow: 0.1em 0.1em 0.1em 0.3em #eee;
-            border: 0;
-            border-radius: 90px;
         }
     }
 </style>

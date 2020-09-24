@@ -3,7 +3,7 @@
     import Actions from '../components/Actions.svelte';
     import TodoItemContainer from '../components/TodoItemContainer.svelte';
 	import { todos } from '../stores';
-	
+
 	fetchTodos()
 		.then(resp => resp.data)
 		.then(todoItems => {

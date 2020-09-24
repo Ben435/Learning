@@ -21,7 +21,9 @@
         </div>
     </div>
     
-    <p class="todo-item--content">{item.content}</p>
+    <div class="todo-item--content">
+        <p>{item.content}</p>
+    </div>
 </div>
 
 <style lang="less">
