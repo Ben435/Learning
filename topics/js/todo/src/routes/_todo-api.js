@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const createNewTodo = async(content) => axios.post('api/todo', { content });
+export const createNewTodo = async(newTOdo) => axios.post('api/todo', newTOdo);
 
 export const editTodo = async(id, newTodo) => axios.post(`api/todo/${id}`, newTodo);
 

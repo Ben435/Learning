@@ -14,8 +14,8 @@
         <h3 class="todo-item--title">{item.title}</h3>
         {/if}
         <div class="todo-item--actions">
-            <button on:click={onEdit}>E</button>
-            <button on:click={onDelete}>D</button>
+            <button class="todo-item--actions__edit" on:click={onEdit}>E</button>
+            <button class="todo-item--actions__delete" on:click={onDelete}>D</button>
         </div>
     </div>
     

@@ -52,13 +52,13 @@
     </div>
     <div class="edit-todo--form">
         {#if original}
-        <input bind:value={title}/>
-        <textarea contenteditable="true" bind:value={content}/>
+        <input class="edit-todo--form__title" bind:value={title}/>
+        <textarea class="edit-todo--form__content" contenteditable="true" bind:value={content}/>
         {/if}
     </div>
     <div class="edit-todo--actions">
-        <button on:click={onCancel}>Cancel</button>
-        <button on:click={onSubmit}>Submit</button>
+        <button class="edit-todo--actions__cancel" on:click={onCancel}>Cancel</button>
+        <button class="edit-todo--actions__submit" on:click={onSubmit}>Submit</button>
     </div>
 </main>
 

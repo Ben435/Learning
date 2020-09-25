@@ -6,7 +6,8 @@
     "dev": "sapper dev",
     "build": "sapper build",
     "export": "sapper export",
-    "start": "node __sapper__/build"
+    "start": "node __sapper__/build",
+    "test": "testcafe firefox integration/**/*.spec.[tj]s"
   },
   "dependencies": {
     "axios": "^0.20.0",
