@@ -1,7 +1,4 @@
 <script>
-    import { goto } from '@sapper/app';
-    import { deleteTodo } from '../routes/_todo-api';
-    import { todos } from '../stores';
     export let item;
 
     export let onEdit = () => {};

@@ -21,6 +21,7 @@
         prefetch('/archive');
     }
 </script>
+
 <div class="actions">
     <div class={`actions--container ${open ? 'open' : ''}`}>
         <button class="actions--action" on:mouseover={onHoverAdd} on:click={onAdd}>Add</button>
