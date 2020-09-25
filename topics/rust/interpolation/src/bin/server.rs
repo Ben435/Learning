@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::io::Result;
-use interpolation::messages::{MessageType,Message};
-use interpolation::constants::{SERVER_ADDR,MAX_MESSAGE_SIZE};
+use interpolation::network::messages::{MessageType,Message};
+use interpolation::network::constants::{SERVER_ADDR,MAX_MESSAGE_SIZE};
 use bincode::{serialize,deserialize};
 
 pub fn main() -> Result<()> {
@@ -22,7 +22,6 @@ pub fn main() -> Result<()> {
                     let mut msg = deserialize::<Message>(&buf).expect("Error deserializing");
 
                     println!("Server received {} bytes: {:?}", amount_read, msg);
-
 
                     msg.content.reverse();
 

@@ -22,3 +22,9 @@ bench = false
 [dependencies]
 bincode = "1.3"
 serde = { version = "1.0", features = ["derive"] }
+simple_opengl_renderer = { git = "https://github.com/Ben435/simple-opengl-renderer" }
+env_logger = "0.7"
+log = "0.4"
+gl = "0.14"
+cgmath = "0.17"
+glfw = "0.40"
