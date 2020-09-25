@@ -38,6 +38,11 @@
         & > {
             flex: 1;
         }
+
+        &--form {
+            display: flex;
+            flex-direction: column;
+        }
     }
 </style>
 
