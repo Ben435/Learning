@@ -1,6 +1,6 @@
 use std::net::UdpSocket;
 use std::io::Result;
-use interpolation::network::messages::{Message,MessageType};
+use interpolation::network::messages::{ServerUpdate,ClientUpdate,MessageType};
 use interpolation::network::constants::{SERVER_ADDR,MAX_MESSAGE_SIZE};
 use bincode::{serialize,deserialize};
 use simple_opengl_renderer::render::*;
@@ -32,8 +32,13 @@ pub fn main() -> Result<()> {
         .build();
 
     let cube = GlMesh::cube();
-    let mut cube_position: Vector3<f32> = vec3(0.0, 0.0, -10.0);
+    let mut client_cube_position: Vector3<f32> = vec3(0.0, 0.0, -10.0);
+    let mut server_cube_position: Vector3<f32> = vec3(0.0, 0.0, -10.0);
     let mut cur_time = window.get_time();
+
+    let sock = UdpSocket::bind("127.0.0.1:0")?;
+
+    sock.connect(SERVER_ADDR)?;
 
     while !window.should_close() {
         for (_, event) in window.flush_events() {
@@ -52,12 +57,31 @@ pub fn main() -> Result<()> {
         let frame_delta_time = new_time - cur_time;
         cur_time = new_time;
 
-        cube_position = update_from_keys(&window, cube_position, frame_delta_time);
+        client_cube_position = update_from_keys(&window, client_cube_position, frame_delta_time);
+
+        // Send msg
+        let msg = ClientUpdate{
+            mtype: MessageType::POSITION,
+            position: client_cube_position,
+        };
+
+        let serial_msg = serialize(&msg).expect("Failed to serialize");
+
+        sock.send(serial_msg.as_slice())?;
+
+        // Receive response
+        let mut recv_buf: [u8; MAX_MESSAGE_SIZE] = [0; MAX_MESSAGE_SIZE];
+        let (_amount_read, _sender) = sock.recv_from(&mut recv_buf)?;
+
+        let recv_msg = deserialize::<ServerUpdate>(&recv_buf).unwrap();
+
+        // Explicit move, just to get it working.
+        server_cube_position = recv_msg.positions.get(0).unwrap().position;
 
         {
             let mut ctx = renderer.begin();
 
-            ctx.submit(&cube, Matrix4::from_translation(cube_position), &shader);
+            ctx.submit(&cube, Matrix4::from_translation(server_cube_position), &shader);
 
             unsafe {
                 gl::ClearColor(0.2, 0.3, 0.3, 1.0);
@@ -71,32 +95,6 @@ pub fn main() -> Result<()> {
 
         window.update_screen();
     }
-
-    let sock = UdpSocket::bind("127.0.0.1:0")?;
-
-    sock.connect(SERVER_ADDR)?;
-
-    // Send msg
-    let mut buf: [u8; 32] = [0; 32];
-    for i in 0..10 {
-        buf[i] = i as u8;
-    }
-    let msg = Message{
-        typ: MessageType::METADATA,
-        content: buf,
-    };
-
-    let serial_msg = serialize(&msg).expect("Failed to serialize");
-
-    sock.send(serial_msg.as_slice())?;
-
-    // Receive response
-    let mut recv_buf: [u8; MAX_MESSAGE_SIZE] = [0; MAX_MESSAGE_SIZE];
-    let (amount_read, _sender) = sock.recv_from(&mut recv_buf)?;
-
-    let recv_msg = deserialize::<Message>(&recv_buf);
-    
-    println!("Received {} bytes: {:?}", amount_read, recv_msg);
 
     Ok(())
 }

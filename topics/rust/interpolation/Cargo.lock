@@ -93,6 +93,7 @@ dependencies = [
  "approx",
  "num-traits",
  "rand",
+ "serde",
 ]
 
 [[package]]
@@ -205,6 +206,7 @@ dependencies = [
  "glfw",
  "log",
  "serde",
+ "serde-value",
  "simple_opengl_renderer",
 ]
 
@@ -296,6 +298,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "915b1b472bc21c53464d6c8461c9d3af805ba1ef837e1cac254428f4a77177b1"
 dependencies = [
  "malloc_buf",
+]
+
+[[package]]
+name = "ordered-float"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fe9037165d7023b1228bc4ae9a2fa1a2b0095eca6c2998c624723dfd01314a5"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -501,6 +512,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e54c9a88f2da7238af84b5101443f0c0d0a3bbdc455e34a5c9497b1903ed55d5"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-value"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3a1a3341211875ef120e117ea7fd5228530ae7e7036a779fdc9117be6b3282c"
+dependencies = [
+ "ordered-float",
+ "serde",
 ]
 
 [[package]]
