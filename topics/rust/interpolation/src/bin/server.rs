@@ -1,6 +1,7 @@
 use std::net::UdpSocket;
 use std::io::Result;
-use interpolation::network::messages::{MessageType,ClientUpdate,ServerUpdate,CubeState};
+use interpolation::network::messages::{ClientUpdate,ServerUpdate,CubeState};
+use interpolation::network::serialization::{Message};
 use interpolation::network::constants::{SERVER_ADDR,MAX_MESSAGE_SIZE};
 use bincode::{serialize,deserialize};
 use cgmath::{vec3};
@@ -28,43 +29,50 @@ pub fn main() -> Result<()> {
                 } else {
                     let sender_key = format!("{}", sender);
 
-                    let msg = deserialize::<ClientUpdate>(&buf).expect("Error deserializing");
+                    let msg = deserialize::<Message>(&buf).expect("Error deserializing");
                     println!("Server received {} bytes: {:?}", amount_read, msg);
 
-                    let cube_index = match sender_to_cube.get(&sender_key) {
-                        Some(id) => *id,
-                        None => {
-                            let ret_index = next_cube_index;
-                            next_cube_index += 1;
-                            sender_to_cube.insert(sender_key, ret_index);
+                    match msg {
+                        Message::Connect(_) => {},
+                        Message::ClientUpdate(client_update) => {
+                            let cube_index = match sender_to_cube.get(&sender_key) {
+                                Some(id) => *id,
+                                None => {
+                                    let ret_index = next_cube_index;
+                                    next_cube_index += 1;
+                                    sender_to_cube.insert(sender_key, ret_index);
+        
+                                    ret_index
+                                }
+                            };
+        
+                            let new_cube_state = CubeState{
+                                cube_id: cube_index,
+                                position: client_update.position,
+                            };
 
-                            ret_index
-                        }
-                    };
-
-                    let new_cube_state = CubeState{
-                        cube_id: cube_index,
-                        position: msg.position,
-                    };
-
-                    if world_state.len() < cube_index+1 {
-                        for i in world_state.len()..cube_index {
-                            world_state.push(CubeState{ cube_id: i, position: vec3(0.0, 0.0, 0.0) });
-                        }
-                        world_state.push(new_cube_state);
-                    } else {
-                        world_state.push(new_cube_state);
-                        world_state.swap_remove(cube_index);
+                            if world_state.len() < cube_index+1 {
+                                for i in world_state.len()..cube_index {
+                                    world_state.push(CubeState{ cube_id: i, position: vec3(0.0, 0.0, 0.0) });
+                                }
+                                world_state.push(new_cube_state);
+                            } else {
+                                world_state.push(new_cube_state);
+                                world_state.swap_remove(cube_index);
+                            }
+                        },
+                        _ => panic!("Unrecognized message"),
                     }
 
                     println!("New server state: {:?}", world_state);
 
                     let new_msg = ServerUpdate{
-                        mtype: MessageType::POSITION,
                         positions: world_state.clone(),
                     };
 
-                    let new_msg = serialize(&new_msg).expect("Error serializing");
+                    let wrapped_msg = Message::server_update(new_msg);
+
+                    let new_msg = serialize(&wrapped_msg).expect("Error serializing");
                 
                     sock.send_to(new_msg.as_slice(), &sender)?;
                 }

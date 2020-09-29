@@ -1,49 +1,24 @@
-use super::messages::{MessageType,ConnectMessage,ClientUpdate};
-use serde::{Serialize,Serializer,Deserialize,Deserializer,de};
-use serde_value::Value;
+use super::messages::{ConnectMessage,ClientUpdate,ServerUpdate};
+use serde::{Serialize,Deserialize};
 
-#[derive(Serialize,Deserialize)]
-struct MessageWrapper {
-    mtype: MessageType,
-    version: u8,
-    data: Value,
-}
-
-#[derive(Debug)]
-enum Message {
+#[derive(Debug,Serialize,Deserialize)]
+#[serde(tag = "type")]
+pub enum Message {
     Connect(ConnectMessage),
-    Position(ClientUpdate),
+    ClientUpdate(ClientUpdate),
+    ServerUpdate(ServerUpdate),
 }
 
-impl<'de> Deserialize<'de> for Message {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> 
-    where
-        D: Deserializer<'de> 
-    {
-        let helper = MessageWrapper::deserialize(deserializer)?;
-
-        match (helper.mtype, helper.version) {
-            (MessageType::CONNECT, 1) => ConnectMessage::deserialize(helper.data)
-                .map(Message::Connect)
-                .map_err(de::Error::custom),
-            (MessageType::POSITION, 1) => ClientUpdate::deserialize(helper.data)
-                .map(Message::Position)
-                .map_err(de::Error::custom),
-            (mtype, version) => Err(de::Error::custom(format!("Unrecognized message type + version: {:?}:{}", mtype, version))),
-        }
+impl Message {
+    pub fn connect(msg: ConnectMessage) -> Message {
+        Message::Connect(msg)
     }
-}
 
-impl Serialize for Message {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer
-    {
-        match self { // TODO: Confused
-            Message::Connect(cmsg) => MessageWrapper{ mtype: MessageType::CONNECT, data: serde_value::Value::Newtype(cmsg) }.serialize(serializer),
-            Message::Position(msg) => {},
-        };
+    pub fn client_update(msg: ClientUpdate) -> Message {
+        Message::ClientUpdate(msg)
+    }
 
-        serializer.serialize_bool(false)
+    pub fn server_update(msg: ServerUpdate) -> Message {
+        Message::ServerUpdate(msg)
     }
 }

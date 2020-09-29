@@ -1,6 +1,7 @@
 use std::net::UdpSocket;
 use std::io::Result;
-use interpolation::network::messages::{ServerUpdate,ClientUpdate,MessageType};
+use interpolation::network::messages::{ServerUpdate,ClientUpdate};
+use interpolation::network::serialization::{Message};
 use interpolation::network::constants::{SERVER_ADDR,MAX_MESSAGE_SIZE};
 use bincode::{serialize,deserialize};
 use simple_opengl_renderer::render::*;
@@ -61,11 +62,12 @@ pub fn main() -> Result<()> {
 
         // Send msg
         let msg = ClientUpdate{
-            mtype: MessageType::POSITION,
             position: client_cube_position,
         };
 
-        let serial_msg = serialize(&msg).expect("Failed to serialize");
+        let wrapped_msg = Message::client_update(msg);
+
+        let serial_msg = serialize(&wrapped_msg).expect("Failed to serialize");
 
         sock.send(serial_msg.as_slice())?;
 
@@ -73,10 +75,16 @@ pub fn main() -> Result<()> {
         let mut recv_buf: [u8; MAX_MESSAGE_SIZE] = [0; MAX_MESSAGE_SIZE];
         let (_amount_read, _sender) = sock.recv_from(&mut recv_buf)?;
 
-        let recv_msg = deserialize::<ServerUpdate>(&recv_buf).unwrap();
+        let recv_msg = deserialize::<Message>(&recv_buf).unwrap();
 
-        // Explicit move, just to get it working.
-        server_cube_position = recv_msg.positions.get(0).unwrap().position;
+        match recv_msg {
+            Message::ServerUpdate(server_update) => {
+                // Explicit move, just to get it working.
+                server_cube_position = server_update.positions.get(0).unwrap().position;
+            },
+            _ => panic!("Wrong message from server!"),
+        }
+        
 
         {
             let mut ctx = renderer.begin();

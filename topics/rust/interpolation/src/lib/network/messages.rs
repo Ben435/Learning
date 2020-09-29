@@ -2,12 +2,6 @@ use serde::{Serialize,Deserialize};
 use cgmath::Vector3;
 
 #[derive(Debug,Serialize,Deserialize)]
-pub enum MessageType {
-    CONNECT,
-    POSITION,
-}
-
-#[derive(Debug,Serialize,Deserialize)]
 pub struct ConnectMessage {}
 
 #[derive(Debug,Clone,Serialize,Deserialize)]
