@@ -23,12 +23,12 @@ const solveQuadratic = (a, b, c) => {
 }
 
 export class Sphere {
-    constructor(center, radius, surfaceColor, emissionColor, transparency, reflection) {
+    constructor(center, radius, surfaceColor, emissionColor, opacity, reflection) {
         this.center = center;
         this.radius = radius;
         this.surfaceColor = surfaceColor;
         this.emissionColor = emissionColor;
-        this.transparency = transparency;
+        this.opacity = opacity;
         this.reflection = reflection;
     }
 
@@ -55,7 +55,7 @@ export class Sphere {
     }
 
     getSurfaceColor() {
-        return [this.surfaceColor.x, this.surfaceColor.y, this.surfaceColor.z, this.transparency * 255];
+        return [this.surfaceColor.x, this.surfaceColor.y, this.surfaceColor.z, this.opacity * 255];
     }
 }
 

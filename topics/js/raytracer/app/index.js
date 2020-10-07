@@ -6,6 +6,8 @@ const height = 480;
 
 const spheres = [
     new Sphere(new Vec3(width/2, height/2), 100, new Vec3(255, 255, 0), new Vec3(0, 0, 0), 1, 0),
+    new Sphere(new Vec3(width/2 - 200, height/2 + 60), 70, new Vec3(255, 0, 255), new Vec3(0, 0, 0), 1, 0),
+    new Sphere(new Vec3(50, 50), 20, new Vec3(0, 0, 0), new Vec3(255, 255, 255), 1, 0)
 ]
 const maxDepth = 1;
 
