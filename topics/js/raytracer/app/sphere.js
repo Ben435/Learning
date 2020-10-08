@@ -75,6 +75,7 @@ export class Sphere {
         return {
             point,
             normal,
+            distance: closestPoint,
         };
     }
 }

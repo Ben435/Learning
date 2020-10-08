@@ -38,11 +38,7 @@ export class Vec3 {
     }
 
     length() {
-        const len2 = this.length2;
-        if (len2 === 1) {
-            return 1;
-        }
-        return Math.sqrt();
+        return Math.sqrt(Math.abs(this.length2()));
     }
 
     normalize() {
@@ -74,6 +70,10 @@ export class Vec3 {
 
     isNaN() {
         return !(Number.isFinite(this.x) && Number.isFinite(this.y) && Number.isFinite(this.z));
+    }
+
+    toString() {
+        return `Vec(x=${this.x},y=${this.y},z=${this.z})`;
     }
 }
 
