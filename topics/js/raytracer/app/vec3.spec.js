@@ -8,4 +8,13 @@ describe('vec3', () => {
 
         expect(tvec.length2()).toEqual(1);
     })
+
+    it('reflect', () => {
+        const tvec = new Vec3(1, 1, 0);
+        const normalVec = new Vec3(0, 1, 0);
+
+        const result = tvec.reflect(normalVec);
+
+        expect(result).toEqual(new Vec3(2, 0, 0));
+    })
 })

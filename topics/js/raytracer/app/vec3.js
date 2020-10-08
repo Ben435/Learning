@@ -55,6 +55,26 @@ export class Vec3 {
         }
         return this;
     }
+
+    reflect(normal) {
+        return this.sub(normal).mul(2).mul(this.dot(normal));
+    }
+
+    invert() {
+        return this.mul(-1);
+    }
+
+    isZero() {
+        return this.x === 0 && this.y === 0 && this.z === 0;
+    }
+
+    toColor(opacity=1) {
+        return [this.x, this.y, this.z, opacity * 255]
+    }
+
+    isNaN() {
+        return !(Number.isFinite(this.x) && Number.isFinite(this.y) && Number.isFinite(this.z));
+    }
 }
 
 export default Vec3;

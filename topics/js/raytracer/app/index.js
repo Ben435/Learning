@@ -5,11 +5,12 @@ const width = 640;
 const height = 480;
 
 const spheres = [
-    new Sphere(new Vec3(width/2, height/2), 100, new Vec3(255, 255, 0), new Vec3(0, 0, 0), 1, 0),
-    new Sphere(new Vec3(width/2 - 200, height/2 + 60), 70, new Vec3(255, 0, 255), new Vec3(0, 0, 0), 1, 0),
-    new Sphere(new Vec3(50, 50), 20, new Vec3(0, 0, 0), new Vec3(255, 255, 255), 1, 0)
-]
-const maxDepth = 1;
+    new Sphere(new Vec3(width/2, height/2), 100, new Vec3(255, 255, 0), new Vec3(0, 0, 0), 0, 0.6, 0.2),
+    new Sphere(new Vec3(width/2 - 200, height/2 + 60), 70, new Vec3(255, 0, 255), new Vec3(0, 0, 0), 0, 0.6, 0.2),
+    new Sphere(new Vec3(200, 150), 20, new Vec3(0, 0, 255), new Vec3(0, 0, 0), 0, 0.8, 0.6),
+    new Sphere(new Vec3(50, 50), 20, new Vec3(0, 0, 0), new Vec3(200, 200, 200), 0.8, 0, 0),
+];
+const maxDepth = 5;
 
 const app = () => {
     const canvas = document.getElementById("drawspace");
@@ -45,7 +46,7 @@ const render = (drawContext) => {
             const index = (y * width + x) * 4;
             
             try {
-                image.data.set(pixel, index);
+                image.data.set(pixel.toColor(), index);
             } catch {
                 console.error('Catch', x, y, index);
                 break;
@@ -61,25 +62,110 @@ const render = (drawContext) => {
     drawContext.putImageData(image, 0, 0);
 };
 
-const trace = (rayOrigin, rayDirection, geometries, currentDepth) => {
-    const [geo, _distance] = geometries.map(geo => {
-        const [intersected, nearPoint] = geo.intersect(rayOrigin, rayDirection);
+const mix = (a, b, mixRatio) => b * mixRatio + a * (1 - mixRatio)
 
-        return [intersected, nearPoint, geo];
-    }).reduce(([closest_geo, nearestPoint], [intersected, nearPoint, geo]) => {
-        if (intersected) {
-            if (nearPoint < nearestPoint) {
-                return [geo, nearPoint]
+const trace = (rayOrigin, rayDirection, geometries, currentDepth) => {
+    const result = geometries.map(geo => {
+        const intersectResult = geo.intersect(rayOrigin, rayDirection);
+
+        if (intersectResult) {
+            const {
+                point, 
+                normal,
+            } = intersectResult;
+            return {
+                geo, 
+                point,
+                normal,
             }
         }
-        return [closest_geo, nearestPoint];
-    }, [null, Number.POSITIVE_INFINITY]);
+    }).reduce((closestResult, interectResult) => {
+        if (interectResult) {
+            const {
+                geo,
+                point,
+                normal,
+            } = interectResult;
 
-    if (geo) {
-        return geo.getSurfaceColor();
-    } else {
-        return [255, 255, 255, 255];
+            if (!closestResult || point < closestResult.point) {
+                return {
+                    geo,
+                    point,
+                    normal,
+                }
+            }
+        }
+        return closestResult;
+    }, null);
+
+    if (!result) {
+        // TODO: Background color goes here.
+        return new Vec3(255, 255, 255);
     }
+
+    const {
+        geo,
+        point,
+    } = result;
+    let { normal } = result;
+
+    if (point.isNaN()) {
+        throw Error("Point is NaN", result);
+    } else if (normal.isNaN()) {
+        throw Error("Normal is NaN", result);
+    }
+
+    let resultantColor = new Vec3();
+    let inside = false;
+    if (rayDirection.dot(normal)) {
+        normal = normal.invert();
+        inside = true;
+    }
+
+    if ((geo.reflectance > 0 || geo.opacity < 1) && currentDepth < maxDepth) {
+        let reflection = new Vec3();
+        let refraction = new Vec3();
+        const facingRatio = -rayDirection.dot(normal);
+        const fresnelEffect = mix(Math.pow(1 - facingRatio, 3), 1, 0.1);
+        if (geo.reflectance > 0) {
+            const reflectionRayDirection = rayDirection.reflect(normal);
+            const reflectionRayOrigin = point;
+    
+            reflection = trace(reflectionRayOrigin, reflectionRayDirection, geometries, currentDepth+1);
+        }
+        if (geo.opacity < 1) {
+            const ior = 1.1; // Index Of Refraction
+            const eta = inside ? ior : 1;
+            const cosi = normal.invert().dot(rayDirection);
+            // Dark arts start here
+            const k = 1 - eta * eta * (1 - cosi * cosi);
+            const refractionRayDirection = rayDirection.mul(eta).add(normal.mul(eta * cosi - Math.sqrt(k))).normalize();
+            const refractionRayOrigin = point.sub(normal);
+            // Dark arts end here
+            refraction = trace(refractionRayOrigin, refractionRayDirection, geometries, currentDepth+1);
+        }
+
+        resultantColor = reflection
+                .mul(fresnelEffect)
+                .add(refraction.mul(1 - fresnelEffect).mul(1 - geo.opacity))
+                .mul(geo.surfaceColor);
+    } else {
+        // Compute illumination
+        resultantColor = geometries
+            .filter(geo => !geo.emissionColor.isZero())
+            .reduce((resultantColor, light) => {
+                const shadowRayDirection = light.center.sub(point);
+
+                const inShadow = geometries
+                    .filter(otherGeo => otherGeo !== light)
+                    .find(otherGeo => otherGeo.intersect(point, shadowRayDirection));
+
+                // TODO: mix colors of light + surface + brightness
+                return inShadow ? resultantColor : geo.surfaceColor.mul(light.emissionBrightness);
+            }, new Vec3());
+    }
+    
+    return resultantColor.add(geo.emissionColor);
 };
 
 app();
