@@ -74,15 +74,14 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
                 // TODO: These should be tunable per light
                 const attenuationVals = {
                     constant: 1.0,
-                    linear: 0.14,
-                    quadratic: 0.07,
+                    linear: 0.09,
+                    quadratic: 0.032,
                 }
                 const attenuation = 1 / (
                     attenuationVals.constant +
                     attenuationVals.linear * lightDistance +
                     attenuationVals.quadratic * lightDistance * lightDistance
                 );
-                // const attenuation = 1;
 
                 return resultantColor.add(
                     geo.surfaceColor
@@ -109,23 +108,25 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
             throw Error(`Error on reflection: ${reflectionRayOrigin}, ${reflectionRayDirection} -> ${e}`);
         }
     }
-    if (false && geo.transmission > 0) {
+    if (geo.transmission > 0) {
         const ior = 1.1; // Index Of Refraction
         const eta = inside ? ior : 1 / ior;
         const cosi = normal.invert().dot(rayDirection);
-        // Dark arts start here
-        // TODO: For some reason, k is negative. I suspect cosi needs to be smaller.
         const k = 1 - eta * eta * (1 - cosi * cosi);
-        if (k < 0) {
-            throw Error(`Negative k k=${k} eta=${eta} cosi=${cosi} normal=${normal} inormal=${normal.invert()} raydir=${rayDirection} nraydir=${rayDirection.normalize()}`)
-        }
-        const refractionRayDirection = rayDirection.mul(eta).add(normal.mul(eta * cosi - Math.sqrt(k))).normalize();
-        const refractionRayOrigin = point.sub(normal);
-        // Dark arts end here
-        try {
-            refraction = trace(refractionRayOrigin, refractionRayDirection, geometries, currentDepth+1);
-        } catch (e) {
-            throw Error(`Error on refraction: ${refractionRayOrigin}, ${refractionRayDirection} -> ${e}`);
+        if (k > 0) {
+            const refractionRayDirection = rayDirection
+                .mul(eta)
+                .add(normal.mul(eta * cosi - Math.sqrt(k)))
+                .normalize();
+            const refractionRayOrigin = point.sub(normal.mul(bias));
+            try {
+                refraction = trace(refractionRayOrigin, refractionRayDirection, geometries, currentDepth+1);
+            } catch (e) {
+                throw Error(`Error on refraction: ${refractionRayOrigin}, ${refractionRayDirection} -> ${e}`);
+            }
+        } else {
+            // Total internal reflection. 100% reflected, so dw about it.
+            console.warn('Total internal reflection occurred, ignoring');
         }
     }
 
@@ -136,7 +137,6 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
                 .mul(geo.transmission))
             .mul(geo.surfaceColor)
             .add(geo.emissionColor);
-    
 };
 
 export default trace;

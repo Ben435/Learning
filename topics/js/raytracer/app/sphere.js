@@ -38,14 +38,14 @@ export const solveQuadratic = (a, b, c) => {
 }
 
 export class Sphere {
-    constructor(center, radius, surfaceColor, transmission, reflectance, emissionColor) {
+    constructor(center, radius, surfaceColor, reflectance, transmission, emissionColor) {
         this.center = center;
         this.radius = radius;
 
         this.surfaceColor = surfaceColor;
 
-        this.transmission = transmission;
         this.reflectance = reflectance;
+        this.transmission = transmission;
 
         this.emissionColor = emissionColor;
         this.emissionBrightness = 1.0;
