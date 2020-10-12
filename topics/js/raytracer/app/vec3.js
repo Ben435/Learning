@@ -1,3 +1,9 @@
+import { clamp } from './math';
+
+const valToColor = (val) => {
+    return clamp(val, 1, 0) * 255;
+}
+
 export class Vec3 {
     constructor(x=0, y=0, z=0) {
         this.x = x;
@@ -38,7 +44,7 @@ export class Vec3 {
     }
 
     length() {
-        return Math.sqrt(Math.abs(this.length2()));
+        return Math.sqrt(this.length2())
     }
 
     normalize() {
@@ -52,10 +58,6 @@ export class Vec3 {
         return this;
     }
 
-    reflect(normal) {
-        return this.sub(normal).mul(2).mul(this.dot(normal));
-    }
-
     invert() {
         return this.mul(-1);
     }
@@ -65,7 +67,7 @@ export class Vec3 {
     }
 
     toColor(opacity=1) {
-        return [this.x, this.y, this.z, opacity * 255]
+        return  [valToColor(this.x), valToColor(this.y), valToColor(this.z), opacity * 255]
     }
 
     isNaN() {

@@ -38,45 +38,37 @@ export const solveQuadratic = (a, b, c) => {
 }
 
 export class Sphere {
-    constructor(center, radius, surfaceColor, emissionColor, emissionBrightness, opacity, reflectance) {
+    constructor(center, radius, surfaceColor, transmission, reflectance, emissionColor) {
         this.center = center;
         this.radius = radius;
+
         this.surfaceColor = surfaceColor;
-        this.emissionColor = emissionColor;
-        this.emissionBrightness = emissionBrightness;
-        this.opacity = opacity;
+
+        this.transmission = transmission;
         this.reflectance = reflectance;
+
+        this.emissionColor = emissionColor;
+        this.emissionBrightness = 1.0;
     }
 
     intersect(rayOrigin, rayDirection) {        
-        const diff = rayOrigin.sub(this.center);
+        const length = this.center.sub(rayOrigin);
+        const radius2 = this.radius * this.radius;
 
-        const a = rayDirection.dot(rayDirection);
-        const b = 2 * rayDirection.dot(diff);
-        const c = diff.dot(diff) - (this.radius * this.radius)
-
-        const found = solveQuadratic(a, b, c);
-        if (!found) {
+        const tca = length.dot(rayDirection);
+        if (tca < 0) {
             return null;
         }
-        const { t0, t1 } = found;
-        let closestPoint = t0;
-        if (closestPoint < 0) {
-            closestPoint = t1;
-            if (closestPoint < 0) {
-                // Both points are negative, can't use either :(.
-                return null;
-            }
+        const d2 = length.dot(length) - tca * tca;
+        if (d2 > radius2) {
+            return null;
         }
-
-        const point = rayOrigin.add(rayDirection.mul(closestPoint));
-        const normal = point.sub(this.center).normalize();
+        const thc = Math.sqrt(radius2 - d2);
 
         return {
-            point,
-            normal,
-            distance: closestPoint,
-        };
+            t0: tca - thc,
+            t1: tca + thc,
+        }
     }
 }
 
