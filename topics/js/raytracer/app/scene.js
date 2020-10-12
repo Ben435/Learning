@@ -7,7 +7,7 @@ const geometries = [
 
     // Scene
     new Sphere(new Vec3(0, 0, -20), 4, new Vec3(1, 0.32, 0.36), 1, 0.5, new Vec3()),
-    new Sphere(new Vec3(5, -1, -15), 2, new Vec3(0.90, 0.76, 0.46), 1, 0, new Vec3()),
+    new Sphere(new Vec3(5, -1, -15), 2, new Vec3(0.90, 0.76, 0.46), 0, 0, new Vec3()),
     new Sphere(new Vec3(5, 0, -25), 3, new Vec3(0.65, 0.77, 0.97), 1, 0, new Vec3()),
     new Sphere(new Vec3(-5.5, 0, -15), 3, new Vec3(0.90, 0.90, 0.90), 1, 0, new Vec3()),
 

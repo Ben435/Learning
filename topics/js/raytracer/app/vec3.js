@@ -58,6 +58,10 @@ export class Vec3 {
         return this;
     }
 
+    reflect(normal) {
+        return this.sub(normal.mul(2).mul(this.dot(normal)));
+    }
+
     invert() {
         return this.mul(-1);
     }
