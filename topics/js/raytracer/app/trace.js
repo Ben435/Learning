@@ -48,8 +48,8 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
         normal = normal.invert();
         inside = true;
     }
-    // Bias, black magic
-    const bias = 0.0001;
+    // Bias
+    const bias = 1e-4;
 
     // if in diffuse mode, or no more bounces allowed, or geometry is diffuse (no reflections or transmission)
     if (options.mode === MODE.DIFFUSE || currentDepth >= maxDepth || !(geo.reflectance > 0 || geo.transmission > 0)) {
@@ -60,8 +60,8 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
                 const shadowRayOrigin = point.add(normal.mul(bias));
                 const toLight = light.center.sub(point);
                 const shadowRayDirection = toLight.normalize();
-                let transmission = 1;
 
+                let transmission = 1;
                 const inShadow = geometries
                     .filter(otherGeo => otherGeo !== light)
                     .find(otherGeo => otherGeo.intersect(shadowRayOrigin, shadowRayDirection));

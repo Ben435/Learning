@@ -48,7 +48,6 @@ export class Sphere {
         this.transmission = transmission;
 
         this.emissionColor = emissionColor;
-        this.emissionBrightness = 1.0;
     }
 
     intersect(rayOrigin, rayDirection) {        

@@ -12,7 +12,7 @@ const geometries = [
     new Sphere(new Vec3(-5.5, 0, -15), 3, new Vec3(0.90, 0.90, 0.90), 1, 0, new Vec3()),
 
     // Light
-    new Sphere(new Vec3(0, 20, -30), 3, new Vec3(), 0, 0, new Vec3(3.0, 3.0, 3.0)),
+    new Sphere(new Vec3(0, 20, -30), 3, new Vec3(), 0, 0, new Vec3(3, 3, 3)),
 ];
 
 export default geometries;
