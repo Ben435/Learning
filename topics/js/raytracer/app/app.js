@@ -47,6 +47,7 @@ const render = async (drawContext, options={}) => {
     const angle = Math.tan(Math.PI * 0.5 * fov / 180);
 
     const startTime = performance.now();
+
     for (let y=0; y<height; y++) {
         for (let x=0; x<width; x++) {
             const rayOrigin = new Vec3();
@@ -54,15 +55,7 @@ const render = async (drawContext, options={}) => {
             const yy = (1 - 2 * ((y + 0.5) * invHeight)) * angle;
             const rayDirection = new Vec3(xx, yy, -1).normalize();
 
-            let pixel;
-            try {
-                pixel = trace(rayOrigin, rayDirection, geometries, 0, options);
-                if (pixel.isNaN()) {
-                    throw Error(`Pixel returned NaN: ${pixel}`);
-                }
-            } catch (e) {
-                throw Error(`Error tracing ray x=${x} y=${y} rayOrigin=${rayOrigin} rayDirection=${rayDirection} -> ${e} `);
-            }
+            const pixel = trace(rayOrigin, rayDirection, geometries, 0, options);
 
             const index = (y * width + x) * 4;
             

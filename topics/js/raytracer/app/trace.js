@@ -3,10 +3,6 @@ import { mix } from './math';
 import { maxDepth, MODE } from './constants';
 
 const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) => {
-    if (rayOrigin.isNaN() || rayDirection.isNaN()) {
-        throw Error(`Origin || Direction is NaN: ro=${rayOrigin} rd=${rayDirection}`);
-    }
-
     let tnearest = Number.POSITIVE_INFINITY;
     let geo = null; 
 
@@ -37,18 +33,12 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
     const point = rayOrigin.add(rayDirection.mul(tnearest));
     let normal = point.sub(geo.center).normalize();
 
-    if (point.isNaN()) {
-        throw Error("Point is NaN", result);
-    } else if (normal.isNaN()) {
-        throw Error("Normal is NaN", result);
-    }
-
     let inside = false;
     if (rayDirection.dot(normal) > 0) {
         normal = normal.invert();
         inside = true;
     }
-    // Bias
+    // Bias, not strictly needed in Js as its double precision, but good practice.
     const bias = 1e-4;
 
     // if in diffuse mode, or no more bounces allowed, or geometry is diffuse (no reflections or transmission)
@@ -102,11 +92,7 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
         const reflectionRayDirection = rayDirection.reflect(normal).normalize();
         const reflectionRayOrigin = point.add(normal.mul(bias));
 
-        try {
-            reflection = trace(reflectionRayOrigin, reflectionRayDirection, geometries, currentDepth+1);
-        } catch (e) {
-            throw Error(`Error on reflection: ${reflectionRayOrigin}, ${reflectionRayDirection} -> ${e}`);
-        }
+        reflection = trace(reflectionRayOrigin, reflectionRayDirection, geometries, currentDepth+1);
     }
     if (geo.transmission > 0) {
         const ior = 1.1; // Index Of Refraction
@@ -119,11 +105,7 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
                 .add(normal.mul(eta * cosi - Math.sqrt(k)))
                 .normalize();
             const refractionRayOrigin = point.sub(normal.mul(bias));
-            try {
-                refraction = trace(refractionRayOrigin, refractionRayDirection, geometries, currentDepth+1);
-            } catch (e) {
-                throw Error(`Error on refraction: ${refractionRayOrigin}, ${refractionRayDirection} -> ${e}`);
-            }
+            refraction = trace(refractionRayOrigin, refractionRayDirection, geometries, currentDepth+1);
         } else {
             // Total internal reflection. 100% reflected, so dw about it.
             console.warn('Total internal reflection occurred, ignoring');
