@@ -36,6 +36,7 @@ use gfx_hal::{
         Specialization,
         Rect,
         Viewport,
+        ShaderStageFlags,
     },
     command::{
         ClearColor,
@@ -110,6 +111,14 @@ impl<B: gfx_hal::Backend> Drop for ResourceHolder<B> {
             instance.destroy_surface(surface);
         }
     }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+struct PushConstants {
+    color: [f32; 4],
+    pos: [f32; 2],
+    scale: [f32; 2],
 }
 
 const APP_NAME: &'static str = "Raytracer";
@@ -190,6 +199,13 @@ unsafe fn make_pipeline<B: gfx_hal::Backend> (
     device.destroy_shader_module(fragment_shader_module);
 
     pipeline
+}
+
+unsafe fn push_constant_bytes<T>(push_constants: &T) -> &[u32] {
+    let size_in_bytes = std::mem::size_of::<T>();
+    let size_in_u32s = size_in_bytes / std::mem::size_of::<u32>();
+    let start_ptr = push_constants as *const T as *const u32;
+    std::slice::from_raw_parts(start_ptr, size_in_u32s)
 }
 
 fn main() {
@@ -298,8 +314,11 @@ fn main() {
     };
 
     let pipeline_layout = unsafe {
+
+        let push_constant_bytes = std::mem::size_of::<PushConstants>() as u32;
+
         device
-            .create_pipeline_layout(&[], &[])
+            .create_pipeline_layout(&[], &[(ShaderStageFlags::VERTEX, 0..push_constant_bytes)])
             .expect("Out of memory")
     };
 
@@ -334,6 +353,8 @@ fn main() {
         
     let mut should_configure_swapchain = true;
 
+    let start_time = std::time::Instant::now();
+
     event_loop.run(move |event, _, control_flow| {
         match event {
             Event::WindowEvent { event, ..} => match event {
@@ -356,11 +377,47 @@ fn main() {
             },
             Event::MainEventsCleared => window.request_redraw(),
             Event::RedrawRequested(_) => {
-                // Render time!
-
                 let res: &mut Resources<_> = &mut resource_holder.0;
                 let render_pass = &res.render_passes[0];
+                let pipeline_layout = &res.pipeline_layouts[0];
                 let pipeline = &res.pipelines[0];
+
+                let anim = start_time.elapsed().as_secs_f32().sin() * 0.5 + 0.5;
+
+                let small = [0.33, 0.33];
+
+                let triangles = &[
+                    PushConstants {
+                        color: [1.0, 0.0, 0.0, 1.0],
+                        pos: [-0.5, -0.5],
+                        scale: small,
+                    },
+                    PushConstants {
+                        color: [0.0, 1.0, 0.0, 1.0],
+                        pos: [0.0, -0.5],
+                        scale: small,
+                    },
+                    PushConstants {
+                        color: [0.0, 0.0, 1.0, 1.0],
+                        pos: [0.5, -0.5],
+                        scale: small,
+                    },
+                    PushConstants {
+                        color: [0.0, anim, 1.0, 1.0],
+                        pos: [-0.5, 0.5],
+                        scale: small,
+                    },
+                    PushConstants {
+                        color: [1.0, 1.0, 1.0, 1.0],
+                        pos: [0.0, 0.5 - anim * 0.5],
+                        scale: small,
+                    },
+                    PushConstants {
+                        color: [1.0, 1.0, 1.0, 1.0],
+                        pos: [0.5, 0.5],
+                        scale: [0.33 + anim * 0.33, 0.33 + anim * 0.33],
+                    },
+                ];
 
                 unsafe {
                     let render_timeout_ns = 1_000_000_000;
@@ -449,7 +506,17 @@ fn main() {
                     );
 
                     command_buffer.bind_graphics_pipeline(pipeline);
-                    command_buffer.draw(0..3, 0..1);
+
+                    for triangle in triangles {
+                        command_buffer.push_graphics_constants(
+                            pipeline_layout,
+                            ShaderStageFlags::VERTEX,
+                            0,
+                            push_constant_bytes(triangle),
+                        );
+    
+                        command_buffer.draw(0..3, 0..1);
+                    }
 
                     command_buffer.end_render_pass();
                     command_buffer.finish();
