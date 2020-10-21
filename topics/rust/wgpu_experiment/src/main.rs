@@ -103,7 +103,17 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     let mut swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
-    event_loop.run(move |event, window_target, control_flow| {
+    event_loop.run(move |event, _, control_flow| {
+        let _ = (
+            &instance,
+            &adapter,
+            &vs_module,
+            &fs_module,
+            &pipeline_layout,
+        );
+
+        *control_flow = ControlFlow::Poll;
+
         match event {
             Event::WindowEvent {
                 event: WindowEvent::Resized(size),
