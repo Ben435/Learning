@@ -1,36 +1,21 @@
 #version 450
 
-out gl_PerVertex {
-    vec4 gl_Position;
+layout(set = 0, binding = 0) uniform Uniforms {
+    mat4x4 projection_view;
+    vec4 clipping_plane;
 };
 
-/*
-r = 1
-left = origin - r
-right = origin + r
-top_left = origin - r/2
-etc
-*/
-vec2 positions[6] = vec2[](
-    vec2(-1, 0),
-    vec2(-0.5, 0.9),
-    vec2(0.5, 0.9),
-    vec2(1, 0),
-    vec2(0.5, -0.9),
-    vec2(-0.5, -0.9)
-);
+layout(location = 0) in vec3 position;
+// For lighting later
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec4 colour;
 
-int indices[4][3] = int[][](
-    int[](1, 5, 0),
-    int[](3, 4, 5),
-    int[](1, 2, 3),
-    int[](1, 3, 5)
-);
+layout(location = 0) out vec4 v_Colour;
+layout(location = 1) out float v_ClipDist;
 
 void main() {
-    int x_index = gl_VertexIndex / 3;
-    int y_index = gl_VertexIndex % 3;
-    int index = indices[x_index][y_index];
-    vec2 position = positions[index];
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = projection_view * vec4(position, 1.0);
+
+    v_Colour = colour;
+    v_ClipDist = dot(vec4(position, 1.0), clipping_plane);
 }

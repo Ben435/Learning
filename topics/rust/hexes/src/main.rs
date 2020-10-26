@@ -1,4 +1,4 @@
-
+use cgmath::{Point3};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -12,53 +12,19 @@ use wgpu::{
 };
 use wgpu_subscriber::initialize_default_subscriber;
 use futures::executor::block_on;
-use shaderc::{
-    ShaderKind,
-    Compiler,
-    CompilationArtifact,
+
+const CAMERA: Point3<f32> = Point3 {
+    x: -100.0,
+    y: 50.0,
+    z: 100.0,
 };
-use std::fmt;
 
-#[derive(Debug,Clone,PartialEq,Eq)]
-enum ShaderCompilerError {
-    FailedToInitializeError,
-}
-
-struct ShaderCompiler {
-    compiler: Compiler,
-}
-
-impl fmt::Debug for ShaderCompiler {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ShaderCompiler")
-            .field("compiler", &String::from("<Compiler>"))
-            .finish()
-    }
-}
-
-impl<'a> ShaderCompiler {
-    pub fn new() -> Result<ShaderCompiler, ShaderCompilerError> {
-        let maybe_compiler = Compiler::new();
-
-        match maybe_compiler {
-            Some(compiler) => {
-                Ok(ShaderCompiler {
-                    compiler,
-                })
-            }
-            None => Err(ShaderCompilerError::FailedToInitializeError)
-        }
-    }
-
-    pub fn create_ogl_shader(&'a mut self, device: &wgpu::Device, shader_content: &str, shader_kind: ShaderKind) -> wgpu::ShaderModule {
-        let compiled_shader = self.compiler
-            .compile_into_spirv(shader_content, shader_kind, "unnamed", "main", None)
-            .expect("Failed to compile shader");
-        
-        let shader_module_source = wgpu::ShaderModuleSource::SpirV(std::borrow::Cow::Borrowed(compiled_shader.as_binary()));
-
-        device.create_shader_module(shader_module_source)
-    }
+#[repr(C)]
+#[derive(Copy,Clone,Debug,PartialEq)]
+struct Uniforms {
+    view: [f32; 16],
+    projection: [f32; 16],
+    time_size_width: [f32; 4],
 }
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
@@ -89,14 +55,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         .await
         .expect("Failed to create device");
 
-    let mut shader_compiler = ShaderCompiler::new().unwrap();
-
-    let vs_ogl_shader = include_str!("assets/shader.vert");
-    let fs_ogl_shader = include_str!("assets/shader.frag");
-
-    let vs_module = shader_compiler.create_ogl_shader(&device, vs_ogl_shader, ShaderKind::Vertex);
-
-    let fs_module = shader_compiler.create_ogl_shader(&device, fs_ogl_shader, ShaderKind::Fragment);
+    let vs_module = device.create_shader_module(wgpu::include_spirv!("./assets/shader.vert.spv"));
+    let fs_module = device.create_shader_module(wgpu::include_spirv!("./assets/shader.frag.spv"));
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
