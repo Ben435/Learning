@@ -629,6 +629,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hexes"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "shaderc",
+ "wgpu",
+ "wgpu-subscriber",
+ "winit",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1148,17 +1159,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a441a7a6c80ad6473bd4b74ec1c9a4c951794285bf941c2126f607c72e48211"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "raytracer"
-version = "0.1.0"
-dependencies = [
- "futures",
- "shaderc",
- "wgpu",
- "wgpu-subscriber",
- "winit",
 ]
 
 [[package]]
