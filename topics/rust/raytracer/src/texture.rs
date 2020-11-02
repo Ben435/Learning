@@ -9,6 +9,11 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn from_raw_buffer(device: &wgpu::Device, queue: &wgpu::Queue, image_buffer: Vec<u8>, label: &str) -> Result<Self> {
+        let img = image::ImageBuffer::from_vec(640, 480, image_buffer).unwrap();
+        Self::from_image(device, queue, &image::DynamicImage::ImageRgb8(img), Some(label))
+    }
+
     pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
         Self::from_image(device, queue, &img, Some(label))
