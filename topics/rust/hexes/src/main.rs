@@ -1,3 +1,5 @@
+mod point_gen;
+
 use cgmath::{Point3};
 use winit::{
     event::{Event, WindowEvent},
@@ -25,6 +27,15 @@ struct Uniforms {
     view: [f32; 16],
     projection: [f32; 16],
     time_size_width: [f32; 4],
+}
+
+struct HexesState {
+    terrain_vertex_buf: wgpu::Buffer,
+    terrain_vertex_count: usize,
+    terrain_normal_bind_group: wgpu::BindGroup,
+    terrain_pipeline: wgpu::RenderPipeline,
+
+    current_frame: usize,
 }
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
