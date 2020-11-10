@@ -1,6 +1,7 @@
 use crate::texture;
 
 use std::iter;
+use image::DynamicImage;
 
 use wgpu::util::DeviceExt;
 use winit::{
@@ -85,7 +86,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: &Window, image_buffer: Vec<u8>, image_width: u32, image_height: u32) -> Self {
+    async fn new(window: &Window, img: DynamicImage) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
@@ -122,7 +123,7 @@ impl State {
 
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_descriptor);
 
-        let diffuse_texture = texture::Texture::from_raw_buffer(&device, &queue, image_buffer, image_width, image_height, "display-image").unwrap();
+        let diffuse_texture = texture::Texture::from_dynamic_image(&device, &queue, &img, "display-image").unwrap();
 
         let texture_bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -296,11 +297,11 @@ impl State {
     }
 }
 
-pub async fn render_texture(image_buffer: Vec<u8>, width: u32, height: u32) {
+pub async fn render_texture(img: image::DynamicImage) {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut state = State::new(&window, image_buffer, width, height).await;
+    let mut state = State::new(&window, img).await;
 
     event_loop.run(move |event, _, control_flow| {
         match event {

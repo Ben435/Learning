@@ -5,7 +5,7 @@ mod sphere;
 use sphere::Sphere;
 use futures::executor::block_on;
 use std::f32::consts::PI;
-use image::Rgba;
+use image::{Rgba,DynamicImage,GenericImage};
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
@@ -22,25 +22,24 @@ impl Scene {
         }
     }
 
-    pub fn render(&self, width: u32, height: u32, fov: f32) -> Vec<u8> {
-        let pixel_buffer: Vec<u8> = vec![128; (WIDTH * HEIGHT * NUMS_PER_PIXEL) as usize];
+    pub fn render(&self, width: u32, height: u32, fov: f32) -> DynamicImage {
+        let mut img = DynamicImage::new_rgba8(width, height);
 
-        let width = width as f32;
-        let height = height as f32;
-        let inv_width = 1.0 / width;
-        let inv_height = 1.0 / height;
+        let fwidth = width as f32;
+        let fheight = height as f32;
+        let inv_width = 1.0 / fwidth;
+        let inv_height = 1.0 / fheight;
 
-        let aspect_ratio = width / height;
+        let aspect_ratio = fwidth / fheight;
         let angle =(PI * 0.5 * fov / 180.0).tan();
 
+        for x in 0..width {
+            for y in 0..height {
+                img.put_pixel(x, y, Rgba([128, 255, 128, 255]));
+            }
+        }
 
-        // how
-        // pixel_buffer
-        //     .into_iter()
-        //     .flat_map(|pxl| pxl.into_vec())
-        //     .collect::<Vec<u8>>()
-
-        pixel_buffer
+        img
     }
 }
 
@@ -51,7 +50,7 @@ fn main() {
     let spheres = vec![Sphere::new(0.0, 0.0, 0.0, 5.0)];
     let scene = Scene::new(spheres);
 
-    let image_buffer = scene.render(WIDTH, HEIGHT, FOV);
+    let img = scene.render(WIDTH, HEIGHT, FOV);
 
-    block_on(window::render_texture(image_buffer, WIDTH, HEIGHT));
+    block_on(window::render_texture(img));
 }

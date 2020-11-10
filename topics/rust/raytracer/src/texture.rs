@@ -1,5 +1,5 @@
 use anyhow::*;
-use image::GenericImageView;
+use image::{GenericImageView,DynamicImage};
 use wgpu;
 
 pub struct Texture {
@@ -10,9 +10,8 @@ pub struct Texture {
 
 impl Texture {
     #[allow(unused)]
-    pub fn from_raw_buffer(device: &wgpu::Device, queue: &wgpu::Queue, image_buffer: Vec<u8>, image_width: u32, image_height: u32, label: &str) -> Result<Self> {
-        let img = image::ImageBuffer::from_vec(image_width, image_height, image_buffer).unwrap();
-        Self::from_image(device, queue, &image::DynamicImage::ImageRgba8(img), Some(label))
+    pub fn from_dynamic_image(device: &wgpu::Device, queue: &wgpu::Queue, img: &DynamicImage, label: &str) -> Result<Self> {
+        Self::from_image(device, queue, &img, Some(label))
     }
 
     #[allow(unused)]
