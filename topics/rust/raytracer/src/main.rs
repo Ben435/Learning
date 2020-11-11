@@ -104,7 +104,7 @@ impl Scene {
 
                         let addition_from_light = sphere.surface_color
                             .map(|pxl| (pxl as f32 * transmission) as u8) // This is kinda bad, casting like this is messy at best, don't like, may fix
-                            .map2(&light.emmission_color.unwrap(), |pxl1, pxl2| pxl1.saturating_mul(pxl2));
+                            .map2(&light.emmission_color.unwrap(), |pxl1, pxl2| ((pxl1 as f32) * (pxl2 as f32 / 255.0)) as u8); // Same here, horrible
 
                         return result_color.map2(&addition_from_light, |px1, px2| px1.saturating_add(px2));
                     });
