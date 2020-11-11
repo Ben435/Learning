@@ -1,22 +1,25 @@
 use cgmath::{prelude::*,Point3,Vector3};
-use image::Rgba;
 
 #[derive(PartialEq)]
 pub struct Sphere {
     pub origin: Point3<f32>,
     pub radius: f32,
 
-    pub surface_color: Rgba<u8>,
-    pub emmission_color: Option<Rgba<u8>>
+    pub surface_color: Vector3<f32>,
+    pub reflectance: f32,
+    pub transmission: f32,
+    pub emmission_color: Vector3<f32>
 }
 
 impl Sphere {
     // TODO: Builder
-    pub fn new(x: f32, y: f32, z: f32, radius: f32, surface_color: Rgba<u8>, emmission_color: Option<Rgba<u8>>) -> Self {
+    pub fn new(x: f32, y: f32, z: f32, radius: f32, surface_color: Vector3<f32>, reflectance: f32, transmission: f32, emmission_color: Vector3<f32>) -> Self {
         Sphere {
             origin: Point3::new(x, y, z),
             radius,
             surface_color,
+            reflectance,
+            transmission,
             emmission_color,
         }
     }
