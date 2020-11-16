@@ -6,10 +6,10 @@ use sphere::Sphere;
 use futures::executor::block_on;
 use std::f32::consts::PI;
 use image::{Rgba,DynamicImage,GenericImage};
-use cgmath::{prelude::*,Vector3,vec3};
+use cgmath::{prelude::*,Vector3,vec3,Point3};
 
-const WIDTH: u32 = 64;
-const HEIGHT: u32 = 48;
+const WIDTH: u32 = 640;
+const HEIGHT: u32 = 480;
 const MAX_DEPTH: u8 = 5;
 
 pub struct Scene {
@@ -25,6 +25,12 @@ fn vec_to_rgba(vec: Vector3<f32>) -> Rgba<u8> {
 
 fn mix(a: f32, b: f32, mix_ratio: f32) -> f32 {
     b * mix_ratio + a * (1.0 - mix_ratio)
+}
+
+/// Reflect ray over normal
+/// Assumes normal is normalized
+fn reflect(ray: Vector3<f32>, normal: Vector3<f32>) -> Vector3<f32> {
+    ray - (normal * 2.0 * ray.dot(normal) )
 }
 
 impl Scene {
@@ -89,7 +95,7 @@ impl Scene {
         });
 
         match maybe_intersect {
-            None => vec3(0.0, 0.0, 0.0), // Missed scene, background goes here.
+            None => vec3(1.0, 1.0, 1.0), // Missed scene, background goes here.
             Some((dist, sphere)) => {
                 let point = ray_origin + ray_direction * dist;
                 // TODO: Handle being inside an object
@@ -122,17 +128,16 @@ impl Scene {
                 // TODO: Something here is wrong, numbers are nuts, fix
                 let facing_ratio = -ray_direction.dot(normal);
                 let fresnel_effect = mix((1.0 - facing_ratio).powi(3), 1.0, 0.1);
-
-                println!("Fressy, {} {}", facing_ratio, fresnel_effect);
+                // println!("Fressy, {} {}", facing_ratio, fresnel_effect);
 
                 let reflection = match sphere.reflectance {
                     reflectance if reflectance >= 0.0 => {
                         // Reflect the ray over the normal
                         // Calculation from https://www.fabrizioduroni.it/2017/08/25/how-to-calculate-reflection-vector.html
-                        let reflection_ray_dir = (2.0 * normal.dot(ray_direction) * normal - ray_direction).normalize();
+                        let reflection_ray_dir = reflect(ray_direction, normal).normalize();
                         let reflection_ray_origin = point + normal * bias;
-    
-                        self.trace(reflection_ray_dir, reflection_ray_origin, current_depth + 1)
+
+                        self.trace(reflection_ray_origin, reflection_ray_dir, current_depth + 1)
                     },
                     _ => vec3(0.0, 0.0, 0.0),
                 };
@@ -144,7 +149,7 @@ impl Scene {
 
                 let result = (reflection_input + refraction_input).mul_element_wise(sphere.surface_color) + sphere.emmission_color;
 
-                println!("Result, {:?} {:?} {:?} {:?}", result, reflection_input, refraction_input, sphere.surface_color);
+                // println!("Result, {:?} {:?} {:?} {:?}", result, reflection_input, refraction_input, sphere.surface_color);
 
                 return result;
             }
@@ -158,17 +163,68 @@ fn main() {
 
     let spheres = vec![
         // Platform
-        Sphere::new(0.0, -10004.0, -20.0, 10000.0, vec3(0.2, 0.2, 0.2), 0.0, 0.0, vec3(0.0, 0.0, 0.0)),
+        Sphere::new(Point3::new(0.0, -10004.0, -20.0), 10000.0, vec3(0.2, 0.2, 0.2), 0.0, 0.0, vec3(0.0, 0.0, 0.0)),
     
         // Objects
-        Sphere::new(0.0, 0.0, -20.0, 4.0, vec3(0.5, 1.0, 0.5), 0.5, 0.0, vec3(0.0, 0.0, 0.0)),
+        Sphere::new(Point3::new(0.0, 0.0, -20.0), 4.0, vec3(0.5, 1.0, 0.5), 0.5, 0.0, vec3(0.0, 0.0, 0.0)),
     
         // Light
-        Sphere::new(0.0, 20.0, -30.0, 3.0, vec3(1.0, 1.0, 1.0), 0.0, 0.0, vec3(1.0, 1.0, 1.0)),
+        Sphere::new(Point3::new(0.0, 20.0, -30.0), 3.0, vec3(1.0, 1.0, 1.0), 0.0, 0.0, vec3(1.0, 1.0, 1.0)),
     ];
     let scene = Scene::new(spheres);
 
     let img = scene.render(WIDTH, HEIGHT, FOV);
 
     block_on(window::render_texture(img));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_reflect_over_origin_is_noop() {
+        let dummy_vecs: Vec<Vector3<f32>> = vec!(
+            vec3(1.0, 0.0, 0.0),
+            vec3(1.0, 1.0, 0.0),
+            vec3(-1.0, 1.0, -1.0),
+        );
+        let normal_vec = vec3(0.0, 0.0, 0.0);
+
+        dummy_vecs.into_iter().for_each(|vec| {
+            let reflect_vec = reflect(vec, normal_vec);
+            assert_eq!(reflect_vec, vec);
+        })
+
+    }
+
+    #[test]
+    fn test_reflect_normal_is_invert() {
+        let base_vec = vec3(-1.0, 0.0, 0.0);
+        let normal_vec = vec3(1.0, 0.0, 0.0).normalize();
+
+        let reflect_vec = reflect(base_vec, normal_vec);
+
+        assert_eq!(reflect_vec, vec3(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_reflect_perpendicular_noop() {
+        let base_vec = vec3(1.0, 0.0, 0.0);
+        let normal_vec = vec3(0.0, 1.0, 0.0).normalize();
+
+        let reflect_vec = reflect(base_vec, normal_vec);
+
+        assert_eq!(reflect_vec, vec3(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_reflect_simple() {
+        let base_vec = vec3(-1.0, -1.0, 0.0);
+        let normal_vec = vec3(0.0, 1.0, 0.0).normalize();
+
+        let reflect_vec = reflect(base_vec, normal_vec);
+
+        assert_eq!(reflect_vec, vec3(-1.0, 1.0, 0.0));
+    }
 }

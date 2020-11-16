@@ -13,9 +13,9 @@ pub struct Sphere {
 
 impl Sphere {
     // TODO: Builder
-    pub fn new(x: f32, y: f32, z: f32, radius: f32, surface_color: Vector3<f32>, reflectance: f32, transmission: f32, emmission_color: Vector3<f32>) -> Self {
+    pub fn new(origin: Point3<f32>, radius: f32, surface_color: Vector3<f32>, reflectance: f32, transmission: f32, emmission_color: Vector3<f32>) -> Self {
         Sphere {
-            origin: Point3::new(x, y, z),
+            origin,
             radius,
             surface_color,
             reflectance,
