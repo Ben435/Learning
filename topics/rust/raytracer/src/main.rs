@@ -30,7 +30,7 @@ fn mix(a: f32, b: f32, mix_ratio: f32) -> f32 {
 /// Reflect ray over normal
 /// Assumes normal is normalized
 fn reflect(ray: Vector3<f32>, normal: Vector3<f32>) -> Vector3<f32> {
-    ray - (normal * 2.0 * ray.dot(normal) )
+    ray - (normal * 2.0 * ray.dot(normal))
 }
 
 impl Scene {
@@ -98,8 +98,15 @@ impl Scene {
             None => vec3(1.0, 1.0, 1.0), // Missed scene, background goes here.
             Some((dist, sphere)) => {
                 let point = ray_origin + ray_direction * dist;
-                // TODO: Handle being inside an object
-                let normal = (point - sphere.origin.to_vec()).normalize();
+                let (normal, inside) = {
+                    let normal = (point - sphere.origin.to_vec()).normalize();
+
+                    if ray_direction.dot(normal) > 0.0 {
+                        (-normal, true)
+                    } else {
+                        (normal, false)
+                    }
+                };
                 let bias = 1e-4;
 
                 if current_depth > MAX_DEPTH || (sphere.reflectance <= 0.0 && sphere.transmission <= 0.0) {
@@ -125,15 +132,11 @@ impl Scene {
                     return resultant_color;
                 }
 
-                // TODO: Something here is wrong, numbers are nuts, fix
                 let facing_ratio = -ray_direction.dot(normal);
                 let fresnel_effect = mix((1.0 - facing_ratio).powi(3), 1.0, 0.1);
-                // println!("Fressy, {} {}", facing_ratio, fresnel_effect);
 
                 let reflection = match sphere.reflectance {
                     reflectance if reflectance >= 0.0 => {
-                        // Reflect the ray over the normal
-                        // Calculation from https://www.fabrizioduroni.it/2017/08/25/how-to-calculate-reflection-vector.html
                         let reflection_ray_dir = reflect(ray_direction, normal).normalize();
                         let reflection_ray_origin = point + normal * bias;
 
@@ -142,7 +145,24 @@ impl Scene {
                     _ => vec3(0.0, 0.0, 0.0),
                 };
 
-                let refraction = vec3(0.0, 0.0, 0.0); // TODO: Refraction
+                let refraction = match sphere.transmission {
+                    transmission if transmission >= 0.0 => {
+                        let ior: f32 = 1.1; // TODO: This should be a material property
+                        let eta = if inside { ior } else { ior.recip() };
+                        let cosi = -normal.dot(ray_direction);
+                        let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
+
+                        if k > 0.0 {
+                            // TODO: Calc refraction
+                            vec3(0.0, 0.0, 0.0)
+                        } else {
+                            // Total internal reflection
+                            // 100% reflected, so we ignore
+                            vec3(0.0, 0.0, 0.0)
+                        }
+                    },
+                    _ => vec3(0.0, 0.0, 0.0),
+                };
 
                 let reflection_input = reflection * fresnel_effect;
                 let refraction_input = refraction * (1.0 - fresnel_effect) * sphere.transmission;
@@ -181,9 +201,10 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cgmath::assert_relative_eq;
 
     #[test]
-    fn test_reflect_over_origin_is_noop() {
+    fn test_reflect_over_origin() {
         let dummy_vecs: Vec<Vector3<f32>> = vec!(
             vec3(1.0, 0.0, 0.0),
             vec3(1.0, 1.0, 0.0),
@@ -199,7 +220,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reflect_normal_is_invert() {
+    fn test_reflect_normal_is_inverse() {
         let base_vec = vec3(-1.0, 0.0, 0.0);
         let normal_vec = vec3(1.0, 0.0, 0.0).normalize();
 
@@ -209,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reflect_perpendicular_noop() {
+    fn test_reflect_normal_is_perpendicular() {
         let base_vec = vec3(1.0, 0.0, 0.0);
         let normal_vec = vec3(0.0, 1.0, 0.0).normalize();
 
@@ -226,5 +247,15 @@ mod tests {
         let reflect_vec = reflect(base_vec, normal_vec);
 
         assert_eq!(reflect_vec, vec3(-1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn test_reflect_off_angle() {
+        let base_vec = vec3(0.0, -1.0, 0.0);
+        let normal_vec = vec3(1.0, 1.0, 0.0).normalize();
+
+        let reflect_vec = reflect(base_vec, normal_vec);
+
+        assert_relative_eq!(reflect_vec, vec3(1.0, 0.0, 0.0));
     }
 }
