@@ -16,7 +16,7 @@ pub struct Scene {
     spheres: Vec<Sphere>
 }
 
-/// Vector3<0.0 -> 1.0> to Rgba<u8>
+/// Vector3<0.0 -> 1.0> to Rgba<0 -> 255>
 fn vec_to_rgba(vec: Vector3<f32>) -> Rgba<u8> {
     let unit_to_pxl = |val: f32| (255.0 * val.min(1.0).max(0.0)) as u8;
 
@@ -136,7 +136,7 @@ impl Scene {
                 let fresnel_effect = mix((1.0 - facing_ratio).powi(3), 1.0, 0.1);
 
                 let reflection = match sphere.reflectance {
-                    reflectance if reflectance >= 0.0 => {
+                    reflectance if reflectance > 0.0 => {
                         let reflection_ray_dir = reflect(ray_direction, normal).normalize();
                         let reflection_ray_origin = point + normal * bias;
 
@@ -146,16 +146,19 @@ impl Scene {
                 };
 
                 let refraction = match sphere.transmission {
-                    transmission if transmission >= 0.0 => {
+                    transmission if transmission > 0.0 => {
                         let ior: f32 = 1.1; // TODO: This should be a material property
                         let eta = if inside { ior } else { ior.recip() };
                         let cosi = -normal.dot(ray_direction);
                         let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
 
                         if k > 0.0 {
-                            // TODO: Calc refraction
-                            vec3(0.0, 0.0, 0.0)
+                            let normal_scale_factor = eta * cosi - k.sqrt();
+                            let refraction_ray_direction = ((ray_direction * eta) + (normal * normal_scale_factor)).normalize();
+                            let refraction_ray_origin = point + (normal * bias);
+                            self.trace(refraction_ray_origin, refraction_ray_direction, current_depth + 1)
                         } else {
+                            println!("Total internal reflection occurred!");
                             // Total internal reflection
                             // 100% reflected, so we ignore
                             vec3(0.0, 0.0, 0.0)
@@ -186,8 +189,11 @@ fn main() {
         Sphere::new(Point3::new(0.0, -10004.0, -20.0), 10000.0, vec3(0.2, 0.2, 0.2), 0.0, 0.0, vec3(0.0, 0.0, 0.0)),
     
         // Objects
-        Sphere::new(Point3::new(0.0, 0.0, -20.0), 4.0, vec3(0.5, 1.0, 0.5), 0.5, 0.0, vec3(0.0, 0.0, 0.0)),
-    
+        Sphere::new(Point3::new(0.0, 0.0, -20.0), 4.0, vec3(0.5, 1.0, 0.5), 1.0, 0.5, vec3(0.0, 0.0, 0.0)),
+        Sphere::new(Point3::new(5.0, -1.0, -15.0), 2.0, vec3(0.90, 0.76, 0.46), 1.0, 0.0, vec3(0.0, 0.0, 0.0)),
+        Sphere::new(Point3::new(5.0, 0.0, -25.0), 3.0, vec3(0.65, 0.77, 0.97), 1.0, 0.0, vec3(0.0, 0.0, 0.0)),
+        Sphere::new(Point3::new(-5.5, 0.0, -15.0), 3.0, vec3(0.90, 0.90, 0.90), 1.0, 0.0, vec3(0.0, 0.0, 0.0)),
+
         // Light
         Sphere::new(Point3::new(0.0, 20.0, -30.0), 3.0, vec3(1.0, 1.0, 1.0), 0.0, 0.0, vec3(1.0, 1.0, 1.0)),
     ];
