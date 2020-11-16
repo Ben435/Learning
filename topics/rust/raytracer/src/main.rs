@@ -10,7 +10,7 @@ use cgmath::{prelude::*,Vector3,vec3,Point3};
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
-const MAX_DEPTH: u8 = 5;
+const MAX_DEPTH: u8 = 16;
 
 pub struct Scene {
     spheres: Vec<Sphere>
@@ -155,7 +155,7 @@ impl Scene {
                         if k > 0.0 {
                             let normal_scale_factor = eta * cosi - k.sqrt();
                             let refraction_ray_direction = ((ray_direction * eta) + (normal * normal_scale_factor)).normalize();
-                            let refraction_ray_origin = point + (normal * bias);
+                            let refraction_ray_origin = point - (normal * bias);
                             self.trace(refraction_ray_origin, refraction_ray_direction, current_depth + 1)
                         } else {
                             println!("Total internal reflection occurred!");
