@@ -1,12 +1,16 @@
 mod texture;
 mod window;
 mod sphere;
+mod intersect;
 
 use sphere::Sphere;
 use futures::executor::block_on;
 use std::f32::consts::PI;
 use image::{Rgba,DynamicImage,GenericImage};
 use cgmath::{prelude::*,Vector3,vec3,Point3};
+use intersect::Intersectable;
+use std::time::Instant;
+use log::{info,log_enabled,Level};
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
@@ -57,7 +61,11 @@ impl Scene {
                 .into_iter()
                 .map(move |y| (x.clone(), y))
             );
-        for (x, y) in iter_coords {
+        let start_time = Instant::now();
+        let mut prev_log_time = Instant::now();
+        let total_rays_to_trace = width * height;
+        info!("Beginning tracing of {} rays", total_rays_to_trace);
+        for (i, (x, y)) in iter_coords.enumerate() {
             let xx = (2.0 * ((x as f32 + 0.5) * inv_width) - 1.0) * angle * aspect_ratio;
             let yy = (1.0 - 2.0 * ((y as f32 + 0.5) * inv_height)) * angle;
 
@@ -68,7 +76,18 @@ impl Scene {
             let vec_color = self.trace(ray_origin, ray_direction, 0);
 
             img.put_pixel(x, y, vec_to_rgba(vec_color));
+
+            if log_enabled!(Level::Info) {
+                let cur_time = Instant::now();
+                if prev_log_time.elapsed().as_secs() > 1 {
+                    info!("Traced {} / {}", i, total_rays_to_trace);
+                    prev_log_time = cur_time;
+                }
+            }
         }
+
+        let elapsed = start_time.elapsed();
+        info!("Done in {}.{}secs", elapsed.as_secs(), elapsed.subsec_nanos());
 
         img
     }
@@ -80,14 +99,14 @@ impl Scene {
 
             match intersection_result {
                 None => prev,
-                Some(closest_dist) => {
+                Some(current_result) => {
                     match prev {
-                        None => Some((closest_dist, sphere)),
-                        Some((min_dist, _s)) => {
-                            if closest_dist < min_dist {
-                                return Some((closest_dist, sphere))
+                        None => Some((current_result, sphere)),
+                        Some((prev_result, prev_sphere)) => {
+                            if current_result.distance < prev_result.distance {
+                                return Some((current_result, sphere))
                             }
-                            prev
+                            Some((prev_result, prev_sphere))
                         }
                     }
                 },
@@ -96,10 +115,10 @@ impl Scene {
 
         match maybe_intersect {
             None => vec3(1.0, 1.0, 1.0), // Missed scene, background goes here.
-            Some((dist, sphere)) => {
-                let point = ray_origin + ray_direction * dist;
+            Some((intersection_result, sphere)) => {
+                let point = intersection_result.point.to_vec();
                 let (normal, inside) = {
-                    let normal = (point - sphere.origin.to_vec()).normalize();
+                    let normal = intersection_result.normal;
 
                     if ray_direction.dot(normal) > 0.0 {
                         (-normal, true)

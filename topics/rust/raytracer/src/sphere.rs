@@ -1,4 +1,5 @@
 use cgmath::{prelude::*,Point3,Vector3};
+use crate::intersect::{Intersectable,IntersectResult};
 
 #[derive(PartialEq)]
 pub struct Sphere {
@@ -23,9 +24,10 @@ impl Sphere {
             emmission_color,
         }
     }
+}
 
-    /// Returns closest point to ray, or None if no collision
-    pub fn intersect(&self, ray_origin: Vector3<f32>, ray_direction: Vector3<f32>) -> Option<f32> {
+impl Intersectable for Sphere {
+    fn intersect(&self, ray_origin: Vector3<f32>, ray_direction: Vector3<f32>) -> Option<IntersectResult> {
         let length: Vector3<f32> = (self.origin - ray_origin).to_vec();
 
         // TODO: This can be a member var, save some calcs
@@ -43,12 +45,21 @@ impl Sphere {
         let thc = (radius2 - d2).sqrt();
 
         let t1 = tca + thc;
-        if thc > tca {
-            return Some(t1);
-        }
+        let distance = {
+            if thc > tca {
+                t1
+            } else {
+                let t0 = tca - thc;
+                t0.min(t1)
+            }
+        };
 
-        let t0 = tca - thc;
-        return Some(t0.min(t1));
-
+        let v_point = ray_origin + distance * ray_direction;
+        let normal = (v_point - self.origin.to_vec()).normalize();
+        return Some(IntersectResult {
+            distance,
+            point: Point3::from_vec(v_point),
+            normal,
+        });
     }
 }
