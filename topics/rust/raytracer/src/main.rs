@@ -79,6 +79,7 @@ impl Scene {
 
             if log_enabled!(Level::Info) {
                 let cur_time = Instant::now();
+                cur_time.elapsed();
                 if prev_log_time.elapsed().as_secs() > 1 {
                     info!("Traced {} / {}", i, total_rays_to_trace);
                     prev_log_time = cur_time;
