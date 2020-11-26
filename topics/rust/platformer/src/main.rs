@@ -1,10 +1,12 @@
 mod camera;
 mod uniforms;
 mod vertex;
+mod texture;
 
 use camera::Camera;
 use uniforms::Uniforms;
 use vertex::Vertex;
+use texture::Texture;
 
 use winit::{
     event::*,
@@ -54,8 +56,14 @@ struct State {
 
     index_buffer: wgpu::Buffer,
     index_buffer_len: u32,
-
+    
+    diffuse_texture: texture::Texture,
     diffuse_bind_group: wgpu::BindGroup,
+    other_diffuse_texture: texture::Texture,
+    other_diffuse_bind_group: wgpu::BindGroup,
+
+    render_alt: bool,
+
     // camera: Camera,
 }
 
@@ -100,53 +108,10 @@ impl State {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let diffuse_bytes = include_bytes!("./assets/happy-tree.png");
-        let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
-        let diffuse_rgba = diffuse_image.as_rgba8().unwrap();
-        let dimensions = diffuse_image.dimensions();
+        let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, Some("Tree Texture")).unwrap();
 
-        let texture_size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
-            depth: 1,
-        };
-
-        let diffuse_texture = device.create_texture(
-            &wgpu::TextureDescriptor {
-                size: texture_size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
-                label: Some("Saturn Texture")
-            }
-        );
-
-        queue.write_texture(
-            wgpu::TextureCopyView {
-                texture: &diffuse_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            diffuse_rgba,
-            wgpu::TextureDataLayout {
-                offset: 0,
-                bytes_per_row: 4 * dimensions.0,
-                rows_per_image: dimensions.1,
-            },
-            texture_size,
-        );
-
-        let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let diffuse_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
+        let other_diffuse_bytes = include_bytes!("./assets/planet-saturn-cropped.png");
+        let other_diffuse_texture = Texture::from_bytes(&device, &queue, other_diffuse_bytes, Some("Tree Texture")).unwrap();
 
         let texture_bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -170,7 +135,7 @@ impl State {
                         count: None,
                     }
                 ],
-                label: Some("Saturn Texture Bind Layout")
+                label: Some("Tree Texture Bind Layout")
             }
         );
 
@@ -180,14 +145,31 @@ impl State {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse_texture_view),
+                        resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&diffuse_sampler),
+                        resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
                     },
                 ],
-                label: Some("Saturn Texture Bind Group")
+                label: Some("Tree Texture Bind Group")
+            }
+        );
+
+        let other_diffuse_bind_group = device.create_bind_group(
+            &wgpu::BindGroupDescriptor {
+                layout: &texture_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&other_diffuse_texture.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&other_diffuse_texture.sampler),
+                    },
+                ],
+                label: Some("Tree Texture Bind Group")
             }
         );
 
@@ -222,7 +204,11 @@ impl State {
             index_buffer,
             index_buffer_len,
             render_pipeline,
+            diffuse_texture,
             diffuse_bind_group,
+            other_diffuse_texture,
+            other_diffuse_bind_group,
+            render_alt: false,
             // camera,
         }
     }
@@ -293,7 +279,25 @@ impl State {
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
-        false
+        match event {
+            WindowEvent::KeyboardInput {
+                input,
+                ..
+            } => {
+                match input {
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Space),
+                        ..
+                    } => {
+                        self.render_alt = !self.render_alt;
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            _ => false
+        }
     }
 
     fn update(&mut self) {
@@ -329,7 +333,12 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+
+            if self.render_alt {
+                render_pass.set_bind_group(0, &self.other_diffuse_bind_group, &[]);
+            } else {
+                render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            }
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..));
             render_pass.draw_indexed(0..self.index_buffer_len, 0, 0..1);
@@ -367,6 +376,7 @@ fn main() {
                         state.resize(**new_inner_size);
                     }
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    e if state.input(e) => {}
                     WindowEvent::KeyboardInput {
                         input,
                         ..
