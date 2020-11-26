@@ -24,7 +24,7 @@ use wgpu::{
 };
 use futures::executor::block_on;
 use log::error;
-use image::GenericImageView;
+use cgmath::{Point3,Vector3};
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
@@ -62,9 +62,12 @@ struct State {
     other_diffuse_texture: texture::Texture,
     other_diffuse_bind_group: wgpu::BindGroup,
 
-    render_alt: bool,
+    camera: Camera,
+    uniforms: Uniforms,
+    uniform_buffer: wgpu::Buffer,
+    uniform_bind_group: wgpu::BindGroup,
 
-    // camera: Camera,
+    render_alt: bool,
 }
 
 impl State {
@@ -189,9 +192,57 @@ impl State {
         let vs_module = device.create_shader_module(include_spirv!("./assets/shaders/shader.vert.spv"));
         let fs_module = device.create_shader_module(include_spirv!("./assets/shaders/shader.frag.spv"));
 
-        let render_pipeline = State::create_pipeline(&device, &sc_desc, vs_module, fs_module, texture_bind_group_layout);
+        let camera = Camera::new(
+            Point3::new(0.0, 0.0, 1.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::unit_y(),
+            sc_desc.width as f32 / sc_desc.height as f32,
+            0.1,
+            100.0,
+        );
 
-        // let camera = Camera::new();
+        let mut uniforms = Uniforms::new();
+        uniforms.update_view_proj(&camera);
+
+        let uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[uniforms]),
+                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::VERTEX,
+                    ty: wgpu::BindingType::UniformBuffer {
+                        dynamic: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ],
+            label: Some("Uniform Bind Group Layout")
+        });
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
+                }
+            ],
+            label: Some("Uniform Bind Group"),
+        });
+
+        let render_pipeline = State::create_pipeline(
+            &device, &sc_desc,
+            vs_module, fs_module,
+            texture_bind_group_layout, uniform_bind_group_layout,
+        );
 
         State {
             surface,
@@ -200,16 +251,24 @@ impl State {
             sc_desc,
             swap_chain,
             size,
+
             vertex_buffer,
             index_buffer,
             index_buffer_len,
+
             render_pipeline,
+
             diffuse_texture,
             diffuse_bind_group,
             other_diffuse_texture,
             other_diffuse_bind_group,
+
+            camera,
+            uniforms,
+            uniform_buffer,
+            uniform_bind_group,
+
             render_alt: false,
-            // camera,
         }
     }
 
@@ -219,11 +278,15 @@ impl State {
         vs_module: wgpu::ShaderModule,
         fs_module: wgpu::ShaderModule,
         texture_bind_group_layout: wgpu::BindGroupLayout,
+        uniform_bind_group_layout: wgpu::BindGroupLayout,
     ) -> wgpu::RenderPipeline {
         let render_pipeline_layout = device.create_pipeline_layout(
             &wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout],
+                bind_group_layouts: &[
+                    &texture_bind_group_layout,
+                    &uniform_bind_group_layout,
+                ],
                 push_constant_ranges: &[],
             }
         );
@@ -333,12 +396,12 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-
             if self.render_alt {
                 render_pass.set_bind_group(0, &self.other_diffuse_bind_group, &[]);
             } else {
                 render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             }
+            render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..));
             render_pass.draw_indexed(0..self.index_buffer_len, 0, 0..1);
