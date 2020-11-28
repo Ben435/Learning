@@ -2,8 +2,10 @@ mod camera;
 mod uniforms;
 mod vertex;
 mod texture;
+mod camera_controller;
 
 use camera::Camera;
+use camera_controller::CameraController;
 use uniforms::Uniforms;
 use vertex::Vertex;
 use texture::Texture;
@@ -63,6 +65,7 @@ struct State {
     other_diffuse_bind_group: wgpu::BindGroup,
 
     camera: Camera,
+    camera_controller: CameraController,
     uniforms: Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
@@ -138,7 +141,7 @@ impl State {
                         count: None,
                     }
                 ],
-                label: Some("Tree Texture Bind Layout")
+                label: Some("Texture Bind Layout")
             }
         );
 
@@ -200,6 +203,7 @@ impl State {
             0.1,
             100.0,
         );
+        let camera_controller = CameraController::new(0.2);
 
         let mut uniforms = Uniforms::new();
         uniforms.update_view_proj(&camera);
@@ -264,6 +268,7 @@ impl State {
             other_diffuse_bind_group,
 
             camera,
+            camera_controller,
             uniforms,
             uniform_buffer,
             uniform_bind_group,
@@ -343,6 +348,7 @@ impl State {
 
     fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
+            _ if self.camera_controller.process_event(event) => true,
             WindowEvent::KeyboardInput {
                 input,
                 ..
@@ -364,6 +370,9 @@ impl State {
     }
 
     fn update(&mut self) {
+        self.camera_controller.update_camera(&mut self.camera);
+        self.uniforms.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SwapChainError> {
