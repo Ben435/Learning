@@ -1,0 +1,15 @@
+[package]
+name = "advent_of_code"
+version = "0.1.0"
+authors = ["Ben Clare <ben.clare2@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "part-1"
+path = "src/part-1.rs"
+
+[[bin]]
+name = "part-2"
+path = "src/part-2.rs"
+
+[dependencies]
