@@ -49,7 +49,7 @@ fn main() -> std::io::Result<()> {
             None => false,
         };
 
-        if (seen_first || seen_second) && !(seen_first && seen_second) {
+        if seen_first ^ seen_second {
             valid_passwords += 1
         } else {
             println!("Invalid password! {}", line)
