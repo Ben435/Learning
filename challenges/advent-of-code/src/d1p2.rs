@@ -6,7 +6,7 @@ use lib::io_helpers::parse_file_list_of_type;
 fn main() -> std::io::Result<()> {
     let arg: Option<String> = args().skip(1).next();
     if arg.is_none() {
-        println!("Usage: day-1 <input-file.txt>");
+        println!("Missing arg");
         return Ok(());
     }
     let file_path = arg.unwrap();
@@ -15,8 +15,10 @@ fn main() -> std::io::Result<()> {
 
     for x in numbers.iter() {
         for y in numbers.iter() {
-            if x + y == 2020 {
-                println!("Found: {} * {} = {}", x, y, x*y)
+            for z in numbers.iter() {
+                if x + y + z == 2020 {
+                    println!("Found: {} * {} * {} = {}", x, y, z, x*y*z)
+                }
             }
         }
     }

@@ -5,11 +5,19 @@ authors = ["Ben Clare <ben.clare2@gmail.com>"]
 edition = "2018"
 
 [[bin]]
-name = "part-1"
-path = "src/part-1.rs"
+name = "d1p1"
+path = "src/d1p1.rs"
 
 [[bin]]
-name = "part-2"
-path = "src/part-2.rs"
+name = "d1p2"
+path = "src/d1p2.rs"
+
+[[bin]]
+name = "d2p1"
+path = "src/d2p1.rs"
+
+[[bin]]
+name = "d2p2"
+path = "src/d2p2.rs"
 
 [dependencies]
