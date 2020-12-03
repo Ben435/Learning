@@ -8,4 +8,12 @@
 
 ## Day-2
 
-`cargo run --bin day-2-part-1 inputs/day-2.txt`
+`cargo run --bin d2p1 inputs/day-2.txt`
+
+`cargo run --bin d2p2 inputs/day-2.txt`
+
+## Day-3
+
+`cargo run --bin d3p1 inputs/day-3.txt`
+
+`cargo run --bin d3p2 inputs/day-3.txt`
