@@ -17,3 +17,9 @@
 `cargo run --bin d3p1 inputs/day-3.txt`
 
 `cargo run --bin d3p2 inputs/day-3.txt`
+
+## Day-4
+
+`cargo run --bin d4p1 inputs/day-4.txt`
+
+`cargo run --bin d4p2 inputs/day-4.txt`
