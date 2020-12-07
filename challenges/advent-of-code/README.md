@@ -1,25 +1,7 @@
 # Advent Of Code 2020
 
-## Day-1
+## Usage
 
-`cargo run --bin d1p1 inputs/day-1.txt`
+`cargo run --bin d<day>p<part> day-<day>.txt`
 
-`cargo run --bin d1p2 inputs/day-1.txt`
-
-## Day-2
-
-`cargo run --bin d2p1 inputs/day-2.txt`
-
-`cargo run --bin d2p2 inputs/day-2.txt`
-
-## Day-3
-
-`cargo run --bin d3p1 inputs/day-3.txt`
-
-`cargo run --bin d3p2 inputs/day-3.txt`
-
-## Day-4
-
-`cargo run --bin d4p1 inputs/day-4.txt`
-
-`cargo run --bin d4p2 inputs/day-4.txt`
+eg: day 2 part 1 -> `cargo run --bin d2p1 day-2.txt`
