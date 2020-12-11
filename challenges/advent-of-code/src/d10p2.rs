@@ -4,38 +4,6 @@ use std::env::args;
 use lib::io_helpers::parse_file_list_of_type;
 use std::iter;
 
-fn recursive_remove(numbers: &Vec<u32>, index: usize, input: u32, output: u32) -> u32 {
-    let mut found_combos = 1;
-    for i in index..numbers.len() {
-        let before = if i > 0 { 
-            numbers.get(i-1).unwrap()
-        } else { 
-            &input
-        };
-        let after = if i < numbers.len()-1 {
-            numbers.get(i+1).unwrap()
-        } else {
-            &output
-        };
-
-        // If couldn't remove this, don't.
-        if after - before > 3 {
-            continue;
-        }
-        let new_combo = numbers[0..i]
-            .iter()
-            .chain(numbers[i+1..numbers.len()].iter())
-            .map(|n| n.clone())
-            .collect::<Vec<u32>>();
-
-        println!("Testing {}:{}:{} {:?}", index, i, numbers.len(), new_combo);
-
-        found_combos += recursive_remove(&new_combo, i, input, output);
-    }
-
-    found_combos
-}
-
 fn calculate_jumps(numbers: &Vec<u32>, input: u32, output: u32) -> u64 {
     let numbers: Vec<u32> = iter::once(input)
         .chain(numbers.iter().map(|n| n.clone()))
@@ -83,7 +51,6 @@ fn main() -> std::io::Result<()> {
 
     println!("Numbers: {:?}", numbers);
 
-    // let combinations = recursive_remove(&numbers, 0, 0, target);
     let combinations = calculate_jumps(&numbers, 0, target);
 
     println!("Combinations: {}", combinations);

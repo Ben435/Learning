@@ -84,5 +84,13 @@ path = "src/d10p1.rs"
 name = "d10p2"
 path = "src/d10p2.rs"
 
+[[bin]]
+name = "d11p1"
+path = "src/d11p1.rs"
+
+[[bin]]
+name = "d11p2"
+path = "src/d11p2.rs"
+
 [dependencies]
 regex = "1.4.2"
