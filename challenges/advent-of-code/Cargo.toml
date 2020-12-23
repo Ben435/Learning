@@ -1,0 +1,104 @@
+[package]
+name = "advent_of_code"
+version = "0.1.0"
+authors = ["Ben Clare <ben.clare2@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "d1p1"
+path = "src/d1p1.rs"
+
+[[bin]]
+name = "d1p2"
+path = "src/d1p2.rs"
+
+[[bin]]
+name = "d2p1"
+path = "src/d2p1.rs"
+
+[[bin]]
+name = "d2p2"
+path = "src/d2p2.rs"
+
+[[bin]]
+name = "d3p1"
+path = "src/d3p1.rs"
+
+[[bin]]
+name = "d3p2"
+path = "src/d3p2.rs"
+
+[[bin]]
+name = "d4p1"
+path = "src/d4p1.rs"
+
+[[bin]]
+name = "d4p2"
+path = "src/d4p2.rs"
+
+[[bin]]
+name = "d5p1"
+path = "src/d5p1.rs"
+
+[[bin]]
+name = "d5p2"
+path = "src/d5p2.rs"
+
+[[bin]]
+name = "d6p1"
+path = "src/d6p1.rs"
+
+[[bin]]
+name = "d6p2"
+path = "src/d6p2.rs"
+
+[[bin]]
+name = "d7p1"
+path = "src/d7p1.rs"
+
+[[bin]]
+name = "d7p2"
+path = "src/d7p2.rs"
+
+[[bin]]
+name = "d8p1"
+path = "src/d8p1.rs"
+
+[[bin]]
+name = "d8p2"
+path = "src/d8p2.rs"
+
+[[bin]]
+name = "d9p1"
+path = "src/d9p1.rs"
+
+[[bin]]
+name = "d9p2"
+path = "src/d9p2.rs"
+
+[[bin]]
+name = "d10p1"
+path = "src/d10p1.rs"
+
+[[bin]]
+name = "d10p2"
+path = "src/d10p2.rs"
+
+[[bin]]
+name = "d11p1"
+path = "src/d11p1.rs"
+
+[[bin]]
+name = "d11p2"
+path = "src/d11p2.rs"
+
+[[bin]]
+name = "d12p1"
+path = "src/d12p1.rs"
+
+[[bin]]
+name = "d12p2"
+path = "src/d12p2.rs"
+
+[dependencies]
+regex = "1.4.2"
