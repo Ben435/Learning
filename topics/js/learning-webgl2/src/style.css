@@ -11,3 +11,9 @@ body {
     display: block;
     border: 5px dotted blue;
 }
+
+.fps-tracker {
+    position: absolute;
+    left: 1vw;
+    top: 1vh;
+}
