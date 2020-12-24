@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Web Raytracer</title>
+  </head>
+  <body>
+    <canvas id="drawspace"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+        #version 300 es
+        in vec2 a_position;
+
+        uniform vec2 u_resolution;
+        
+        void main()
+        {
+          vec2 zeroToOne = a_position / u_resolution;
+ 
+          vec2 zeroToTwo = zeroToOne * 2.0;
+       
+          // convert from 0->2 to -1->+1 (clip space)
+          vec2 clipSpace = zeroToTwo - 1.0;
+       
+          gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision highp float;
+
+        out vec4 outColor;
+
+        void main()
+        {
+          outColor = vec4(1.0, 0.0, 0.5, 1.0);
+        }
+    </script>
+
+    <script src="index.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      #drawspace {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+    </style>
+  </body>
+</html>
