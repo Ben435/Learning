@@ -3,17 +3,21 @@ import "./style.css"
 interface State {
     width: number,
     height: number,
-    squareVertexBuffer: WebGLBuffer,
-    squareIndexBuffer: WebGLBuffer,
-    squareVAO: WebGLVertexArrayObject,
     program: SimpleGLProgram,
+    models: Model[],
 }
 
 interface SimpleGLProgram extends WebGLProgram {
     aVertexPosition: number
 }
 
-function entry() {
+interface Model {
+    vertexBuffer: WebGLBuffer,
+    indexBuffer: WebGLBuffer,
+    vertexArrayObject: WebGLVertexArrayObject,
+}
+
+async function entry(): Promise<void> {
     const canvas = document.getElementById("drawspace") as HTMLCanvasElement
 
     const gl = canvas.getContext("webgl2")
@@ -52,20 +56,32 @@ function entry() {
         aVertexPosition: gl.getAttribLocation(glProgram, 'aVertexPosition')
     }
 
-    const bufferData = initBuffers(gl, program)
+    let models = []
+    for (let i=1; i<=103; i+=1) {
+        const model = await fetch(`/resources/models/ford-mustang/part${i}.json`)
+            .then(res => res.json())
+            .then(data => loadModel(gl, program, data.vertices, data.indices))
+
+        models.push(model)
+    }
 
     let state: State = {
         width,
         height,
         program,
-        ...bufferData,
+        models,
     }
 
-    window.onkeydown = (ev: KeyboardEvent) => {
+    window.onkeydown =    (ev: KeyboardEvent) => {
         if (ev.key === ' ') {
+            const startTimeMillis = new Date().getMilliseconds()
             state = frame(state)
+            const durationMillis = new Date().getMilliseconds() - startTimeMillis
+
+            console.log(`Rendering in ${durationMillis}ms`)
         }
     }
+    console.log('Loaded!')
 }
 
 function resize(canvas: HTMLCanvasElement): { width: number, height: number } {
@@ -86,36 +102,26 @@ function resize(canvas: HTMLCanvasElement): { width: number, height: number } {
 }
 
 function draw(state: State, gl: WebGL2RenderingContext): State {
-    const { 
-        width,
-        height,
-        squareVertexBuffer,
-        squareIndexBuffer,
-        squareVAO,
+    const {
+        models,
     } = state
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.viewport(0, 0, state.width, state.height);
 
-    // Use the buffers we've constructed
-    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer);
+    models.forEach(model => {
+        gl.bindVertexArray(model.vertexArrayObject)
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
 
-    // Bind IBO
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareIndexBuffer);
-
-    gl.bindVertexArray(squareVAO)
-
-    // Draw to the scene using triangle primitives
-    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+    })
 
     // Clean
     gl.bindVertexArray(null)
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
-    return {
-        ...state
-    }
+    return state
 }
 
 function getShader(gl: WebGL2RenderingContext, id: string) {
@@ -148,28 +154,19 @@ function getShader(gl: WebGL2RenderingContext, id: string) {
     return shader;
   }
 
-function initBuffers(gl: WebGL2RenderingContext, program: SimpleGLProgram) {
-    const vertices = [
-        -0.5, 0.5, 0,
-        -0.5, -0.5, 0,
-        0.5, -0.5, 0,
-        0.5, 0.5, 0
-    ]
+function loadModel(gl: WebGL2RenderingContext, program: SimpleGLProgram, vertices: number[], indices: number[]): Model {
+    const vertexArrayObject = gl.createVertexArray()
+    gl.bindVertexArray(vertexArrayObject);
 
-    const indices = [0, 1, 2, 0, 2, 3]
-
-    const squareVAO = gl.createVertexArray()
-    gl.bindVertexArray(squareVAO);
-
-    const squareVertexBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer)
+    const vertexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
     gl.vertexAttribPointer(program.aVertexPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(program.aVertexPosition);
 
-    const squareIndexBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareIndexBuffer)
+    const indexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW)
 
     gl.bindVertexArray(null)
@@ -177,9 +174,9 @@ function initBuffers(gl: WebGL2RenderingContext, program: SimpleGLProgram) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
 
     return {
-        squareVertexBuffer,
-        squareIndexBuffer,
-        squareVAO,
+        vertexBuffer,
+        indexBuffer,
+        vertexArrayObject,
     }
 }
 

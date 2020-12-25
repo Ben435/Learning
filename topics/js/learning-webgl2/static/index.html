@@ -11,24 +11,29 @@
             #version 300 es
             precision mediump float;
 
-            // Supplied vertex position attribute
             in vec3 aVertexPosition;
+            in vec3 aVertexNormal;
+
+            uniform vec3 uLightDirection;
+            uniform vec4 uLightDiffuse;
+            uniform vec4 uMaterialDiffuse;
+
+            out vec4 vVertexColor;
 
             void main(void) {
-                // Set the position in clipspace coordinates
                 gl_Position = vec4(aVertexPosition, 1.0);
+                vVertexColor = vec4(1.0, 0.0, 0.0, 1.0);
             }
         </script>
         <script id="fs" type="x-shader/x-fragment">
             #version 300 es
             precision mediump float;
 
-            // Color that is the result of this shader
+            in vec4 vVertexColor;
             out vec4 fragColor;
 
             void main(void) {
-                // Set the result as red
-                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+                fragColor = vVertexColor;
             }
         </script>
     </body>

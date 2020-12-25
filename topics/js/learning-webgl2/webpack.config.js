@@ -2,6 +2,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.ts',
@@ -37,6 +38,14 @@ module.exports = {
       new MiniCssExtractPlugin({
         filename: "[name].[contenthash].css"
       }),
-      new CleanWebpackPlugin()
+      new CleanWebpackPlugin(),
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            context: 'static',
+            from: 'resources/**',
+          }
+        ]
+      })
     ]
 };
