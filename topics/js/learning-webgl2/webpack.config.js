@@ -43,7 +43,7 @@ module.exports = {
         patterns: [
           {
             context: 'static',
-            from: 'resources/**',
+            from: 'resources/models/geometries/*.json',
           }
         ]
       })

@@ -64,3 +64,33 @@ export function calculateNormals(vs: number[], ind: number[]): number[] {
 
     return ns;
 }
+
+export function getShader(gl: WebGL2RenderingContext, id: string) {
+    const script = document.getElementById(id) as HTMLScriptElement
+    const shaderString = script.text.trim()
+
+    // Assign shader depending on the type of shader
+    let shader
+    if (script.type === 'x-shader/x-vertex') {
+      shader = gl.createShader(gl.VERTEX_SHADER)
+    }
+    else if (script.type === 'x-shader/x-fragment') {
+      shader = gl.createShader(gl.FRAGMENT_SHADER)
+    }
+    else {
+        console.error(`Failed to match shader with type: '${script.type}'`)
+      return null
+    }
+
+    // Compile the shader using the supplied shader code
+    gl.shaderSource(shader, shaderString)
+    gl.compileShader(shader)
+
+    // Ensure the shader is valid
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(shader))
+      return null
+    }
+
+    return shader
+}

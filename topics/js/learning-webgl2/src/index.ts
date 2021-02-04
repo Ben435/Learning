@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix'
 import {} from 'dat.gui'
-import { calculateNormals } from './graphics-utils'
+import { getShader, calculateNormals } from './graphics-utils'
 import "./style.css"
 
 interface State {
@@ -8,7 +8,6 @@ interface State {
     height: number,
     program: SimpleGLProgram,
     models: Model[],
-    modelViewMatrix: mat4,
     projectionMatrix: mat4,
     normalMatrix: mat4,
 }
@@ -30,6 +29,8 @@ interface Model {
     normalsBuffer: WebGLBuffer,
     indexBuffer: WebGLBuffer,
     vertexArrayObject: WebGLVertexArrayObject,
+    modelViewMatrix: mat4,
+    materialDiffuse: number[]
     indices: number,
 }
 
@@ -105,18 +106,26 @@ async function entry(): Promise<void> {
         3, 7, 2
     ]
     const normals = calculateNormals(vertices, indices)
-    const model = loadModel(gl, program, vertices, normals, indices)
-    models.push(model)
+    const wallModel = loadModel(gl, program, vertices, normals, indices)
+    mat4.translate(wallModel.modelViewMatrix, wallModel.modelViewMatrix, [0, 0, -40])
+    wallModel.materialDiffuse = [0.1, 0.5, 0.8, 1]
+    models.push(wallModel)
+
+    const sphereModel = await fetch(`/resources/models/geometries/ball.json`)
+        .then(res => res.json())
+        .then(data => loadModel(gl, program, data.vertices, calculateNormals(data.vertices, data.indices), data.indices))
+    mat4.translate(sphereModel.modelViewMatrix, sphereModel.modelViewMatrix, [0, 0, -10])
+    sphereModel.materialDiffuse = [1.0, 0.2, 0.1, 1]
+    models.push(sphereModel)
 
     // for (let i=1; i<=103; i+=1) {
     //     const model = await fetch(`/resources/models/ford-mustang/part${i}.json`)
     //         .then(res => res.json())
-    //         .then(data => loadModel(gl, program, data.vertices, data.indices))
-
+    //         .then(data => loadModel(gl, program, data.vertices, calculateNormals(data.vertices, data.indices), data.indices))
+    //     mat4.translate(model.modelViewMatrix, model.modelViewMatrix, [0, -3, -5])
+    //     model.materialDiffuse = [0.2, 1.0, 0.1, 1]
     //     models.push(model)
     // }
-
-    initLights(gl, program)
 
     let state: State = {
         width,
@@ -124,7 +133,6 @@ async function entry(): Promise<void> {
         program,
         models,
         projectionMatrix: mat4.create(),
-        modelViewMatrix: mat4.create(),
         normalMatrix: mat4.create(),
     }
 
@@ -163,7 +171,6 @@ function draw(state: State, gl: WebGL2RenderingContext): State {
         height,
         models,
         projectionMatrix,
-        modelViewMatrix,
         normalMatrix,
         program,
     } = state
@@ -172,18 +179,25 @@ function draw(state: State, gl: WebGL2RenderingContext): State {
     gl.viewport(0, 0, state.width, state.height)
 
     mat4.perspective(projectionMatrix, 45, width / height, 0.1, 10000)
-    mat4.identity(modelViewMatrix)
-    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -40])
-
-    mat4.copy(normalMatrix, modelViewMatrix)
+    mat4.identity(normalMatrix)
+    mat4.translate(normalMatrix, normalMatrix, [0, 0, -40])
     mat4.invert(normalMatrix, normalMatrix)
     mat4.transpose(normalMatrix, normalMatrix)
 
-    gl.uniformMatrix4fv(program.uModelViewMatrix, false, modelViewMatrix)
     gl.uniformMatrix4fv(program.uProjectionMatrix, false, projectionMatrix)
     gl.uniformMatrix4fv(program.uNormalMatrix, false, normalMatrix)
+    initLights(gl, program)
 
     models.forEach(model => {
+        gl.uniform4f(
+            program.uMaterialDiffuse, 
+            model.materialDiffuse[0], 
+            model.materialDiffuse[1],
+            model.materialDiffuse[2], 
+            model.materialDiffuse[3],
+        )
+        gl.uniformMatrix4fv(program.uModelViewMatrix, false, model.modelViewMatrix)
+
         gl.bindVertexArray(model.vertexArrayObject)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer)
 
@@ -197,36 +211,6 @@ function draw(state: State, gl: WebGL2RenderingContext): State {
 
     return state
 }
-
-function getShader(gl: WebGL2RenderingContext, id: string) {
-    const script = document.getElementById(id) as HTMLScriptElement
-    const shaderString = script.text.trim()
-
-    // Assign shader depending on the type of shader
-    let shader
-    if (script.type === 'x-shader/x-vertex') {
-      shader = gl.createShader(gl.VERTEX_SHADER)
-    }
-    else if (script.type === 'x-shader/x-fragment') {
-      shader = gl.createShader(gl.FRAGMENT_SHADER)
-    }
-    else {
-        console.error(`Failed to match shader with type: '${script.type}'`)
-      return null
-    }
-
-    // Compile the shader using the supplied shader code
-    gl.shaderSource(shader, shaderString)
-    gl.compileShader(shader)
-
-    // Ensure the shader is valid
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error(gl.getShaderInfoLog(shader))
-      return null
-    }
-
-    return shader
-  }
 
 function loadModel(gl: WebGL2RenderingContext, program: SimpleGLProgram, vertices: number[], normals: number[], indices: number[]): Model {
     const vertexArrayObject = gl.createVertexArray()
@@ -254,12 +238,17 @@ function loadModel(gl: WebGL2RenderingContext, program: SimpleGLProgram, vertice
     gl.bindBuffer(gl.ARRAY_BUFFER, null)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
 
+    const modelViewMatrix = mat4.create()
+    mat4.identity(modelViewMatrix)
+    const materialDiffuse = [1.0, 1.0, 1.0, 1.0]
     return {
         vertexBuffer,
         normalsBuffer,
         indexBuffer,
         vertexArrayObject,
         indices: indices.length,
+        modelViewMatrix,
+        materialDiffuse,
     }
 }
 
@@ -267,7 +256,6 @@ function initLights(gl: WebGL2RenderingContext, program: SimpleGLProgram) {
     gl.uniform3fv(program.uLightDirection, [0, 0, -1])
     gl.uniform4fv(program.uLightAmbient, [0.01, 0.01, 0.01, 1])
     gl.uniform4fv(program.uLightDiffuse, [0.5, 0.5, 0.5, 1])
-    gl.uniform4f(program.uMaterialDiffuse, 0.1, 0.5, 0.8, 1)
 }
 
 
