@@ -14,7 +14,7 @@ use uniforms::Uniforms;
 use vertex::Vertex;
 use texture::Texture;
 use player::Player;
-use sprite_sheet::{SpriteSheet,SpriteSheetFactory};
+use sprite_sheet::{SpriteSheet,SpriteSheetFactory,SpriteSheetRowBuilder};
 use rect::Rect;
 use timer::Timer;
 
@@ -59,6 +59,7 @@ struct State {
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
 
+    row_num: usize,
     sprite_num: usize,
 }
 
@@ -109,10 +110,22 @@ impl State {
         let sprite_sheet = sprite_sheet_factory
             .new_spritesheet()
             .for_texture(sprite_sheet_texture)
-            .add_clip_rect(Rect::new(0.0, 0.0, 0.25, 0.25))
-            .add_clip_rect(Rect::new(0.25, 0.0, 0.25, 0.25))
-            .add_clip_rect(Rect::new(0.5, 0.0, 0.25, 0.25))
-            .add_clip_rect(Rect::new(0.75, 0.0, 0.25, 0.25))
+            .add_row(
+                SpriteSheetRowBuilder::divide_to_columns(0, 0.25, 4)
+                .finish_row()
+            )
+            .add_row(
+                SpriteSheetRowBuilder::divide_to_columns(1, 0.25, 4)
+                .finish_row()
+            )
+            .add_row(
+                SpriteSheetRowBuilder::divide_to_columns(2, 0.25, 4)
+                .finish_row()
+            )
+            .add_row(
+                SpriteSheetRowBuilder::divide_to_columns(3, 0.25, 4)
+                .finish_row()
+            )
             .build(&device)
             .unwrap();
         
@@ -192,6 +205,7 @@ impl State {
             uniform_bind_group,
 
             sprite_num: 0,
+            row_num: 0,
         }
     }
 
@@ -278,8 +292,17 @@ impl State {
                         ..
                     } => {
                         self.sprite_num = (self.sprite_num + 1) % 4;
-                        self.sprite_sheet.set_current_sprite(self.sprite_num);
-                        error!("Current sprite: {}", self.sprite_num);
+                        info!("Current index: [{}][{}]", self.row_num, self.sprite_num);
+                        true
+                    },
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::T),
+                        ..
+                    } => {
+                        self.row_num = (self.row_num + 1) % 4; 
+                        self.sprite_num = 0;
+                        info!("Current row: [{}][{}]", self.row_num, self.sprite_num);
                         true
                     }
                     _ => false,
@@ -326,7 +349,7 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            let sprite = self.sprite_sheet.get_sprite_representation();
+            let sprite = self.sprite_sheet.get_sprite_representation(self.row_num, self.sprite_num);
             render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, sprite.vertex_buffer.slice(..));
             render_pass.set_index_buffer(sprite.index_buffer.slice(..));
