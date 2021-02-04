@@ -1,4 +1,4 @@
-use crate::camera::Camera;
+use crate::camera::{Camera, FORWARD};
 use winit::event::{
     WindowEvent,
     KeyboardInput,
@@ -9,8 +9,8 @@ use cgmath::InnerSpace;
 
 pub struct CameraController {
     speed: f32,
-    is_forward_pressed: bool,
-    is_backward_pressed: bool,
+    is_up_pressed: bool,
+    is_down_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
 }
@@ -19,8 +19,8 @@ impl CameraController {
     pub fn new(speed: f32) -> Self {
         Self {
             speed,
-            is_forward_pressed: false,
-            is_backward_pressed: false,
+            is_up_pressed: false,
+            is_down_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
         }
@@ -39,7 +39,7 @@ impl CameraController {
                 let is_pressed = *state == ElementState::Pressed;
                 match keycode {
                     VirtualKeyCode::W | VirtualKeyCode::Up => {
-                        self.is_forward_pressed = is_pressed;
+                        self.is_up_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::A | VirtualKeyCode::Left => {
@@ -47,7 +47,7 @@ impl CameraController {
                         true
                     }
                     VirtualKeyCode::S | VirtualKeyCode::Down => {
-                        self.is_backward_pressed = is_pressed;
+                        self.is_down_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::D | VirtualKeyCode::Right => {
@@ -62,29 +62,27 @@ impl CameraController {
     }
 
     pub fn update_camera(&self, camera: &mut Camera) {
-        let forward = camera.target - camera.eye;
-        let forward_norm = forward.normalize();
+        let up_norm = camera.up.normalize();
 
-        if !(self.is_forward_pressed && self.is_backward_pressed) {
-            if self.is_forward_pressed {
-                camera.eye += forward_norm * self.speed;
+        if !(self.is_up_pressed && self.is_down_pressed) {
+            if self.is_up_pressed {
+                camera.eye += up_norm * self.speed;
             }
-            if self.is_backward_pressed {
-                camera.eye -= forward_norm * self.speed;
+            if self.is_down_pressed {
+                camera.eye -= up_norm * self.speed;
             }
         }
-        let right = forward_norm.cross(camera.up);
 
-        let forward = camera.target - camera.eye;
-        let forward_mag = forward.magnitude();
+        let forward = FORWARD;
+        let right = forward.cross(camera.up);
 
         if !(self.is_left_pressed && self.is_right_pressed) {
             if self.is_right_pressed {
-                camera.eye = camera.target - (forward + right * self.speed).normalize() * forward_mag;
+                camera.eye = camera.eye + (right * self.speed);
             }
 
             if self.is_left_pressed {
-                camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
+                camera.eye = camera.eye  + (-right * self.speed);
             }
         }
     }
