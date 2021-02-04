@@ -22,19 +22,30 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(eye: Point3<f32>, target: Point3<f32>, up: Vector3<f32>, aspect: f32, znear: f32, zfar: f32) -> Camera {
+    pub fn new(eye: Point3<f32>, up: Vector3<f32>, aspect: f32, znear: f32, zfar: f32) -> Camera {
         let width = aspect;
         let height = 1.0;
-        Camera {
+        let mut new_camera = Camera {
             eye,
             up,
-            width,
-            height,
-            half_width: width/2.0,
-            half_height: height/2.0,
+            width: 0.0,
+            height: 0.0,
+            half_width: 0.0,
+            half_height: 0.0,
             znear,
             zfar
-        }
+        };
+
+        new_camera.update_dimensions(width, height);
+
+        new_camera
+    }
+
+    pub fn update_dimensions(&mut self, new_width: f32, new_height: f32) {
+        self.width = new_width;
+        self.height = new_height;
+        self.half_width = new_width / 2.0;
+        self.half_height = new_height / 2.0;
     }
 
     pub fn build_view_matrix(&self) -> Matrix4<f32> {
