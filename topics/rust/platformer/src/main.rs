@@ -103,6 +103,7 @@ impl State {
     
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
+        let sprite_load_timer = Timer::new();
         let sprite_sheet_bytes = include_bytes!("./assets/example-sprite-sheet.png");
         let sprite_sheet_texture = Texture::from_bytes(&device, &queue, sprite_sheet_bytes, Some("Example Sprite Sheet Texture")).unwrap();
 
@@ -128,7 +129,8 @@ impl State {
             )
             .build(&device)
             .unwrap();
-        
+
+        info!("Time to load sprite sheet: {}ms", sprite_load_timer.elapsed().as_millis());
 
         let vs_module = device.create_shader_module(include_spirv!("./assets/shaders/shader.vert.spv"));
         let fs_module = device.create_shader_module(include_spirv!("./assets/shaders/shader.frag.spv"));
