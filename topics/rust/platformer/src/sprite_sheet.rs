@@ -84,6 +84,10 @@ pub struct SpriteSheetBuilder<'a> {
     label: Option<String>,
 }
 
+pub struct SpriteSheetRow {
+    
+}
+
 impl <'a> SpriteSheetBuilder<'a> {
     pub fn new(parent_factory: &'a SpriteSheetFactory) -> SpriteSheetBuilder<'a> {
         SpriteSheetBuilder {

@@ -6,6 +6,7 @@ mod camera_controller;
 mod player;
 mod sprite_sheet;
 mod rect;
+mod timer;
 
 use camera::Camera;
 use camera_controller::CameraController;
@@ -15,6 +16,7 @@ use texture::Texture;
 use player::Player;
 use sprite_sheet::{SpriteSheet,SpriteSheetFactory};
 use rect::Rect;
+use timer::Timer;
 
 use winit::{
     event::*,
@@ -31,8 +33,10 @@ use wgpu::{
     util::DeviceExt,
 };
 use futures::executor::block_on;
-use log::error;
-use cgmath::{Point3,Vector3};
+use log::{info,error};
+use cgmath::{Point3,Vector3,Matrix4};
+use std::time::Duration;
+use std::collections::VecDeque;
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
@@ -123,7 +127,7 @@ impl State {
             0.1,
             100.0,
         );
-        let camera_controller = CameraController::new(0.1);
+        let camera_controller = CameraController::new(1.0);
 
         let mut uniforms = Uniforms::new();
         uniforms.update_view_proj(&camera);
@@ -285,9 +289,10 @@ impl State {
         }
     }
 
-    fn update(&mut self) {
-        self.camera_controller.update_camera(&mut self.camera);
+    fn update(&mut self, delta_frame: Duration) {
+        self.camera_controller.update_camera(&mut self.camera, delta_frame);
         self.uniforms.update_view_proj(&self.camera);
+        self.uniforms.update_model_proj(Matrix4::from_scale(0.5));
         self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
     }
 
@@ -344,10 +349,19 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
+    let init_timer = Timer::new();
+
     let mut state = block_on(State::new(&window));
 
-    event_loop.run(move |event, _, control_flow| {
+    info!("Time to initialize: {}ms", init_timer.elapsed().as_millis());
 
+    let mut time_since_last_render_time_log = Timer::new();
+    let max_rolling_frame_size = 500;
+    let mut rolling_render_times = VecDeque::<u128>::with_capacity(max_rolling_frame_size + 1);
+    let mut render_timer = Timer::new();
+    let mut frame_timer = Timer::new();
+
+    event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
         match event {
@@ -378,7 +392,11 @@ fn main() {
                     _ => {}
                 }
             Event::RedrawRequested(_) => {
-                state.update();
+                render_timer.reset();
+                let delta_frame = frame_timer.elapsed();
+                frame_timer.reset();
+
+                state.update(delta_frame);
                 match state.render() {
                     Ok(_) => {}
                     Err(wgpu::SwapChainError::Lost) => state.resize(state.size),
@@ -387,6 +405,17 @@ fn main() {
                         *control_flow = ControlFlow::Exit;
                     },
                     Err(e) => error!("{:?}", e),
+                }
+
+                let time_to_render = render_timer.elapsed().as_millis();
+                rolling_render_times.push_back(time_to_render);
+                rolling_render_times.truncate(max_rolling_frame_size);
+
+                if time_since_last_render_time_log.elapsed().as_millis() > 1000 {
+                    let sum: u128 = rolling_render_times.iter().sum();
+                    let avg_frame_time = sum / rolling_render_times.len() as u128;
+                    time_since_last_render_time_log.reset();
+                    info!("Avg render time: {}ms", avg_frame_time);
                 }
             }
             Event::MainEventsCleared => {

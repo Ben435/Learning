@@ -6,6 +6,7 @@ use winit::event::{
     ElementState,
 };
 use cgmath::InnerSpace;
+use std::time::Duration;
 
 pub struct CameraController {
     speed: f32,
@@ -61,15 +62,16 @@ impl CameraController {
         }
     }
 
-    pub fn update_camera(&self, camera: &mut Camera) {
+    pub fn update_camera(&self, camera: &mut Camera, delta_frame: Duration) {
         let up_norm = camera.up.normalize();
+        let relative_speed = delta_frame.as_secs_f32() * self.speed;
 
         if !(self.is_up_pressed && self.is_down_pressed) {
             if self.is_up_pressed {
-                camera.eye += up_norm * self.speed;
+                camera.eye += up_norm * relative_speed;
             }
             if self.is_down_pressed {
-                camera.eye -= up_norm * self.speed;
+                camera.eye -= up_norm * relative_speed;
             }
         }
 
@@ -78,11 +80,11 @@ impl CameraController {
 
         if !(self.is_left_pressed && self.is_right_pressed) {
             if self.is_right_pressed {
-                camera.eye = camera.eye + (right * self.speed);
+                camera.eye = camera.eye + (right * relative_speed);
             }
 
             if self.is_left_pressed {
-                camera.eye = camera.eye  + (-right * self.speed);
+                camera.eye = camera.eye  + (-right * relative_speed);
             }
         }
     }
