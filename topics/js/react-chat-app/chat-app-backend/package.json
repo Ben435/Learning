@@ -1,0 +1,11 @@
+{
+  "name": "chat-app-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Ben Clare <ben.clare2@gmail.com>",
+  "license": "ISC"
+}
