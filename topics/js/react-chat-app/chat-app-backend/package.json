@@ -4,8 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "author": "Ben Clare <ben.clare2@gmail.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "10.17.27",
+    "typescript": "~3.9.7",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.4"
+  }
 }
