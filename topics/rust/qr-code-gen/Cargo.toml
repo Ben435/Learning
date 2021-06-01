@@ -1,0 +1,7 @@
+[package]
+name = "qr-code-gen"
+version = "0.1.0"
+authors = ["Ben Clare <ben.clare2@gmail.com>"]
+edition = "2018"
+
+[dependencies]
