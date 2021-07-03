@@ -1,0 +1,33 @@
+{
+  "name": "web-collision-detection",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack-dev-server --open -d",
+    "build": "webpack",
+    "test": "jest"
+  },
+  "author": "Ben Clare <ben.clare2@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/polyfill": "^7.11.5",
+    "@babel/preset-env": "^7.11.5",
+    "@wasm-tool/wasm-pack-plugin": "^1.1.0",
+    "babel-jest": "^26.5.2",
+    "babel-loader": "^8.1.0",
+    "copy-webpack-plugin": "^6.1.1",
+    "css-loader": "^3.6.0",
+    "html-webpack-plugin": "^4.3.0",
+    "jest": "^26.5.2",
+    "mini-css-extract-plugin": "^1.0.0",
+    "style-loader": "^1.2.1",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.3",
+    "webpack-dev-server": "^3.7.1"
+  },
+  "dependencies": {
+    "collision-detection": "file:../wasm-collision-detection/pkg"
+  }
+}

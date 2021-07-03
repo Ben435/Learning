@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "web-collision-detection"
+		},
+		{
+			"path": "wasm-collision-detection"
+		}
+	]
+}
