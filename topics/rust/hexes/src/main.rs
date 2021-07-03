@@ -1,4 +1,6 @@
+mod point_gen;
 
+use cgmath::{Point3};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -12,10 +14,29 @@ use wgpu::{
 };
 use wgpu_subscriber::initialize_default_subscriber;
 use futures::executor::block_on;
-use shaderc::{
-    ShaderKind,
-    Compiler
+
+const CAMERA: Point3<f32> = Point3 {
+    x: -100.0,
+    y: 50.0,
+    z: 100.0,
 };
+
+#[repr(C)]
+#[derive(Copy,Clone,Debug,PartialEq)]
+struct Uniforms {
+    view: [f32; 16],
+    projection: [f32; 16],
+    time_size_width: [f32; 4],
+}
+
+struct HexesState {
+    terrain_vertex_buf: wgpu::Buffer,
+    terrain_vertex_count: usize,
+    terrain_normal_bind_group: wgpu::BindGroup,
+    terrain_pipeline: wgpu::RenderPipeline,
+
+    current_frame: usize,
+}
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
     let swapchain_format = TextureFormat::Bgra8UnormSrgb;
@@ -45,23 +66,8 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
         .await
         .expect("Failed to create device");
 
-    let mut shader_compiler = Compiler::new().unwrap();
-
-    let vs_ogl_shader = include_str!("assets/shader.vert");
-    let fs_ogl_shader = include_str!("assets/shader.frag");
-
-    let compiled_vs_shader = shader_compiler
-        .compile_into_spirv(vs_ogl_shader, ShaderKind::Vertex, "unnamed", "main", None)
-        .expect("Failed to compile shader");
-    let vs_module_source = wgpu::ShaderModuleSource::SpirV(std::borrow::Cow::Borrowed(compiled_vs_shader.as_binary()));
-
-    let compiled_fs_shader = shader_compiler
-        .compile_into_spirv(fs_ogl_shader, ShaderKind::Fragment, "unnamed", "main", None)
-        .expect("Failed to compile fragment shader");
-    let fs_module_source = wgpu::ShaderModuleSource::SpirV(std::borrow::Cow::Borrowed(compiled_fs_shader.as_binary()));
-
-    let vs_module = device.create_shader_module(vs_module_source);
-    let fs_module = device.create_shader_module(fs_module_source);
+    let vs_module = device.create_shader_module(wgpu::include_spirv!("./assets/shader.vert.spv"));
+    let fs_module = device.create_shader_module(wgpu::include_spirv!("./assets/shader.frag.spv"));
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
