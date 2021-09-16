@@ -5,6 +5,7 @@ const path = require('path');
 
 module.exports = {
   entry: './src/index.ts',
+  devtool: 'inline-source-map',
   devServer: {
     contentBase: path.join(__dirname, 'dist'),
     compress: true,
@@ -17,7 +18,12 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.glsl$/,
+        type: 'asset/source',
+        // mimetype: 'application/text'
+      },
+      {
+        test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
