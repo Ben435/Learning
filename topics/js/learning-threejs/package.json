@@ -1,0 +1,17 @@
+{
+  "name": "learning-threejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "parcel ./src/index.html",
+    "build": "parcel build ./src/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ben Clare <ben.clare2@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "parcel": "^2.0.0-rc.0",
+    "three": "^0.133.0"
+  }
+}
