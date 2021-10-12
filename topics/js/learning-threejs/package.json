@@ -12,6 +12,6 @@
   "license": "ISC",
   "dependencies": {
     "parcel": "^2.0.0-rc.0",
-    "three": "^0.133.0"
+    "three": "^0.133.1"
   }
 }

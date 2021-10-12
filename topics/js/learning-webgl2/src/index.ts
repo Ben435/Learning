@@ -8,10 +8,8 @@ function entry() {
     const gl = canvas.getContext("webgl2")
 
     if (!gl) {
-        throw Error('Webgl2 not supported in this browser!')
+        throw Error('`webgl2` not supported in this browser!')
     }
-
-    gl.VERTEX_SHADER
 
     console.log("Initialized!")
 
@@ -27,7 +25,7 @@ function entry() {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 
-    var positions = [
+    const positions = [
         10, 20,
         80, 20,
         10, 30,

@@ -24,6 +24,8 @@ function main() {
     function animate(delta) {
         requestAnimationFrame(animate)
 
+        // do some stuff
+
         const curTime = performance.now()
 
         cube.rotation.x = Math.sin(curTime / 1000)
@@ -32,7 +34,16 @@ function main() {
         renderer.render(scene, camera)
     }
 
-    animate(renderer, scene, camera)
+    animate(0)
+    window.addEventListener('keypress', ev => {
+        if (ev.key === 'w') {
+            camera.position.z -= 0.1
+        } else if (ev.key === 's') {
+            camera.position.z += 0.1
+        } else {
+            console.log(`Unrecognised: ${ev.key}`)
+        }
+    })
 }
 
 
