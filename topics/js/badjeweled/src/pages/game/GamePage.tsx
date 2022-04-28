@@ -43,12 +43,16 @@ export const GamePage: React.FC = () => {
 
         gameState.forEach((row, rowNum) => row.forEach((cell, colNum) => {
             // vertical
-            if (!(rowNum === 0 || rowNum === boardHeight-1) && gameState[rowNum-1][colNum].type === cell.type && gameState[rowNum+1][colNum].type === cell.type) {
+            if (!(rowNum === 0 || rowNum === boardHeight-1) &&  // not on top or bottom edge
+                gameState[rowNum-1][colNum].type === cell.type &&  // and cell above is same type
+                gameState[rowNum+1][colNum].type === cell.type) {  // and cell below is same type
                 // vertical mark
                 markCell(rowNum-1, colNum)
                 markCell(rowNum, colNum)
                 markCell(rowNum+1, colNum)
-            } else if (!(colNum === 0 || colNum === boardWidth-1) && gameState[rowNum][colNum-1].type === cell.type && gameState[rowNum][colNum+1].type === cell.type) {
+            } else if (!(colNum === 0 || colNum === boardWidth-1) && // not on left or right edge
+                gameState[rowNum][colNum-1].type === cell.type &&  // and cell left is same type
+                gameState[rowNum][colNum+1].type === cell.type) {  // and cell right is same type
                 // horizontal mark
                 markCell(rowNum, colNum-1, colNum, colNum+1)
             }
