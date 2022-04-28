@@ -1,0 +1,33 @@
+
+.row {
+    display: flex;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    border: 3px solid black;
+    padding: 2px;
+}
+
+.cell--blue {
+    background-color: blue;
+}
+.cell--red {
+    background-color: red;
+}
+.cell--green {
+    background-color: green;
+}
+.cell--purple {
+    background-color: purple;
+}
+.cell--white {
+    background-color: white;
+}
+
+.cell--marked {
+    border: 5px solid gold;
+    padding: 0px;
+}
+
