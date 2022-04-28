@@ -41,17 +41,14 @@ export const GamePage: React.FC = () => {
             toMark[rowNum] = existing.concat(colNums)
         }
 
-        gameState.forEach((row, rowNum) => rowNum === 0 || rowNum === boardHeight-1 ? row : row.forEach((cell, colNum) => {
-            if (colNum === 0 || colNum === boardWidth-1) {
-                return // skip first and last col
-            }
+        gameState.forEach((row, rowNum) => row.forEach((cell, colNum) => {
             // vertical
-            if (gameState[rowNum-1][colNum].type === cell.type && gameState[rowNum+1][colNum].type === cell.type) {
+            if (!(rowNum === 0 || rowNum === boardHeight-1) && gameState[rowNum-1][colNum].type === cell.type && gameState[rowNum+1][colNum].type === cell.type) {
                 // vertical mark
                 markCell(rowNum-1, colNum)
                 markCell(rowNum, colNum)
                 markCell(rowNum+1, colNum)
-            } else if (gameState[rowNum][colNum-1].type === cell.type && gameState[rowNum][colNum+1].type === cell.type) {
+            } else if (!(colNum === 0 || colNum === boardWidth-1) && gameState[rowNum][colNum-1].type === cell.type && gameState[rowNum][colNum+1].type === cell.type) {
                 // horizontal mark
                 markCell(rowNum, colNum-1, colNum, colNum+1)
             }
