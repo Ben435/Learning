@@ -1,20 +1,20 @@
-import * as cdk from "@aws-cdk/core";
-import * as apigateway from "@aws-cdk/aws-apigateway";
-import * as lambda from "@aws-cdk/aws-lambda";
-import * as s3 from "@aws-cdk/aws-s3";
-import { join } from 'path';
+import { Construct } from "constructs";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import { RemovalPolicy } from "aws-cdk-lib";
 
-export class WidgetService extends cdk.Construct {
-    constructor(scope: cdk.Construct, id: string) {
+export class WidgetService extends Construct {
+    constructor(scope: Construct, id: string) {
         super(scope, id);
 
         const bucket = new s3.Bucket(this, 'WidgetStore', {
-            removalPolicy: cdk.RemovalPolicy.DESTROY
+            removalPolicy: RemovalPolicy.DESTROY
         });
 
         const handler = new lambda.Function(this, 'WidgetHandler', {
-            runtime: lambda.Runtime.NODEJS_12_X,
-            code: lambda.Code.fromAsset(join('resources')),
+            runtime: lambda.Runtime.NODEJS_18_X,
+            code: lambda.Code.fromInline('function main(){}'),
             handler: 'widgets.main',
             environment: {
                 BUCKET: bucket.bucketName
