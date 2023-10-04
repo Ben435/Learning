@@ -3,10 +3,7 @@ import { mix } from './math';
 import { maxDepth, MODE } from './constants';
 
 const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) => {
-    let tnearest = Number.POSITIVE_INFINITY;
-    let geo = null; 
-
-    geometries.forEach(geometry => {
+    const { geo, tnearest } = geometries.reduce((prev, geometry) => {
         const result = geometry.intersect(rayOrigin, rayDirection);
 
         if (result) {
@@ -15,12 +12,15 @@ const trace = (rayOrigin, rayDirection, geometries, currentDepth, options={}) =>
                 t0 = t1;
             }
 
-            if (t0 < tnearest) {
-                tnearest = t0;
-                geo = geometry;
+            if (t0 < prev.tnearest) {
+                return {
+                    tnearest: t0,
+                    geo: geometry
+                };
             }
         }
-    });
+        return prev;
+    }, { tnearest: Number.POSITIVE_INFINITY, geo: null });
 
     if (!geo) {
         // TODO: Background color goes here. Currents #fff -> white
