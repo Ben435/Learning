@@ -13,7 +13,7 @@ export function People({ queryReference }: PeopleProps) {
 
     return (
         <Suspense fallback={<p>loading people</p>}>
-            <div>{data.allPeople!.people!.map(person => <Person key={person!.id} person={person!}/>)}</div>
+            <div>{data!.allPeople.edges.map(person => <Person key={person!.node.id} person={person!.node}/>)}</div>
         </Suspense>
     )
 }
