@@ -1,5 +1,5 @@
-import { graphql, useFragment } from "react-relay"
-import { MovieDetailsFragment$key } from "./__generated__/MovieDetailsFragment.graphql"
+import { graphql, useFragment } from 'react-relay'
+import { MovieDetailsFragment$key } from './__generated__/MovieDetailsFragment.graphql'
 
 const getFilmDetails = graphql`
     fragment MovieDetailsFragment on Film {

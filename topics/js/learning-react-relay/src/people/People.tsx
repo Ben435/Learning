@@ -1,7 +1,7 @@
-import { PreloadedQuery, usePreloadedQuery } from "react-relay"
-import { appMainQuery } from "../__generated__/appMainQuery.graphql"
-import { appQuery } from "../app"
-import { Person } from "./Person"
+import { PreloadedQuery, usePreloadedQuery } from 'react-relay'
+import { appMainQuery } from '../__generated__/appMainQuery.graphql'
+import { appQuery } from '../app'
+import { Person } from './Person'
 
 interface PeopleProps {
   queryReference: PreloadedQuery<appMainQuery>

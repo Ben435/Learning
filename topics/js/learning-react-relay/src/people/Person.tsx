@@ -1,5 +1,5 @@
-import { graphql, useFragment } from "react-relay"
-import { PersonDetailsFragment$key } from "./__generated__/PersonDetailsFragment.graphql"
+import { graphql, useFragment } from 'react-relay'
+import { PersonDetailsFragment$key } from './__generated__/PersonDetailsFragment.graphql'
 
 const personDetailsFragment = graphql`
     fragment PersonDetailsFragment on Person {

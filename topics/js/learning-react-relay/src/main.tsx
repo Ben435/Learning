@@ -29,7 +29,7 @@ async function fetchQuery(
       id: params.id,
       variables,
     }),
-  });
+  })
 
   // APQ handshake -> https://www.apollographql.com/docs/apollo-server/performance/apq/
   if (!response.ok) {
@@ -51,13 +51,13 @@ async function fetchQuery(
     })
   }
 
-  return response.json();
+  return response.json()
 }
 
 const env: Environment = new Environment({
   network: Network.create(fetchQuery),
   store: new Store(new RecordSource()),
-});
+})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
