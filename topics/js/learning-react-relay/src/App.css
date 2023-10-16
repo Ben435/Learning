@@ -12,6 +12,9 @@
 .card {
   flex: 1;
   padding: 2em;
+  height: 50vh;
+  width: 20vw;
+  overflow: scroll;
 }
 
 .read-the-docs {

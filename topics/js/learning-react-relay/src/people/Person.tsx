@@ -11,10 +11,10 @@ const personDetailsFragment = graphql`
 `
 
 interface PersonProps {
-    person: PersonDetailsFragment$key
+  person: PersonDetailsFragment$key
 }
 
 export function Person({ person }: PersonProps) {
-    const data = useFragment(personDetailsFragment, person)
-    return <p>Person {data.name} of species {data.species?.name || 'unknown'}</p>
+  const data = useFragment(personDetailsFragment, person)
+  return <p>Person {data.name} of species {data.species?.name || 'unknown'}</p>
 }
