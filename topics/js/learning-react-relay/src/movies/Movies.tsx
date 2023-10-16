@@ -1,11 +1,11 @@
 import { PreloadedQuery, usePreloadedQuery } from 'react-relay'
 import { Suspense } from 'react'
 import { Movie } from './Movie'
-import { AppQuery } from '../__generated__/AppQuery.graphql'
-import { appQuery } from '../appQuery'
+import { appMainQuery } from '../__generated__/appMainQuery.graphql'
+import { appQuery } from '../app'
 
 export interface MoviesProps {
-    queryReference: PreloadedQuery<AppQuery>
+    queryReference: PreloadedQuery<appMainQuery>
 }
 
 export function Movies({ queryReference }: MoviesProps) {

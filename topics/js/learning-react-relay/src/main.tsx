@@ -12,22 +12,44 @@ import {
   type Variables,
   type GraphQLResponse
 } from 'relay-runtime'
+import rawQueryMap from '../persisted_queries.json'
 
 async function fetchQuery(
   params: RequestParameters,
   variables: Variables,
 ): Promise<GraphQLResponse> {
-  const response = await fetch('https://swapi-graphql.netlify.app/.netlify/functions/index', {
+  let response = await fetch('https://swapi-graphql.netlify.app/.netlify/functions/index', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      kind: params.operationKind,
       operationName: params.name,
-      query: params.text,
+      id: params.id,
       variables,
     }),
   });
+
+  // APQ handshake -> https://www.apollographql.com/docs/apollo-server/performance/apq/
+  if (!response.ok) {
+    console.warn(`server did not not query with id ${params.id}, sending raw query`)
+
+    const rawQuery = (rawQueryMap as Record<string, string>)[params.id!]
+    response = await fetch('https://swapi-graphql.netlify.app/.netlify/functions/index', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        kind: params.operationKind,
+        operationName: params.name,
+        id: params.id,
+        query: rawQuery,
+        variables,
+      }),
+    })
+  }
 
   return response.json();
 }

@@ -3,11 +3,11 @@ import './App.css'
 import { Movies } from './movies/Movies'
 import { People } from './people/People'
 import { useEffect } from 'react'
-import { AppQuery } from './__generated__/AppQuery.graphql'
-import { appQuery } from './appQuery'
+import { appMainQuery } from './__generated__/appMainQuery.graphql'
+import { appQuery } from './app'
 
 function App() {
-  const [ queryReference, loadQuery, disposeQuery ] = useQueryLoader<AppQuery>(appQuery, null)
+  const [ queryReference, loadQuery, disposeQuery ] = useQueryLoader<appMainQuery>(appQuery, null)
 
   useEffect(() => {
     if (queryReference == null) {
@@ -19,9 +19,13 @@ function App() {
   return (
     <>
       <h1>Star Wars stuff</h1>
-      <div className="card">
-        {queryReference ? <Movies queryReference={queryReference}/> : null}
-        {queryReference ? <People queryReference={queryReference}/> : null}
+      <div className="container">
+        <div className="card">
+          {queryReference ? <Movies queryReference={queryReference}/> : null}
+        </div>
+        <div className="card">
+          {queryReference ? <People queryReference={queryReference}/> : null}
+        </div>
       </div>
     </>
   )

@@ -41,6 +41,10 @@
       "**/node_modules/**",
       "**/__mocks__/**",
       "**/__generated__/**"
-    ]
+    ],
+    "persistConfig": {
+      "file": "./persisted_queries.json",
+      "algorithm": "MD5"
+    }
   }
 }

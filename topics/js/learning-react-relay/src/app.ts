@@ -1,7 +1,7 @@
 import { graphql } from "react-relay";
 
 export const appQuery = graphql`
-  query AppQuery {
+  query appMainQuery {
     allFilms {
       films {
         id
