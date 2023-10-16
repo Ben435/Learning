@@ -13,7 +13,7 @@ export function Movies({ queryReference }: MoviesProps) {
 
   return (
     <Suspense fallback={<p>loading movies...</p>}>
-        {data!.allFilms.edges!.map(film => <Movie key={film!.node.id} film={film!.node} />)}
+        {data!.allFilms.edges.map(film => <Movie key={film!.node.id} film={film!.node} />)}
     </Suspense>
   )
 }
