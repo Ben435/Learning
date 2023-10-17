@@ -1,0 +1,20 @@
+{
+  "name": "cdk",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "cdk": "cdk"
+  },
+  "author": "Ben Clare <ben.clare2@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "aws-cdk": "^2.101.1",
+    "aws-cdk-lib": "^2.101.1",
+    "constructs": "^10.3.0",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.6",
+    "ts-node": "^10.9.1"
+  }
+}
