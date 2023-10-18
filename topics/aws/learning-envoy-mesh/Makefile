@@ -20,3 +20,7 @@ docker-build:
 docker-push:
 	docker tag $(SERVICE_NAME) $(REGISTRY):$(VERSION) && \
 	docker push $(REGISTRY):$(VERSION)
+
+.PHONY:
+ci-build-and-push: docker-build docker-push
+	@echo "Done"

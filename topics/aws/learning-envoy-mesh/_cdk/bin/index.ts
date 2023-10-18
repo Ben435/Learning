@@ -1,6 +1,6 @@
 import { App, Stage, StageProps } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { APIStack } from '../lib/app-stack'
+import { APIStack } from '../lib/api-stack'
 import { InfraStack } from '../lib/infra-stack'
 
 class DeployStage extends Stage {
