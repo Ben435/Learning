@@ -14,7 +14,6 @@ class DeployStage extends Stage {
         new APIStack(this, 'APIStack', {
             env: props.env,
             infraStack,
-            appECRARN: 'hello-world',
         })
     }
 }
@@ -22,7 +21,7 @@ class DeployStage extends Stage {
 const app = new App()
 
 new DeployStage(app, 'dev', {
-    env: { 
+    env: {
         account: process.env.CDK_DEFAULT_ACCOUNT,
         region: process.env.CDK_DEFAULT_REGION
     },

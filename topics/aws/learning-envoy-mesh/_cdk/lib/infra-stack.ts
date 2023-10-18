@@ -1,4 +1,5 @@
 import { Stack, StackProps } from "aws-cdk-lib";
+import { Mesh } from "aws-cdk-lib/aws-appmesh";
 import { InstanceClass, InstanceSize, InstanceType, Vpc } from "aws-cdk-lib/aws-ec2";
 import { Cluster } from "aws-cdk-lib/aws-ecs";
 import { Construct } from "constructs";
@@ -6,6 +7,7 @@ import { Construct } from "constructs";
 export class InfraStack extends Stack {
     public readonly vpc: Vpc
     public readonly cluster: Cluster
+    public readonly mesh: Mesh
 
     constructor(scope: Construct, id: string, props: StackProps) {
         super(scope, id, props)
@@ -18,5 +20,7 @@ export class InfraStack extends Stack {
                 spotPrice: "0.002",
             }
         })
+
+        this.mesh = new Mesh(this, 'Mesh')
     }
 }
