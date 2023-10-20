@@ -3,6 +3,8 @@ pub mod thread_pool {
     use std::sync::{mpsc, Arc, Mutex};
     use std::thread;
 
+    use log::{debug};
+
     pub struct PoolCreationError<'a> {
         pub reason: &'a str,
     }
@@ -64,14 +66,14 @@ pub mod thread_pool {
 
     impl Drop for ThreadPool {
         fn drop(&mut self) {
-            println!("Terminating workers");
+            debug!("Terminating workers");
 
             for _ in &self.threads {
                 self.sender.send(Message::Terminate).unwrap();
             }
 
             for worker in &mut self.threads {
-                println!("Shutting down worker: {}", worker.id);
+                debug!("Shutting down worker: {}", worker.id);
 
                 if let Some(thread) = worker.thread.take() {
                     thread.join().unwrap();
@@ -92,12 +94,12 @@ pub mod thread_pool {
 
                 match job {
                     Message::NewJob(job) => {
-                        println!("Worker {} got job; executing", id);
+                        debug!("Worker {} got job; executing", id);
 
                         job();
                     }
                     Message::Terminate => {
-                        println!("Terminating worker {}", id);
+                        debug!("Terminating worker {}", id);
 
                         break;
                     }

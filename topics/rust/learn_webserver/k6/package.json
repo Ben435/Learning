@@ -1,0 +1,14 @@
+{
+  "name": "learning-k6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "start": "k6 run script.js"
+  },
+  "author": "Ben Clare <ben.clare2@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "k6": "^0.0.0"
+  }
+}

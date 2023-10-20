@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
+use log::{debug, info, error};
 
 static WORKER_THREADS: usize = 4;
 
@@ -12,61 +13,74 @@ static PORT: &str = "8080";
 static NOT_FOUND_FILE: &str = "404.html";
 
 fn main() {
+    env_logger::init();
+
     let pool = thread_pool::ThreadPool::new(WORKER_THREADS).unwrap();
 
     let address = format!("{}:{}", HOST, PORT);
     let listener = TcpListener::bind(&address).expect(&format!("Failed to bind to: {}", &address));
 
-    println!("Listening on: {}", &address);
+    info!("Listening on: {}", &address);
+
+    let handler = Handler{};
 
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => pool.execute(|| handle_connection(stream)),
+            Ok(stream) => pool.execute(move || handler.handle_connection(stream)),
             Err(e) => panic!("Error! {}", e),
         }
     }
 
-    println!("Shutting down!")
+    info!("Shutting down!")
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+#[derive(Debug, Clone, Copy)]
+struct Handler {}
 
-    stream.read(&mut buffer).unwrap();
+impl Handler {
+    fn handle_connection(&self, mut stream: TcpStream) {
+        let mut buffer = [0; 1024];
 
-    let request = String::from_utf8_lossy(&buffer[..]);
+        stream.read(&mut buffer).unwrap();
 
-    println!("Request: {}", &request);
+        let request = String::from_utf8_lossy(&buffer[..]);
 
-    let lines: Vec<&str> = request.split("\r\n").collect();
-    /*
-    Method Request-URI HTTP-Version CRLF
-    headers CRLF
-    message-body CRLF
-    CRLF
-    */
-    let first_line_parts: Vec<&str> = lines.get(0).unwrap().split(" ").collect();
-    let method = first_line_parts.get(0).unwrap();
-    let req_uri = first_line_parts.get(1).unwrap();
+        debug!("Request: {}", &request);
 
-    println!("Requested: METHOD={}, URI={}", &method, &req_uri);
+        let lines: Vec<&str> = request.split("\r\n").collect();
+        /*
+        Method Request-URI HTTP-Version CRLF
+        headers CRLF
+        message-body CRLF
+        CRLF
+        */
+        let first_line_parts: Vec<&str> = lines.get(0).unwrap().split(" ").collect();
+        let method = first_line_parts.get(0).unwrap();
+        let req_uri = first_line_parts.get(1).unwrap();
 
-    let static_file_prefix: &Path = Path::new("static");
-    let uri = static_file_prefix.join(match *req_uri {
-        "/" => "index.html",
-        _ if req_uri.starts_with("/") => &req_uri[1..],
-        _ => &req_uri,
-    });
+        info!("Requested: METHOD={}, URI={}", &method, &req_uri);
 
-    let response_content = fs::read_to_string(uri);
+        let static_file_prefix: &Path = Path::new("static");
+        let uri = static_file_prefix.join(match *req_uri {
+            "/" => "index.html",
+            _ if req_uri.starts_with("/") => &req_uri[1..],
+            _ => &req_uri,
+        });
 
-    println!("Content: {:?}", &response_content);
+        let response_content = fs::read_to_string(uri);
 
-    let response = match response_content {
-        Ok(content) => format!("HTTP/1.1 200 OK \r\n\r\n{}", content),
-        Err(_) => format!("HTTP/1.1 404 OK \r\n\r\n{}", &NOT_FOUND_FILE),
-    };
+        debug!("Content: {:?}", &response_content);
 
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+        let response = match response_content {
+            Ok(content) => format!("HTTP/1.1 200 OK \r\n\r\n{}", content),
+            Err(e) =>  {
+                error!("Got err while processing request: {}", e);
+                format!("HTTP/1.1 404 OK \r\n\r\n{}", &NOT_FOUND_FILE)
+            }
+        };
+
+        stream.write(response.as_bytes()).unwrap();
+        stream.flush().unwrap();
+    }
 }
+
