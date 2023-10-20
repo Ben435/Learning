@@ -1,9 +1,9 @@
 use learn_webserver::thread_pool;
+use log::{debug, error, info};
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
-use log::{debug, info, error};
 
 static WORKER_THREADS: usize = 4;
 
@@ -22,7 +22,7 @@ fn main() {
 
     info!("Listening on: {}", &address);
 
-    let handler = Handler{};
+    let handler = Handler {};
 
     for stream in listener.incoming() {
         match stream {
@@ -73,7 +73,7 @@ impl Handler {
 
         let response = match response_content {
             Ok(content) => format!("HTTP/1.1 200 OK \r\n\r\n{}", content),
-            Err(e) =>  {
+            Err(e) => {
                 error!("Got err while processing request: {}", e);
                 format!("HTTP/1.1 404 OK \r\n\r\n{}", &NOT_FOUND_FILE)
             }
@@ -83,4 +83,3 @@ impl Handler {
         stream.flush().unwrap();
     }
 }
-

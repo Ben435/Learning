@@ -3,7 +3,7 @@ pub mod thread_pool {
     use std::sync::{mpsc, Arc, Mutex};
     use std::thread;
 
-    use log::{debug};
+    use log::debug;
 
     pub struct PoolCreationError<'a> {
         pub reason: &'a str,
