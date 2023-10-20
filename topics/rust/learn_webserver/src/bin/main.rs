@@ -1,8 +1,8 @@
-use std::net::{TcpListener, TcpStream};
-use std::io::{Read, Write};
-use std::fs;
-use std::path::Path;
 use learn_webserver::thread_pool;
+use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::path::Path;
 
 static WORKER_THREADS: usize = 4;
 
@@ -15,28 +15,26 @@ fn main() {
     let pool = thread_pool::ThreadPool::new(WORKER_THREADS).unwrap();
 
     let address = format!("{}:{}", HOST, PORT);
-    let listener = TcpListener::bind(&address)
-        .expect(&format!("Failed to bind to: {}", &address));
+    let listener = TcpListener::bind(&address).expect(&format!("Failed to bind to: {}", &address));
 
     println!("Listening on: {}", &address);
 
-    for stream in listener.incoming().take(2) {
+    for stream in listener.incoming() {
         match stream {
             Ok(stream) => pool.execute(|| handle_connection(stream)),
             Err(e) => panic!("Error! {}", e),
         }
     }
 
-
     println!("Shutting down!")
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 512];
+    let mut buffer = [0; 1024];
 
     stream.read(&mut buffer).unwrap();
 
-    let request =  String::from_utf8_lossy(&buffer[..]);
+    let request = String::from_utf8_lossy(&buffer[..]);
 
     println!("Request: {}", &request);
 
@@ -54,13 +52,11 @@ fn handle_connection(mut stream: TcpStream) {
     println!("Requested: METHOD={}, URI={}", &method, &req_uri);
 
     let static_file_prefix: &Path = Path::new("static");
-    let uri = static_file_prefix.join(
-            match *req_uri {
-            "/" => "index.html",
-            _ if req_uri.starts_with("/") => &req_uri[1..],
-            _ => &req_uri
-        }
-    );
+    let uri = static_file_prefix.join(match *req_uri {
+        "/" => "index.html",
+        _ if req_uri.starts_with("/") => &req_uri[1..],
+        _ => &req_uri,
+    });
 
     let response_content = fs::read_to_string(uri);
 
