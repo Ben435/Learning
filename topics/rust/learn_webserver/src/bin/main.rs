@@ -1,11 +1,9 @@
 use learn_webserver::thread_pool;
 use log::{debug, error, info};
-use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
-
-static WORKER_THREADS: usize = 4;
+use std::io;
 
 static HOST: &str = "localhost";
 static PORT: &str = "8080";
@@ -15,7 +13,10 @@ static NOT_FOUND_FILE: &str = "404.html";
 fn main() {
     env_logger::init();
 
-    let pool = thread_pool::ThreadPool::new(WORKER_THREADS).unwrap();
+    let threads = num_cpus::get();
+
+    info!("Starting a pool of {} threads", threads);
+    let pool = thread_pool::ThreadPool::new(threads).unwrap();
 
     let address = format!("{}:{}", HOST, PORT);
     let listener = TcpListener::bind(&address).expect(&format!("Failed to bind to: {}", &address));
@@ -67,7 +68,10 @@ impl Handler {
             _ => &req_uri,
         });
 
-        let response_content = fs::read_to_string(uri);
+        let response_content: Result<String, io::Error> =
+            Result::Ok(uri.to_string_lossy().to_string());
+
+        // let response_content = fs::read_to_string(uri);
 
         debug!("Content: {:?}", &response_content);
 
