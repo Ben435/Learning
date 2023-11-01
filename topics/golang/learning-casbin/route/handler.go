@@ -46,7 +46,7 @@ func (h *Handler) LoginHandler() http.HandlerFunc {
 			return
 		}
 		h.sessionManager.Put(r.Context(), "userID", user.ID)
-		h.sessionManager.Put(r.Context(), "role", string(user.Role))
+		h.sessionManager.Put(r.Context(), "name", string(user.Name))
 		h.sessionManager.Commit(r.Context())
 		writeSuccess("SUCCESS", w)
 	})
@@ -73,14 +73,14 @@ func (h *Handler) CurrentMemberHandler() http.HandlerFunc {
 	})
 }
 
-func (h *Handler) MemberRoleHandler() http.HandlerFunc {
+func (h *Handler) MemberNameHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := h.sessionManager.GetString(r.Context(), "role")
-		if len(role) == 0 {
-			writeError(http.StatusInternalServerError, "ERROR", w, fmt.Errorf("failed to find role in context"))
+		name := h.sessionManager.GetString(r.Context(), "name")
+		if len(name) == 0 {
+			writeError(http.StatusInternalServerError, "ERROR", w, fmt.Errorf("failed to find name in context"))
 			return
 		}
-		writeSuccess(fmt.Sprintf("User with Role: %s", role), w)
+		writeSuccess(fmt.Sprintf("User with name: %s", name), w)
 	})
 }
 

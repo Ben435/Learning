@@ -32,7 +32,7 @@ func main() {
 	mux.HandleFunc("/login", handler.LoginHandler())
 	mux.HandleFunc("/logout", handler.LogoutHandler())
 	mux.HandleFunc("/member/current", handler.CurrentMemberHandler())
-	mux.HandleFunc("/member/role", handler.MemberRoleHandler())
+	mux.HandleFunc("/member/name", handler.MemberNameHandler())
 	mux.HandleFunc("/admin/stuff", handler.AdminHandler())
 
 	port, exists := os.LookupEnv("PORT")

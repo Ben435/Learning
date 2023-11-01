@@ -39,17 +39,14 @@ func NewUsers() Users {
 		{
 			ID:   1,
 			Name: "Gandalf",
-			Role: Admin,
 		},
 		{
 			ID:   2,
 			Name: "Frodo",
-			Role: Member,
 		},
 		{
 			ID:   3,
 			Name: "Smeagle",
-			Role: Anonymous,
 		},
 	}
 }

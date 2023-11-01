@@ -2,3 +2,7 @@ p, admin, /*, *
 p, anonymous, /login, *
 p, member, /logout, *
 p, member, /member/*, *
+g, Gandalf, admin
+g, Frodo, member
+g, Smeagle, anonymous
+g, anon, anonymous
