@@ -7,6 +7,14 @@ export const appQuery = graphql`
         node @required(action: LOG) {
           id
           ...MovieDetailsFragment
+          planetConnection {
+            edges {
+              node {
+                id
+                ...PlanetDetailsFragment
+              }
+            }
+          }
         }
       }
     }
