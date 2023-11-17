@@ -4,5 +4,5 @@ node_modules/
 .idea/
 venv/
 __sapper__/
-.DS_Store/
+.DS_Store
 
